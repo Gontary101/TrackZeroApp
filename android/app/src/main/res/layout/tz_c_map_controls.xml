@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Inflated into TzMapControls (vertical LinearLayout): zoom group, then locate. -->
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:app="http://schemas.android.com/apk/res-auto">
+  <LinearLayout
+    android:layout_width="@dimen/tz_map_btn"
+    android:layout_height="wrap_content"
+    android:background="@drawable/tz_bg_surface2_r18"
+    android:elevation="@dimen/tz_elev2"
+    android:orientation="vertical">
+    <ImageButton
+      android:id="@+id/tz_zoom_in"
+      android:layout_width="@dimen/tz_map_btn"
+      android:layout_height="@dimen/tz_map_btn"
+      android:background="@null"
+      android:contentDescription="@string/tz_cd_zoom_in"
+      android:src="@drawable/ic_tz_plus"
+      app:tint="@color/tz_text1" />
+    <View
+      android:layout_width="match_parent"
+      android:layout_height="@dimen/tz_divider"
+      android:layout_marginStart="@dimen/tz_divider_inset"
+      android:layout_marginEnd="@dimen/tz_divider_inset"
+      android:background="@color/tz_divider" />
+    <ImageButton
+      android:id="@+id/tz_zoom_out"
+      android:layout_width="@dimen/tz_map_btn"
+      android:layout_height="@dimen/tz_map_btn"
+      android:background="@null"
+      android:contentDescription="@string/tz_cd_zoom_out"
+      android:src="@drawable/ic_tz_minus"
+      app:tint="@color/tz_text1" />
+  </LinearLayout>
+  <ImageButton
+    android:id="@+id/tz_locate"
+    android:layout_width="@dimen/tz_map_btn"
+    android:layout_height="@dimen/tz_map_btn"
+    android:layout_marginTop="@dimen/tz_space_12"
+    android:background="@drawable/tz_bg_surface2_r18"
+    android:contentDescription="@string/tz_cd_recenter"
+    android:elevation="@dimen/tz_elev2"
+    android:src="@drawable/ic_tz_locate"
+    app:tint="@color/tz_text1" />
+</merge>

@@ -55,3 +55,20 @@ Approach changed: TrackZero host activity instead of hiding MwmActivity views (T
   not packaged on Android (added); stock ThemeSwitcher could persist the light cycling style (D8).
 - Verified on emulator: launches to the black cycling map, no base buttons/menus/place page, transparent status
   bar over the map, mint rider dot, location in FOLLOW. Debug builds show the engine's FPS/zoom label (debug only).
+
+## Phase 4 — Components
+
+- `app.trackzero.ui`: TzBottomIsland, TzMapControls, TzChip (GPS + REC, pulse), TzStatsIsland, TzTurnCard
+  (normal / imminent / off-route), TzManeuvers (glyph + phrase mapping), TzRouteCard, TzSilhouetteView,
+  TzHoldButton, TzToggleRow (+ TzSwitch), TzSegmented, TzCategoryChip, TzListRow, TzPageHandle,
+  TzElevationProfileView, TzMetricView, TzMotion. Buttons = MaterialButton styles.
+- `app.trackzero.format.TzFormat` (§X3) + tests; `app.trackzero.geo.{Geo,DouglasPeucker}` + tests;
+  `app.trackzero.follow.{Maneuver,TurnState}`.
+- Resources: 18 `tz_bg_*` shapes, `tz_dot`, `tz_list_divider`, `animator/tz_press`, layouts `tz_c_*`,
+  `tz_strings.xml`, `tz_attrs.xml`, `tz_styles.xml`, `tz_dimens_components.xml`, `tz_integers.xml`.
+- Debug gallery shows every component with sample data; compared with the Components board on the emulator.
+  Fixed during review: StatsIsland labels were left-aligned (default MATCH_PARENT params).
+- HoldButton verified with adb: 0.9 s press → fill drains back, nothing happens; 1.8 s → "RIDE SAVED".
+- Unit tests: 21 pass (TzFormat 8, Geo 4, DouglasPeucker 8, TzTextSize 1). No warnings in `app.trackzero`
+  (EdgeToEdge API replaces the deprecated bar-colour setters).
+- Emulator now runs headless (`-no-window`, 2 GB): the desktop display became unreachable, and one instance only.

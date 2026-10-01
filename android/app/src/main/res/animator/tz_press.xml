@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Press feedback (plan §X5): scale 0.96 over 90 ms. -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+  <item android:state_pressed="true">
+    <set>
+      <objectAnimator android:duration="@integer/tz_press_ms" android:propertyName="scaleX" android:valueTo="0.96" android:valueType="floatType" />
+      <objectAnimator android:duration="@integer/tz_press_ms" android:propertyName="scaleY" android:valueTo="0.96" android:valueType="floatType" />
+    </set>
+  </item>
+  <item>
+    <set>
+      <objectAnimator android:duration="@integer/tz_press_ms" android:propertyName="scaleX" android:valueTo="1" android:valueType="floatType" />
+      <objectAnimator android:duration="@integer/tz_press_ms" android:propertyName="scaleY" android:valueTo="1" android:valueType="floatType" />
+    </set>
+  </item>
+</selector>

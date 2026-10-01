@@ -26,6 +26,12 @@
   <color name="tz_danger_bg">#2D1316</color>
   <color name="tz_danger_fill">#5A1F25</color>
   <color name="tz_scrim">#A3000000</color> <!-- 64% black -->
+  <!-- Elevation profile grid (R5 board) -->
+  <color name="tz_grid">#1D1F22</color>
+  <!-- Off-route distance unit (R3 board) -->
+  <color name="tz_amber_unit">#C9A46A</color>
+  <!-- Map attribution text (B1 board) -->
+  <color name="tz_attribution">#6B7076</color>
   <!-- Map style targets (Phase 3) -->
   <color name="tz_map_road_major">#2A2D32</color>
   <color name="tz_map_road_minor">#17191C</color>

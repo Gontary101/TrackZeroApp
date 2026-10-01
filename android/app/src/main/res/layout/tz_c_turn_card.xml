@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Inflated into TzTurnCard (vertical LinearLayout). -->
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:app="http://schemas.android.com/apk/res-auto">
+  <LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="center_vertical"
+    android:orientation="horizontal">
+    <FrameLayout
+      android:id="@+id/tz_turn_well"
+      android:layout_width="@dimen/tz_maneuver_well"
+      android:layout_height="@dimen/tz_maneuver_well"
+      android:background="@drawable/tz_bg_surface3_r22">
+      <ImageView
+        android:id="@+id/tz_turn_glyph"
+        android:layout_width="@dimen/tz_maneuver_glyph"
+        android:layout_height="@dimen/tz_maneuver_glyph"
+        android:layout_gravity="center"
+        android:importantForAccessibility="no" />
+    </FrameLayout>
+    <LinearLayout
+      android:layout_width="0dp"
+      android:layout_height="wrap_content"
+      android:layout_marginStart="@dimen/tz_turn_glyph_gap"
+      android:layout_weight="1"
+      android:orientation="vertical">
+      <TextView
+        android:id="@+id/tz_turn_off_title"
+        style="@style/TzText.OffRouteTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="@dimen/tz_space_4"
+        android:text="@string/tz_off_route"
+        android:visibility="gone" />
+      <app.trackzero.ui.TzMetricView
+        android:id="@+id/tz_turn_distance"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:tzNumberSize="64"
+        app:tzNumberStyle="@style/TzText.Turn" />
+      <TextView
+        android:id="@+id/tz_turn_instruction"
+        style="@style/TzText.TurnInstruction"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/tz_turn_line_gap"
+        android:maxLines="1"
+        android:ellipsize="end" />
+      <TextView
+        android:id="@+id/tz_turn_street"
+        style="@style/TzText.TurnStreet"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/tz_turn_line_gap"
+        android:ellipsize="end"
+        android:maxLines="1" />
+    </LinearLayout>
+  </LinearLayout>
+  <View
+    android:id="@+id/tz_turn_divider"
+    android:layout_width="match_parent"
+    android:layout_height="@dimen/tz_divider"
+    android:layout_marginTop="@dimen/tz_turn_card_gap"
+    android:background="@color/tz_divider" />
+  <LinearLayout
+    android:id="@+id/tz_turn_then"
+    android:layout_width="match_parent"
+    android:layout_height="@dimen/tz_then_row_h"
+    android:layout_marginTop="@dimen/tz_turn_card_gap"
+    android:gravity="center_vertical"
+    android:orientation="horizontal">
+    <TextView
+      style="@style/TzText.Label"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:text="@string/tz_then" />
+    <ImageView
+      android:id="@+id/tz_turn_then_glyph"
+      android:layout_width="@dimen/tz_then_icon"
+      android:layout_height="@dimen/tz_then_icon"
+      android:layout_marginStart="@dimen/tz_button_icon_gap"
+      android:importantForAccessibility="no"
+      app:tint="@color/tz_text2" />
+    <TextView
+      android:id="@+id/tz_turn_then_text"
+      style="@style/TzText.TurnThen"
+      android:layout_width="0dp"
+      android:layout_height="wrap_content"
+      android:layout_marginStart="@dimen/tz_button_icon_gap"
+      android:layout_weight="1"
+      android:ellipsize="end"
+      android:maxLines="1" />
+  </LinearLayout>
+</merge>

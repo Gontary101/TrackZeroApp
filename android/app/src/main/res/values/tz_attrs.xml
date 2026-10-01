@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <declare-styleable name="TzMetricView">
+    <!-- A TzText number style (TzText.MetricM, TzText.Hero…) -->
+    <attr name="tzNumberStyle" format="reference" />
+    <!-- Number size in sp; the unit is half of it. Capped at 1.3x font scale. -->
+    <attr name="tzNumberSize" format="float" />
+  </declare-styleable>
+  <declare-styleable name="TzToggleRow">
+    <attr name="tzIcon" format="reference" />
+    <attr name="tzTitle" format="string" />
+    <attr name="tzSubtitle" format="string" />
+  </declare-styleable>
+  <declare-styleable name="TzListRow">
+    <attr name="tzIcon" />
+    <attr name="tzTitle" />
+  </declare-styleable>
+  <declare-styleable name="TzElevationProfileView">
+    <attr name="tzCompact" format="boolean" />
+  </declare-styleable>
+  <declare-styleable name="TzSegmented">
+    <attr name="tzCompact" />
+  </declare-styleable>
+</resources>

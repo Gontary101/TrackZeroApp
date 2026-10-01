@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Inflated into TzBottomIsland (a horizontal LinearLayout). -->
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:app="http://schemas.android.com/apk/res-auto">
+  <LinearLayout
+    android:id="@+id/tz_island_map"
+    android:layout_width="0dp"
+    android:layout_height="@dimen/tz_island_slot_h"
+    android:layout_weight="1"
+    android:background="@null"
+    android:clickable="true"
+    android:focusable="true"
+    android:gravity="center"
+    android:orientation="vertical">
+    <ImageView
+      android:layout_width="@dimen/tz_island_icon"
+      android:layout_height="@dimen/tz_island_icon"
+      android:importantForAccessibility="no"
+      android:src="@drawable/ic_tz_map" />
+    <TextView
+      style="@style/TzText.IslandLabel"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_marginTop="@dimen/tz_island_label_gap"
+      android:text="@string/tz_tab_map" />
+  </LinearLayout>
+  <Space android:layout_width="@dimen/tz_space_4" android:layout_height="0dp" />
+  <LinearLayout
+    android:id="@+id/tz_island_routes"
+    android:layout_width="0dp"
+    android:layout_height="@dimen/tz_island_slot_h"
+    android:layout_weight="1"
+    android:background="@null"
+    android:clickable="true"
+    android:focusable="true"
+    android:gravity="center"
+    android:orientation="vertical">
+    <ImageView
+      android:layout_width="@dimen/tz_island_icon"
+      android:layout_height="@dimen/tz_island_icon"
+      android:importantForAccessibility="no"
+      android:src="@drawable/ic_tz_routes" />
+    <TextView
+      style="@style/TzText.IslandLabel"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_marginTop="@dimen/tz_island_label_gap"
+      android:text="@string/tz_tab_routes" />
+  </LinearLayout>
+  <Space android:layout_width="@dimen/tz_space_4" android:layout_height="0dp" />
+  <LinearLayout
+    android:id="@+id/tz_island_ride"
+    android:layout_width="@dimen/tz_island_ride_w"
+    android:layout_height="@dimen/tz_island_slot_h"
+    android:background="@drawable/tz_bg_mint_r30"
+    android:clickable="true"
+    android:contentDescription="@string/tz_cd_start_free_ride"
+    android:focusable="true"
+    android:gravity="center"
+    android:orientation="vertical">
+    <ImageView
+      android:layout_width="@dimen/tz_island_ride_icon"
+      android:layout_height="@dimen/tz_island_ride_icon"
+      android:importantForAccessibility="no"
+      android:src="@drawable/ic_tz_play"
+      app:tint="@color/tz_on_mint" />
+    <TextView
+      style="@style/TzText.IslandLabel.Ride"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_marginTop="@dimen/tz_island_ride_gap"
+      android:importantForAccessibility="no"
+      android:text="@string/tz_ride" />
+  </LinearLayout>
+  <Space android:layout_width="@dimen/tz_space_4" android:layout_height="0dp" />
+  <LinearLayout
+    android:id="@+id/tz_island_search"
+    android:layout_width="0dp"
+    android:layout_height="@dimen/tz_island_slot_h"
+    android:layout_weight="1"
+    android:background="@null"
+    android:clickable="true"
+    android:focusable="true"
+    android:gravity="center"
+    android:orientation="vertical">
+    <ImageView
+      android:layout_width="@dimen/tz_island_icon"
+      android:layout_height="@dimen/tz_island_icon"
+      android:importantForAccessibility="no"
+      android:src="@drawable/ic_tz_search" />
+    <TextView
+      style="@style/TzText.IslandLabel"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_marginTop="@dimen/tz_island_label_gap"
+      android:text="@string/tz_tab_search" />
+  </LinearLayout>
+  <Space android:layout_width="@dimen/tz_space_4" android:layout_height="0dp" />
+  <LinearLayout
+    android:id="@+id/tz_island_more"
+    android:layout_width="0dp"
+    android:layout_height="@dimen/tz_island_slot_h"
+    android:layout_weight="1"
+    android:background="@null"
+    android:clickable="true"
+    android:focusable="true"
+    android:gravity="center"
+    android:orientation="vertical">
+    <ImageView
+      android:layout_width="@dimen/tz_island_icon"
+      android:layout_height="@dimen/tz_island_icon"
+      android:importantForAccessibility="no"
+      android:src="@drawable/ic_tz_more" />
+    <TextView
+      style="@style/TzText.IslandLabel"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_marginTop="@dimen/tz_island_label_gap"
+      android:text="@string/tz_tab_more" />
+  </LinearLayout>
+</merge>

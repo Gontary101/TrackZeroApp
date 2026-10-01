@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Inflated into TzRouteCard (horizontal LinearLayout): body (tap / long-press) + favourite star. -->
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:app="http://schemas.android.com/apk/res-auto">
+  <LinearLayout
+    android:id="@+id/tz_route_body"
+    android:layout_width="0dp"
+    android:layout_height="wrap_content"
+    android:layout_weight="1"
+    android:background="@null"
+    android:clickable="true"
+    android:focusable="true"
+    android:gravity="center_vertical"
+    android:orientation="horizontal">
+    <FrameLayout
+      android:layout_width="@dimen/tz_silhouette"
+      android:layout_height="@dimen/tz_silhouette"
+      android:background="@drawable/tz_bg_well_r16">
+      <app.trackzero.ui.TzSilhouetteView
+        android:id="@+id/tz_route_silhouette"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:importantForAccessibility="no" />
+    </FrameLayout>
+    <LinearLayout
+      android:layout_width="0dp"
+      android:layout_height="wrap_content"
+      android:layout_marginStart="@dimen/tz_row_gap"
+      android:layout_weight="1"
+      android:orientation="vertical">
+      <TextView
+        android:id="@+id/tz_route_name"
+        style="@style/TzText.TitleM"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:ellipsize="end"
+        android:maxLines="1" />
+      <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/tz_card_line_gap"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+        <ImageView
+          android:layout_width="@dimen/tz_stat_icon"
+          android:layout_height="@dimen/tz_stat_icon"
+          android:importantForAccessibility="no"
+          android:src="@drawable/ic_tz_dist"
+          app:tint="@color/tz_text2" />
+        <app.trackzero.ui.TzMetricView
+          android:id="@+id/tz_route_distance"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:layout_marginStart="@dimen/tz_stat_icon_gap"
+          app:tzNumberSize="22"
+          app:tzNumberStyle="@style/TzText.MetricS" />
+        <ImageView
+          android:layout_width="@dimen/tz_stat_icon"
+          android:layout_height="@dimen/tz_stat_icon"
+          android:layout_marginStart="@dimen/tz_space_16"
+          android:importantForAccessibility="no"
+          android:src="@drawable/ic_tz_gain"
+          app:tint="@color/tz_text2" />
+        <app.trackzero.ui.TzMetricView
+          android:id="@+id/tz_route_gain"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:layout_marginStart="@dimen/tz_stat_icon_gap"
+          app:tzNumberSize="22"
+          app:tzNumberStyle="@style/TzText.MetricS" />
+      </LinearLayout>
+      <TextView
+        android:id="@+id/tz_route_kind"
+        style="@style/TzText.Label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/tz_card_line_gap" />
+    </LinearLayout>
+  </LinearLayout>
+  <ImageButton
+    android:id="@+id/tz_route_star"
+    android:layout_width="@dimen/tz_touch_min_browse"
+    android:layout_height="@dimen/tz_touch_min_browse"
+    android:layout_marginStart="@dimen/tz_space_4"
+    android:background="@null" />
+</merge>

@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <!-- Bottom island -->
+  <string name="tz_tab_map">Map</string>
+  <string name="tz_tab_routes">Routes</string>
+  <string name="tz_tab_search">Search</string>
+  <string name="tz_tab_more">More</string>
+  <string name="tz_ride">RIDE</string>
+  <string name="tz_cd_start_free_ride">Start free ride</string>
+
+  <!-- Map controls -->
+  <string name="tz_cd_zoom_in">Zoom in</string>
+  <string name="tz_cd_zoom_out">Zoom out</string>
+  <string name="tz_cd_recenter">Recenter</string>
+  <string name="tz_gps_accuracy">GPS ±%1$s</string>
+  <string name="tz_gps_none">NO GPS</string>
+
+  <!-- Ride state chip -->
+  <string name="tz_rec">REC</string>
+  <string name="tz_paused">PAUSED</string>
+  <string name="tz_auto_paused">AUTO-PAUSED</string>
+
+  <!-- Turn card -->
+  <string name="tz_then">Then</string>
+  <string name="tz_off_route">OFF ROUTE</string>
+  <string name="tz_off_route_away">away</string>
+  <string name="tz_head_back">Head back to the route</string>
+
+  <!-- Maneuvers (turn card + voice) -->
+  <string name="tz_mnv_straight">Continue straight</string>
+  <string name="tz_mnv_turn_right">Turn right</string>
+  <string name="tz_mnv_turn_left">Turn left</string>
+  <string name="tz_mnv_slight_right">Keep right</string>
+  <string name="tz_mnv_slight_left">Keep left</string>
+  <string name="tz_mnv_uturn">Make a U-turn</string>
+  <string name="tz_mnv_arrive">Arrive</string>
+  <string name="tz_mnv_reroute">Head back to the route</string>
+  <string name="tz_mnv_head_to_start">Head to start</string>
+
+  <!-- Route card -->
+  <string name="tz_cd_add_favorite">Add to favorites</string>
+  <string name="tz_cd_remove_favorite">Remove from favorites</string>
+  <string name="tz_kind_loop">Loop</string>
+  <string name="tz_kind_out_and_back">Out &amp; back</string>
+  <string name="tz_kind_point_to_point">Point to point</string>
+
+  <!-- Hold button -->
+  <string name="tz_hold_to_end">HOLD TO END &amp; SAVE</string>
+  <string name="tz_ride_saved_button">RIDE SAVED</string>
+  <string name="tz_cd_hold_to_end">End and save ride. Press and hold.</string>
+
+  <!-- Carousel handle -->
+  <string name="tz_cd_page_handle">Ride page %1$d of %2$d. Swipe up for ride controls</string>
+</resources>

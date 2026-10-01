@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Debug gallery: every component of the Components board with sample data (TzGalleryActivity). -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:app="http://schemas.android.com/apk/res-auto"
+  android:layout_width="match_parent"
+  android:layout_height="wrap_content"
+  android:clipChildren="false"
+  android:clipToPadding="false"
+  android:orientation="vertical">
+
+  <TextView style="@style/TzText.Label" android:layout_width="wrap_content" android:layout_height="wrap_content"
+    android:layout_marginTop="@dimen/tz_space_32" android:layout_marginBottom="@dimen/tz_space_8" android:text="BottomIsland" />
+  <app.trackzero.ui.TzBottomIsland android:id="@+id/g_island1" android:layout_width="match_parent" android:layout_height="@dimen/tz_island_h" />
+  <app.trackzero.ui.TzBottomIsland android:id="@+id/g_island2" android:layout_width="match_parent" android:layout_height="@dimen/tz_island_h"
+    android:layout_marginTop="@dimen/tz_space_12" />
+
+  <TextView style="@style/TzText.Label" android:layout_width="wrap_content" android:layout_height="wrap_content"
+    android:layout_marginTop="@dimen/tz_space_32" android:layout_marginBottom="@dimen/tz_space_8" android:text="StatsIsland" />
+  <app.trackzero.ui.TzStatsIsland android:id="@+id/g_stats" android:layout_width="match_parent" android:layout_height="@dimen/tz_stats_island_h" />
+
+  <TextView style="@style/TzText.Label" android:layout_width="wrap_content" android:layout_height="wrap_content"
+    android:layout_marginTop="@dimen/tz_space_32" android:layout_marginBottom="@dimen/tz_space_8" android:text="TurnCard" />
+  <app.trackzero.ui.TzTurnCard android:id="@+id/g_turn" android:layout_width="match_parent" android:layout_height="wrap_content" />
+  <app.trackzero.ui.TzTurnCard android:id="@+id/g_turn_imminent" android:layout_width="match_parent" android:layout_height="wrap_content"
+    android:layout_marginTop="@dimen/tz_space_12" />
+  <app.trackzero.ui.TzTurnCard android:id="@+id/g_turn_off" android:layout_width="match_parent" android:layout_height="wrap_content"
+    android:layout_marginTop="@dimen/tz_space_12" />
+
+  <TextView style="@style/TzText.Label" android:layout_width="wrap_content" android:layout_height="wrap_content"
+    android:layout_marginTop="@dimen/tz_space_32" android:layout_marginBottom="@dimen/tz_space_8" android:text="MapControls · GPS · REC" />
+  <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+    <app.trackzero.ui.TzMapControls android:id="@+id/g_controls" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+    <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="@dimen/tz_space_24"
+      android:orientation="vertical">
+      <app.trackzero.ui.TzChip android:id="@+id/g_gps" android:layout_width="wrap_content" android:layout_height="@dimen/tz_chip_small_h" />
+      <app.trackzero.ui.TzChip android:id="@+id/g_gps_bad" android:layout_width="wrap_content" android:layout_height="@dimen/tz_chip_small_h"
+        android:layout_marginTop="@dimen/tz_space_12" />
+      <app.trackzero.ui.TzChip android:id="@+id/g_rec" android:layout_width="wrap_content" android:layout_height="@dimen/tz_chip_small_h"
+        android:layout_marginTop="@dimen/tz_space_12" />
+      <app.trackzero.ui.TzChip android:id="@+id/g_paused" android:layout_width="wrap_content" android:layout_height="@dimen/tz_chip_small_h"
+        android:layout_marginTop="@dimen/tz_space_12" />
+    </LinearLayout>
+  </LinearLayout>
+
+  <TextView style="@style/TzText.Label" android:layout_width="wrap_content" android:layout_height="wrap_content"
+    android:layout_marginTop="@dimen/tz_space_32" android:layout_marginBottom="@dimen/tz_space_8" android:text="RouteCard" />
+  <app.trackzero.ui.TzRouteCard android:id="@+id/g_route1" android:layout_width="match_parent" android:layout_height="wrap_content" />
+  <app.trackzero.ui.TzRouteCard android:id="@+id/g_route2" android:layout_width="match_parent" android:layout_height="wrap_content"
+    android:layout_marginTop="@dimen/tz_space_12" />
+
+  <TextView style="@style/TzText.Label" android:layout_width="wrap_content" android:layout_height="wrap_content"
+    android:layout_marginTop="@dimen/tz_space_32" android:layout_marginBottom="@dimen/tz_space_8" android:text="Buttons" />
+  <com.google.android.material.button.MaterialButton style="@style/TzButton.Primary" android:layout_width="match_parent"
+    android:layout_height="wrap_content" android:text="Start ride" app:icon="@drawable/ic_tz_play" />
+  <com.google.android.material.button.MaterialButton style="@style/TzButton.Secondary" android:layout_width="match_parent"
+    android:layout_height="wrap_content" android:layout_marginTop="@dimen/tz_space_12" android:text="Pause ride" app:icon="@drawable/ic_tz_pause" />
+  <com.google.android.material.button.MaterialButton style="@style/TzButton.Primary.Resume" android:layout_width="match_parent"
+    android:layout_height="wrap_content" android:layout_marginTop="@dimen/tz_space_12" android:text="Resume ride" app:icon="@drawable/ic_tz_play" />
+  <app.trackzero.ui.TzHoldButton android:id="@+id/g_hold" android:layout_width="match_parent" android:layout_height="wrap_content"
+    android:layout_marginTop="@dimen/tz_space_12" />
+
+  <TextView style="@style/TzText.Label" android:layout_width="wrap_content" android:layout_height="wrap_content"
+    android:layout_marginTop="@dimen/tz_space_32" android:layout_marginBottom="@dimen/tz_space_8" android:text="Toggles · Segmented · Chips" />
+  <app.trackzero.ui.TzToggleRow android:id="@+id/g_toggle1" android:layout_width="match_parent" android:layout_height="wrap_content"
+    app:tzIcon="@drawable/ic_tz_voice" app:tzSubtitle="At 200 m and 50 m before each turn" app:tzTitle="Voice turn announcements" />
+  <app.trackzero.ui.TzToggleRow android:id="@+id/g_toggle2" android:layout_width="match_parent" android:layout_height="wrap_content"
+    android:layout_marginTop="@dimen/tz_space_12" app:tzIcon="@drawable/ic_tz_sun" app:tzTitle="Keep screen awake" />
+  <app.trackzero.ui.TzSegmented android:id="@+id/g_segmented" android:layout_width="wrap_content" android:layout_height="wrap_content"
+    android:layout_marginTop="@dimen/tz_space_12" />
+  <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="@dimen/tz_space_12"
+    android:orientation="horizontal">
+    <app.trackzero.ui.TzCategoryChip android:id="@+id/g_chip1" android:layout_width="wrap_content" android:layout_height="wrap_content"
+      android:text="Water" />
+    <app.trackzero.ui.TzCategoryChip android:id="@+id/g_chip2" android:layout_width="wrap_content" android:layout_height="wrap_content"
+      android:layout_marginStart="@dimen/tz_space_8" android:text="Café" />
+  </LinearLayout>
+
+  <TextView style="@style/TzText.Label" android:layout_width="wrap_content" android:layout_height="wrap_content"
+    android:layout_marginTop="@dimen/tz_space_32" android:layout_marginBottom="@dimen/tz_space_8" android:text="ListRow" />
+  <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:background="@drawable/tz_bg_surface1_r24"
+    android:divider="@drawable/tz_list_divider" android:orientation="vertical" android:showDividers="middle">
+    <app.trackzero.ui.TzListRow android:id="@+id/g_row1" android:layout_width="match_parent" android:layout_height="wrap_content"
+      app:tzIcon="@drawable/ic_tz_download" app:tzTitle="Offline maps" />
+    <app.trackzero.ui.TzListRow android:id="@+id/g_row2" android:layout_width="match_parent" android:layout_height="wrap_content"
+      app:tzIcon="@drawable/ic_tz_history" app:tzTitle="Ride history" />
+  </LinearLayout>
+
+  <TextView style="@style/TzText.Label" android:layout_width="wrap_content" android:layout_height="wrap_content"
+    android:layout_marginTop="@dimen/tz_space_32" android:layout_marginBottom="@dimen/tz_space_8" android:text="CarouselHandle" />
+  <app.trackzero.ui.TzPageHandle android:id="@+id/g_handle" android:layout_width="match_parent" android:layout_height="wrap_content" />
+
+  <TextView style="@style/TzText.Label" android:layout_width="wrap_content" android:layout_height="wrap_content"
+    android:layout_marginTop="@dimen/tz_space_32" android:layout_marginBottom="@dimen/tz_space_8" android:text="ElevationProfile" />
+  <app.trackzero.ui.TzElevationProfileView android:id="@+id/g_profile" android:layout_width="match_parent" android:layout_height="280dp"
+    android:background="@drawable/tz_bg_surface1_r24" />
+  <app.trackzero.ui.TzElevationProfileView android:id="@+id/g_profile_compact" android:layout_width="match_parent"
+    android:layout_height="@dimen/tz_space_40" android:layout_marginTop="@dimen/tz_space_12" app:tzCompact="true" />
+</LinearLayout>

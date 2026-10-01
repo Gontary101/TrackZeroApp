@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Component styles built on the plan's TzText styles (tz_type.xml). -->
+<resources>
+  <style name="TzText.IslandLabel.Ride">
+    <item name="android:fontFamily">@font/barlow_bold</item>
+    <item name="android:letterSpacing">0.13</item>
+    <item name="android:textColor">@color/tz_on_mint</item>
+  </style>
+
+  <!-- GPS / REC chip text: Barlow Condensed SemiBold 17sp, tracking 1px -->
+  <style name="TzText.Chip">
+    <item name="android:fontFamily">@font/barlow_condensed_semibold</item>
+    <item name="android:textSize">@dimen/tz_text_17</item>
+    <item name="android:letterSpacing">0.06</item>
+  </style>
+
+  <!-- Turn card -->
+  <style name="TzText.TurnInstruction">
+    <item name="android:fontFamily">@font/barlow_bold</item>
+    <item name="android:textSize">@dimen/tz_text_18</item>
+  </style>
+  <style name="TzText.TurnStreet">
+    <item name="android:fontFamily">@font/barlow_medium</item>
+    <item name="android:textSize">@dimen/tz_text_16</item>
+    <item name="android:textColor">@color/tz_text2</item>
+  </style>
+  <style name="TzText.TurnThen">
+    <item name="android:fontFamily">@font/barlow_semibold</item>
+    <item name="android:textSize">@dimen/tz_text_15</item>
+    <item name="android:textColor">@color/tz_text2</item>
+  </style>
+  <style name="TzText.OffRouteTitle" parent="TzText.DotM">
+    <item name="android:textColor">@color/tz_amber</item>
+    <item name="android:letterSpacing">0.05</item>
+  </style>
+  <style name="TzText.OffRouteLine">
+    <item name="android:fontFamily">@font/barlow_semibold</item>
+    <item name="android:textSize">@dimen/tz_text_16</item>
+    <item name="android:textColor">@color/tz_amber_text2</item>
+  </style>
+
+  <!-- Buttons (Components board): 64dp, radius 20, type.button, icon 22dp + 10dp gap centred with the text -->
+  <style name="TzButton" parent="Widget.MaterialComponents.Button.UnelevatedButton">
+    <item name="android:minHeight">@dimen/tz_button_h</item>
+    <item name="android:insetTop">0dp</item>
+    <item name="android:insetBottom">0dp</item>
+    <item name="android:fontFamily">@font/barlow_condensed_bold</item>
+    <item name="android:textSize">@dimen/tz_text_22</item>
+    <item name="android:letterSpacing">0.09</item>
+    <item name="android:textAllCaps">true</item>
+    <item name="android:includeFontPadding">false</item>
+    <item name="android:stateListAnimator">@animator/tz_press</item>
+    <item name="cornerRadius">@dimen/tz_radius_button</item>
+    <item name="iconGravity">textStart</item>
+    <item name="iconSize">@dimen/tz_button_icon</item>
+    <item name="iconPadding">@dimen/tz_button_icon_gap</item>
+    <item name="rippleColor">@android:color/transparent</item>
+    <item name="elevation">0dp</item>
+  </style>
+  <style name="TzButton.Primary">
+    <item name="backgroundTint">@color/tz_mint</item>
+    <item name="android:textColor">@color/tz_on_mint</item>
+    <item name="iconTint">@color/tz_on_mint</item>
+  </style>
+  <style name="TzButton.Secondary">
+    <item name="backgroundTint">@color/tz_surface3</item>
+    <item name="android:textColor">@color/tz_text1</item>
+    <item name="iconTint">@color/tz_text1</item>
+  </style>
+  <style name="TzButton.Danger">
+    <item name="backgroundTint">@color/tz_danger_bg</item>
+    <item name="android:textColor">@color/tz_danger</item>
+    <item name="iconTint">@color/tz_danger</item>
+  </style>
+  <style name="TzButton.Primary.Resume">
+    <item name="android:minHeight">@dimen/tz_button_resume_h</item>
+  </style>
+
+  <!-- Toggle / list rows -->
+  <style name="TzText.RowTitle">
+    <item name="android:fontFamily">@font/barlow_semibold</item>
+    <item name="android:textSize">@dimen/tz_text_17</item>
+  </style>
+  <style name="TzText.RowSubtitle">
+    <item name="android:fontFamily">@font/barlow_medium</item>
+    <item name="android:textSize">@dimen/tz_text_13</item>
+    <item name="android:textColor">@color/tz_text2</item>
+  </style>
+  <style name="TzText.RowDetail">
+    <item name="android:fontFamily">@font/barlow_medium</item>
+    <item name="android:textSize">@dimen/tz_text_15</item>
+    <item name="android:textColor">@color/tz_text2</item>
+  </style>
+  <!-- Segmented options and category chips: 15sp SemiBold -->
+  <style name="TzText.Option">
+    <item name="android:fontFamily">@font/barlow_semibold</item>
+    <item name="android:textSize">@dimen/tz_text_15</item>
+  </style>
+</resources>

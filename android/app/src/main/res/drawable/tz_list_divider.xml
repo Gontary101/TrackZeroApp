@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Divider between TzListRows in a group: 1dp surface3, inset 54dp from the start. -->
+<inset xmlns:android="http://schemas.android.com/apk/res/android" android:insetLeft="@dimen/tz_list_divider_inset">
+  <shape android:shape="rectangle">
+    <solid android:color="@color/tz_divider" />
+    <size android:height="@dimen/tz_divider" />
+  </shape>
+</inset>

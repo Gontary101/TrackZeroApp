@@ -72,3 +72,21 @@ background onto an opaque screen doesn't resume drawing.
 The core only offers "switch to next mode" (async). `TzMap.followRider(headingUp)` records the requested mode
 and advances one step per `onMyPositionModeChanged` until reached; a user pan (NOT_FOLLOW not caused by us)
 cancels the request. FOLLOW→FOLLOW_AND_ROTATE is refused by the core until a heading exists, so callers re-request.
+
+## D11 · Component implementation choices (Phase 4)
+- Extra tokens the plan's token files don't list but the Components board specifies live in
+  `tz_dimens_components.xml`, `tz_styles.xml`, `tz_integers.xml` and three colours appended to `tz_colors.xml`
+  (`tz_grid #1D1F22`, `tz_amber_unit #C9A46A`, `tz_attribution #6B7076`), so the plan's files stay recognisable.
+- `TzMetricView` (number + half-size unit sharing a baseline) implements §X3's "number and unit in separate
+  TextViews" once; StatsIsland, TurnCard, RouteCard and the ride grids reuse it.
+- Buttons are `MaterialButton` styles (`TzButton.Primary/Secondary/Danger/Primary.Resume`): `iconGravity=textStart`
+  centres icon + label like the board; press scale is a state-list animator (90 ms, 0.96).
+- `TzHoldButton` measures the hold on the frame clock (`SystemClock.uptimeMillis` + `postOnAnimation`), not a
+  ValueAnimator: with system animations disabled an animator completes instantly, which would turn "hold 1.5 s to
+  end the ride" into a tap. Screen readers get a long-click action instead.
+- Follow value types (`follow.Maneuver`, `follow.TurnState`) are defined now so the TurnCard binds its real
+  input; maneuver phrases are string resources (shared with voice in Phase 10).
+- Motion honours "Remove animations" through `TzMotion.enabled()` (reads the global animator scale; works below
+  API 26 where `ValueAnimator.areAnimatorsEnabled()` doesn't exist).
+- `TzElevationProfileView`, `TzSilhouetteView`, `geo.Geo`, `geo.DouglasPeucker` (+ tests) were written by a codex
+  worker from a precise spec and reviewed/adjusted (XML `tzCompact` attribute, motion check).

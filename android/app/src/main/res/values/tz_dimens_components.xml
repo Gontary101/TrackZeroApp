@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Component sizes from the Components board that tz_dimens.xml (plan §2.3) doesn't list. -->
+<resources>
+  <!-- Radii: pills use height / 2 -->
+  <dimen name="tz_radius_island">36dp</dimen>
+  <dimen name="tz_radius_slot">30dp</dimen>
+  <dimen name="tz_radius_well">22dp</dimen>
+  <dimen name="tz_radius_pill_44">22dp</dimen>
+  <dimen name="tz_radius_pill_32">16dp</dimen>
+  <dimen name="tz_radius_silhouette">16dp</dimen>
+  <dimen name="tz_radius_segmented">26dp</dimen>
+  <dimen name="tz_radius_grabber">2dp</dimen>
+
+  <dimen name="tz_island_icon">22dp</dimen>
+  <dimen name="tz_island_ride_icon">20dp</dimen>
+  <dimen name="tz_island_label_gap">3dp</dimen>
+  <dimen name="tz_island_ride_gap">2dp</dimen>
+  <dimen name="tz_divider">1dp</dimen>
+  <dimen name="tz_unit_gap">3dp</dimen>
+  <dimen name="tz_label_gap">6dp</dimen>
+  <dimen name="tz_unit_gap_turn">4dp</dimen>
+  <dimen name="tz_divider_inset">14dp</dimen>
+  <dimen name="tz_stat_divider_h">44dp</dimen>
+  <dimen name="tz_chip_small_h">32dp</dimen>
+  <dimen name="tz_dot">8dp</dimen>
+  <dimen name="tz_dot_active_w">24dp</dimen>
+  <dimen name="tz_dot_gap">6dp</dimen>
+  <dimen name="tz_grabber_w">36dp</dimen>
+  <dimen name="tz_grabber_h">4dp</dimen>
+  <dimen name="tz_then_icon">20dp</dimen>
+  <dimen name="tz_then_row_h">24dp</dimen>
+  <dimen name="tz_button_icon">22dp</dimen>
+  <dimen name="tz_button_icon_gap">10dp</dimen>
+  <dimen name="tz_chip_icon">18dp</dimen>
+  <dimen name="tz_stat_icon">16dp</dimen>
+  <dimen name="tz_stat_icon_gap">5dp</dimen>
+  <dimen name="tz_card_line_gap">7dp</dimen>
+  <!-- Icon/content gap inside rows and cards (route card, toggle row, list row) -->
+  <dimen name="tz_row_gap">14dp</dimen>
+  <dimen name="tz_chevron">18dp</dimen>
+  <dimen name="tz_list_divider_inset">54dp</dimen>
+  <dimen name="tz_switch_w">56dp</dimen>
+  <dimen name="tz_switch_h">34dp</dimen>
+  <dimen name="tz_switch_knob">26dp</dimen>
+  <dimen name="tz_segment_h_compact">40dp</dimen>
+  <dimen name="tz_segment_pad">18dp</dimen>
+  <dimen name="tz_silhouette_box">60dp</dimen>
+  <dimen name="tz_silhouette_stroke">2.8dp</dimen>
+  <dimen name="tz_silhouette_stroke_large">5dp</dimen>
+  <dimen name="tz_turn_card_gap">14dp</dimen>
+  <dimen name="tz_turn_glyph_gap">16dp</dimen>
+  <dimen name="tz_turn_line_gap">2dp</dimen>
+
+  <!-- Text sizes used outside the TzText styles -->
+  <dimen name="tz_text_11">11sp</dimen>
+  <dimen name="tz_text_13">13sp</dimen>
+  <dimen name="tz_text_15">15sp</dimen>
+  <dimen name="tz_text_16">16sp</dimen>
+  <dimen name="tz_text_17">17sp</dimen>
+  <dimen name="tz_text_18">18sp</dimen>
+  <dimen name="tz_text_22">22sp</dimen>
+  <dimen name="tz_text_28">28sp</dimen>
+</resources>
