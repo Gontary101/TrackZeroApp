@@ -171,6 +171,18 @@
   </style>
 
   <!-- Ride controls sheet header: "1:42:18 · 38.2 km" -->
+  <!-- R5 header: climb name in Doto 26sp (1px tracking), CLIMB 1/3 pill in mint Barlow Bold 12sp (2px) -->
+  <style name="TzText.ClimbTitle" parent="TzText.DotM">
+    <item name="android:textSize">@dimen/tz_text_26</item>
+    <item name="android:letterSpacing">0.04</item>
+  </style>
+  <style name="TzText.ClimbPill">
+    <item name="android:fontFamily">@font/barlow_bold</item>
+    <item name="android:textSize">12sp</item>
+    <item name="android:letterSpacing">0.17</item>
+    <item name="android:textColor">@color/tz_mint</item>
+  </style>
+
   <style name="TzText.SheetSummary">
     <item name="android:fontFamily">@font/barlow_condensed_semibold</item>
     <item name="android:textSize">@dimen/tz_text_20</item>

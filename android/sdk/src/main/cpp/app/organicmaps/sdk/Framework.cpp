@@ -42,7 +42,10 @@
 
 #include "geometry/parametrized_segment.hpp"
 
+#include "indexer/classificator.hpp"
+#include "indexer/feature_algo.hpp"
 #include "indexer/feature_altitude.hpp"
+#include "indexer/feature_data.hpp"
 #include "indexer/ftypes_matcher.hpp"
 #include "indexer/scales.hpp"
 #include "indexer/validate_and_format_contacts.hpp"
@@ -1038,6 +1041,42 @@ JNIEXPORT jintArray JNICALL Java_app_organicmaps_sdk_Framework_nativeRoadJunctio
   jintArray out = env->NewIntArray(n);
   env->SetIntArrayRegion(out, 0, n, result.data());
   return out;
+}
+
+// TrackZero: name of the closest named peak or mountain pass within radiusM (a climb's summit), "" when none.
+JNIEXPORT jstring JNICALL Java_app_organicmaps_sdk_Framework_nativeGetSummitName(JNIEnv * env, jclass, jdouble lat,
+                                                                                jdouble lon, jdouble radiusM)
+{
+  m2::PointD const center = mercator::FromLatLon(lat, lon);
+  auto const & dataSource = frm()->GetDataSource();
+  auto const mwmId = dataSource.GetMwmIdByCountryFile(
+      platform::CountryFile(frm()->GetCountryInfoGetter().GetRegionCountryId(center)));
+  if (!mwmId.IsAlive())
+    return jni::ToJavaString(env, "");
+
+  auto const & c = classif();
+  uint32_t const peak = c.GetTypeByPath({"natural", "peak"});
+  uint32_t const pass = c.GetTypeByPath({"mountain_pass"});
+  std::string best;
+  double bestDistance = radiusM;
+  dataSource.ForEachInRectForMWM([&](FeatureType & ft)
+  {
+    if (ft.GetGeomType() != feature::GeomType::Point)
+      return;
+    feature::TypesHolder const types(ft);
+    if (!types.Has(peak) && !types.Has(pass))
+      return;
+    auto const name = ft.GetTranslatedName().m_primary.value_or(std::string());
+    if (name.empty())
+      return;
+    double const d = mercator::DistanceOnEarth(center, feature::GetCenter(ft));
+    if (d <= bestDistance)
+    {
+      bestDistance = d;
+      best = name;
+    }
+  }, mercator::RectByCenterXYAndSizeInMeters(center, 2 * radiusM), scales::GetUpperScale(), mwmId);
+  return jni::ToJavaString(env, best);
 }
 
 JNIEXPORT void JNICALL Java_app_organicmaps_sdk_Framework_nativeClearApiPoints(JNIEnv * env, jclass clazz)

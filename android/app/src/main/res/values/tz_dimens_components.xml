@@ -97,8 +97,11 @@
   <dimen name="tz_ride_pill_pad">16dp</dimen>
   <dimen name="tz_ride_above_handle">8dp</dimen>
   <dimen name="tz_ride_resume_above_handle">12dp</dimen>
-  <dimen name="tz_ride_profile_h">300dp</dimen>
-  <dimen name="tz_ride_profile_pad">20dp</dimen>
+  <dimen name="tz_climb_icon">30dp</dimen>
+  <dimen name="tz_climb_pill_h">28dp</dimen>
+  <dimen name="tz_climb_metric_gap">6dp</dimen>
+  <dimen name="tz_climb_card_gap">14dp</dimen>
+  <dimen name="tz_climb_profile_h">230dp</dimen>
   <dimen name="tz_sheet_grabber_w">44dp</dimen>
   <dimen name="tz_sheet_grabber_h">5dp</dimen>
   <dimen name="tz_sheet_grabber_r">3dp</dimen>

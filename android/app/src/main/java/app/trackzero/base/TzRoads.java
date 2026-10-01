@@ -13,6 +13,8 @@ public final class TzRoads
   private static final double MAX_DISTANCE_M = 20;
   /** A recorded track turns a few metres from the junction node; a planned one on it. */
   private static final double JUNCTION_RADIUS_M = 12;
+  /** A summit's peak or pass is at most this far from the top of the climb along the road. */
+  private static final double SUMMIT_RADIUS_M = 300;
 
   private TzRoads() {}
 
@@ -24,6 +26,13 @@ public final class TzRoads
   public static int[] junctions(@NonNull double[] lat, @NonNull double[] lon)
   {
     return Framework.nativeRoadJunctions(lat, lon, JUNCTION_RADIUS_M);
+  }
+
+  /** The named peak or pass at a climb's summit, "" if none. Blocking: off the main thread, once {@link #ready}. */
+  @NonNull
+  public static String summitName(double lat, double lon)
+  {
+    return Framework.nativeGetSummitName(lat, lon, SUMMIT_RADIUS_M);
   }
 
   /** The maps are loaded. A ride restored by the system can run before the app has done it. */

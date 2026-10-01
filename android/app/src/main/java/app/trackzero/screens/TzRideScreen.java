@@ -32,6 +32,8 @@ import app.trackzero.TzNavigator;
 import app.trackzero.TzPrefs;
 import app.trackzero.base.TzMap;
 import app.trackzero.base.TzRouteLayer;
+import app.trackzero.follow.Climb;
+import app.trackzero.follow.ClimbTracker;
 import app.trackzero.follow.FollowEngine;
 import app.trackzero.format.TzFormat;
 import app.trackzero.ride.RideSession;
@@ -44,6 +46,7 @@ import app.trackzero.ui.TzElevationProfileView;
 import app.trackzero.ui.TzHoldButton;
 import app.trackzero.ui.TzMetricView;
 import app.trackzero.ui.TzPageHandle;
+import app.trackzero.ui.TzSegmented;
 import app.trackzero.ui.TzStatsIsland;
 import app.trackzero.ui.TzTextSize;
 import app.trackzero.ui.TzToggleRow;
@@ -131,11 +134,27 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
   private TzMetricView[] mCells;
   // Page 2
   @Nullable
-  private View mClimbHeader;
+  private View mClimbContent;
   @Nullable
-  private TzChip mClimbChip;
+  private TextView mClimbTitle;
+  @Nullable
+  private TextView mClimbPill;
+  @Nullable
+  private View mClimbMetrics;
+  @Nullable
+  private TzMetricView[] mClimbCells;
+  @Nullable
+  private TzSegmented mClimbRange;
   @Nullable
   private TzElevationProfileView mProfile;
+  @Nullable
+  private TzStatsIsland mClimbStats;
+  /** The data now in {@link #mProfile}: a route's climbs (their profile), else the ridden trace. */
+  @Nullable
+  private Object mProfileSource;
+  /** The x range last asked of {@link #mProfile} (it animates there). */
+  private double mRangeFrom = Double.NaN;
+  private double mRangeTo = Double.NaN;
 
   private final ServiceConnection mConnection = new ServiceConnection() {
     @Override
@@ -353,8 +372,13 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
       final View page = (View) mSpeedHeader.getParent();
       page.setPadding(0, 0, 0, mBottomInset + handle);
     }
-    if (mClimbHeader != null)
-      setTopMargin(mClimbHeader, top);
+    if (mClimbContent != null)
+    {
+      setTopMargin(mClimbContent, top);
+      final FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams) mClimbStats.getLayoutParams();
+      lp.bottomMargin = mBottomInset + handle + getResources().getDimensionPixelSize(R.dimen.tz_ride_above_handle);
+      mClimbStats.setLayoutParams(lp);
+    }
   }
 
   private static void setTopMargin(@NonNull View v, int px)
@@ -466,7 +490,7 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
     {
     case PAGE_MAP -> renderMap(s, st, now, units, locale, state == RideSession.State.PAUSED);
     case PAGE_SPEED -> renderSpeed(s, st, now, units, locale, paused);
-    case PAGE_CLIMB -> renderClimb(s, units, locale);
+    case PAGE_CLIMB -> renderClimb(s, st, units, locale);
     }
   }
 
@@ -602,16 +626,114 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
     mCells[5].setValue(TzFormat.speed(st.maxKmh(), units, locale));
   }
 
-  private void renderClimb(@NonNull RideSession s, @NonNull TzFormat.Units units, @NonNull Locale locale)
+  /** R5: the climb the rider is on or the next one; without climbs data, the elevation ridden. */
+  private void renderClimb(@NonNull RideSession s, @NonNull RideStats st, @NonNull TzFormat.Units units,
+                           @NonNull Locale locale)
   {
     if (mProfile == null)
       return;
-    renderChip(mClimbChip, s.state());
+    final ClimbTracker climbs = mService == null ? null : mService.climbs();
+    final FollowEngine follow = mService == null ? null : mService.follow();
+    if (climbs == null || follow == null || climbs.profile().length < 2)
+    {
+      renderElevation(s, st, units, locale);
+      return;
+    }
+    final Climb c = climbs.shown();
+    final int count = climbs.climbs().size();
+    mClimbTitle.setText(c == null ? getString(R.string.tz_no_climbs_ahead)
+                                  : c.name != null ? c.name.toUpperCase(locale)
+                                                   : getString(R.string.tz_climb_number, c.index));
+    mClimbPill.setVisibility(c == null ? View.GONE : View.VISIBLE);
+    if (c != null)
+      mClimbPill.setText(getString(R.string.tz_climb_pill, c.index, count));
+    mClimbMetrics.setVisibility(View.VISIBLE);
+    mClimbRange.setVisibility(c == null ? View.GONE : View.VISIBLE);
+
+    // Metrics: live grade (mint: the one live reading), to the summit, climbed so far.
+    mClimbCells[0].setValue(TzFormat.grade(st.gradePct(), locale));
+    if (c == null)
+    {
+      mClimbCells[1].setValue(TzFormat.UNKNOWN, "");
+      mClimbCells[2].setValue(TzFormat.UNKNOWN, "");
+    }
+    else
+    {
+      mClimbCells[1].setValue(TzFormat.distance(climbs.toSummitM(), units, locale));
+      final TzFormat.Value gained = TzFormat.elevation(climbs.gainedM(), units, locale);
+      mClimbCells[2].setValue("+" + gained.number, gained.unit);
+    }
+
+    // Profile: the route's, zoomed on the climb or the whole route.
+    final float[] ele = climbs.profile();
+    final double total = follow.remainingM() + follow.along();
+    if (mProfileSource != climbs)
+    {
+      mProfileSource = climbs;
+      final float[] dist = new float[ele.length];
+      for (int i = 0; i < ele.length; i++)
+        dist[i] = (float) Math.min(i * climbs.step(), total);
+      mProfile.setProfile(dist, ele);
+      mRangeFrom = mRangeTo = Double.NaN;
+    }
+    final boolean zoomed = c != null && mClimbRange.getSelected() == 0;
+    final double from = zoomed ? c.startAt : 0;
+    final double to = zoomed ? c.summitAt : total;
+    if (from != mRangeFrom || to != mRangeTo)
+    {
+      // Animated when the rider switches the view or moves on to the next climb.
+      mProfile.setRange((float) from, (float) to, !Double.isNaN(mRangeFrom));
+      mRangeFrom = from;
+      mRangeTo = to;
+    }
+    final TzFormat.Value length = TzFormat.distance(to - from, units, locale);
+    mProfile.setAxisLabels(("0 " + length.unit).toUpperCase(locale), length.toString().toUpperCase(locale));
+    mProfile.setRiderDistance((float) follow.along());
+    if (c == null)
+      mProfile.setSummit(Float.NaN, Float.NaN, null);
+    else
+      mProfile.setSummit((float) c.summitAt, (float) c.summitAlt,
+                         TzFormat.elevation(c.summitAlt, units, locale).toString().toUpperCase(locale));
+
+    // Island: altitude, time to the summit at the speed ridden on the climb, the climb's average grade.
+    setAltitudeCell(st, units, locale);
+    if (c == null)
+    {
+      final TzFormat.Value gain = TzFormat.elevation(st.gainM(), units, locale);
+      mClimbStats.setCell(1, getString(R.string.tz_stat_gain), gain.number, gain.unit);
+      final TzFormat.Value grade = TzFormat.grade(st.gradePct(), locale);
+      mClimbStats.setCell(2, getString(R.string.tz_stat_grade), grade.number, grade.unit);
+      return;
+    }
+    final double summitIn = climbs.summitInSeconds();
+    mClimbStats.setCell(1, getString(R.string.tz_stat_summit_in),
+                        Double.isNaN(summitIn) ? TzFormat.OFF_ROUTE : String.valueOf(Math.round(summitIn / 60)),
+                        getString(R.string.tz_unit_min));
+    final TzFormat.Value avg = TzFormat.grade(c.avgGradePct, locale);
+    mClimbStats.setCell(2, getString(R.string.tz_stat_avg_grade), avg.number, avg.unit);
+  }
+
+  /** Free ride, or a route without elevation: the altitude ridden so far (plan §11.2, last case). */
+  private void renderElevation(@NonNull RideSession s, @NonNull RideStats st, @NonNull TzFormat.Units units,
+                               @NonNull Locale locale)
+  {
+    mClimbTitle.setText(R.string.tz_ride_elevation_title);
+    mClimbPill.setVisibility(View.GONE);
+    mClimbMetrics.setVisibility(View.GONE);
+    mClimbRange.setVisibility(View.GONE);
+    setAltitudeCell(st, units, locale);
+    final TzFormat.Value gain = TzFormat.elevation(st.gainM(), units, locale);
+    mClimbStats.setCell(1, getString(R.string.tz_stat_gain), gain.number, gain.unit);
+    final TzFormat.Value grade = TzFormat.grade(st.gradePct(), locale);
+    mClimbStats.setCell(2, getString(R.string.tz_stat_grade), grade.number, grade.unit);
+
     final float[] dist = s.traceDistances();
     // The trace grows every 10 m: redraw only when it did.
-    if (dist.length == mTraceSize)
+    if (mProfileSource == s && dist.length == mTraceSize)
       return;
+    mProfileSource = s;
     mTraceSize = dist.length;
+    mProfile.setSummit(Float.NaN, Float.NaN, null);
     if (dist.length < 2)
     {
       mProfile.setProfile(null, null);
@@ -622,6 +744,18 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
     final TzFormat.Value end = TzFormat.distance(dist[dist.length - 1], units, locale);
     // "0 KM" … "9.6 KM": the start uses the end's unit.
     mProfile.setAxisLabels(("0 " + end.unit).toUpperCase(locale), end.toString().toUpperCase(locale));
+  }
+
+  private void setAltitudeCell(@NonNull RideStats st, @NonNull TzFormat.Units units, @NonNull Locale locale)
+  {
+    final double alt = st.altitudeM();
+    if (Double.isNaN(alt))
+    {
+      mClimbStats.setCell(0, getString(R.string.tz_stat_altitude), TzFormat.UNKNOWN, "");
+      return;
+    }
+    final TzFormat.Value v = TzFormat.elevation(alt, units, locale);
+    mClimbStats.setCell(0, getString(R.string.tz_stat_altitude), v.number, v.unit);
   }
 
   /** A route ride draws its line and shows the route's numbers; loaded once per screen. */
@@ -715,9 +849,27 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
     }
     default ->
     {
-      mClimbHeader = v.findViewById(R.id.tz_ride_climb_header);
-      mClimbChip = v.findViewById(R.id.tz_ride_climb_chip);
+      mClimbContent = v.findViewById(R.id.tz_ride_climb_content);
+      mClimbTitle = v.findViewById(R.id.tz_ride_climb_title);
+      mClimbPill = v.findViewById(R.id.tz_ride_climb_pill);
+      mClimbMetrics = v.findViewById(R.id.tz_ride_climb_metrics);
+      final int[] ids = {R.id.tz_ride_climb_grade, R.id.tz_ride_climb_to_summit, R.id.tz_ride_climb_gained};
+      final int[] labels = {R.string.tz_stat_grade, R.string.tz_stat_to_summit, R.string.tz_stat_gained};
+      mClimbCells = new TzMetricView[ids.length];
+      for (int i = 0; i < ids.length; i++)
+      {
+        final View cell = v.findViewById(ids[i]);
+        ((TextView) cell.findViewById(R.id.tz_cell_label)).setText(labels[i]);
+        mClimbCells[i] = cell.findViewById(R.id.tz_cell_value);
+      }
+      mClimbCells[0].setNumberColor(ContextCompat.getColor(requireContext(), R.color.tz_mint));
+      mClimbRange = v.findViewById(R.id.tz_ride_climb_range);
+      mClimbRange.setOptions(getString(R.string.tz_climb_view_climb), getString(R.string.tz_climb_view_route));
+      mClimbRange.setListener(i -> render());
       mProfile = v.findViewById(R.id.tz_ride_profile);
+      mClimbStats = v.findViewById(R.id.tz_ride_climb_stats);
+      mProfileSource = null;
+      mRangeFrom = mRangeTo = Double.NaN;
     }
     }
     layoutPages();

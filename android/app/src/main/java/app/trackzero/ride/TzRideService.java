@@ -26,11 +26,18 @@ import app.trackzero.TzIo;
 import app.trackzero.TzPrefs;
 import app.trackzero.base.TzActivity;
 import app.trackzero.base.TzRoads;
+import app.trackzero.follow.Climb;
+import app.trackzero.follow.ClimbDetector;
+import app.trackzero.follow.ClimbNames;
+import app.trackzero.follow.ClimbTracker;
 import app.trackzero.follow.FollowEngine;
 import app.trackzero.follow.FollowRoute;
 import app.trackzero.follow.ManeuverBuilder;
 import app.trackzero.follow.RouteManeuver;
 import app.trackzero.format.TzFormat;
+import app.trackzero.geo.Geo;
+import app.trackzero.routes.GpxTrack;
+import app.trackzero.routes.RouteGeometry;
 import app.trackzero.routes.RouteStore;
 import java.util.List;
 import java.util.Locale;
@@ -54,6 +61,8 @@ public final class TzRideService extends Service
   private static final String EXTRA_NAME = "name";
   private static final long JOURNAL_FLUSH_MS = 30_000;
   private static final long NOTIFICATION_UPDATE_MS = 10_000;
+  /** A GPX waypoint names a climb when it is this close to its summit (plan §11.1). */
+  private static final double SUMMIT_WAYPOINT_M = 300;
 
   /** Called on the main thread after every fix and state change. */
   public interface Listener
@@ -90,6 +99,9 @@ public final class TzRideService extends Service
   /** Turn-by-turn on a route ride, once the route is loaded. */
   @Nullable
   private FollowEngine mFollow;
+  /** The route's climbs (R5); null on a free ride or a route without elevation. */
+  @Nullable
+  private ClimbTracker mClimbs;
   @Nullable
   private TzVoice mVoice;
   private long mLastFlushMs;
@@ -210,6 +222,13 @@ public final class TzRideService extends Service
     return mFollow;
   }
 
+  /** Climbs of a route ride with elevation; null otherwise or while the route loads. */
+  @Nullable
+  public ClimbTracker climbs()
+  {
+    return mClimbs;
+  }
+
   public void addListener(@NonNull Listener l)
   {
     mListeners.add(l);
@@ -319,27 +338,82 @@ public final class TzRideService extends Service
       routes.loadGeometry(route, g -> {
         if (g == null || g.lineLat.length < 2 || mSession == null)
           return;
-        // The junction lookup reads the maps: off the main thread.
+        // Junctions and summit names are read from the maps: off the main thread.
         final boolean maps = TzRoads.ready(this);
-        TzIo.submit(() -> {
-          final FollowRoute line = new FollowRoute(g.lineLat, g.lineLon);
-          final List<RouteManeuver> maneuvers = ManeuverBuilder.build(line, maps ? TzRoads::junctions : null);
-          Log.i(TAG, "Following " + Math.round(line.totalM()) + " m, " + maneuvers.size() + " maneuvers"
-                     + (maps ? "" : " (maps not loaded: every bend)"));
-          return new FollowEngine(line, maneuvers, mFollowEvents);
-        }, engine -> {
+        TzIo.submit(() -> prepare(g, maps), prepared -> {
           if (mSession == null || mFollow != null)
             return;
-          mFollow = engine;
+          mFollow = prepared.engine;
+          mClimbs = prepared.climbs;
           mVoice = new TzVoice(this);
         });
       });
     });
   }
 
+  private static final class Prepared
+  {
+    @NonNull
+    final FollowEngine engine;
+    @Nullable
+    final ClimbTracker climbs;
+
+    Prepared(@NonNull FollowEngine engine, @Nullable ClimbTracker climbs)
+    {
+      this.engine = engine;
+      this.climbs = climbs;
+    }
+  }
+
+  /** Turn-by-turn and climbs for a route (blocking: maps and geometry work). */
+  @NonNull
+  private Prepared prepare(@NonNull RouteGeometry g, boolean maps)
+  {
+    final FollowRoute line = new FollowRoute(g.lineLat, g.lineLon);
+    final List<RouteManeuver> maneuvers = ManeuverBuilder.build(line, maps ? TzRoads::junctions : null);
+    ClimbTracker climbs = null;
+    if (g.ele != null)
+    {
+      final List<Climb> found = ClimbDetector.detect(g.ele, RouteGeometry.ELE_STEP_M, line.totalM());
+      for (Climb c : found)
+        c.name = summitName(line.latAt(c.summitAt), line.lonAt(c.summitAt), g.waypoints, maps);
+      climbs = new ClimbTracker(found, g.ele, RouteGeometry.ELE_STEP_M);
+    }
+    Log.i(TAG, "Following " + Math.round(line.totalM()) + " m, " + maneuvers.size() + " maneuvers"
+               + (maps ? "" : " (maps not loaded: every bend)")
+               + (climbs == null ? ", no elevation" : ", " + climbs.climbs().size() + " climbs"));
+    return new Prepared(new FollowEngine(line, maneuvers, mFollowEvents), climbs);
+  }
+
+  /**
+   * The map's peak or pass at the summit (it names the place, as the design asks), else a GPX waypoint there; null
+   * if neither.
+   */
+  @Nullable
+  private static String summitName(double lat, double lon, @NonNull List<GpxTrack.Waypoint> waypoints, boolean maps)
+  {
+    final String map = maps ? TzRoads.summitName(lat, lon) : "";
+    if (!map.isEmpty())
+      return map;
+    String best = null;
+    double bestM = SUMMIT_WAYPOINT_M;
+    for (GpxTrack.Waypoint w : waypoints)
+    {
+      final double d = Geo.distance(lat, lon, w.lat, w.lon);
+      final String name = ClimbNames.fromWaypoint(w.name);
+      if (d <= bestM && name != null)
+      {
+        best = name;
+        bestM = d;
+      }
+    }
+    return best;
+  }
+
   private void stopFollowing()
   {
     mFollow = null;
+    mClimbs = null;
     if (mVoice != null)
       mVoice.shutdown();
     mVoice = null;
@@ -406,6 +480,8 @@ public final class TzRideService extends Service
       final double speedMps = f.hasSpeed ? f.speedMps : s.stats().speedKmh() / 3.6;
       mFollow.update(f.lat, f.lon, f.hasBearing ? f.bearingDeg : Double.NaN, speedMps, f.elapsedMs,
                      s.stats().distanceM(), s.stats().movingMs(f.elapsedMs));
+      if (mClimbs != null)
+        mClimbs.update(mFollow.along(), s.stats().movingMs(f.elapsedMs));
     }
     if (s.state() != before || f.elapsedMs - mLastFlushMs >= JOURNAL_FLUSH_MS)
       flushJournal();

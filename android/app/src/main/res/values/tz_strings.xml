@@ -158,6 +158,19 @@
   <string name="tz_stat_grade">Grade</string>
   <string name="tz_stat_eta">ETA</string>
   <string name="tz_stat_remaining">Remaining</string>
+  <string name="tz_stat_to_summit">To summit</string>
+  <string name="tz_stat_gained">Gained</string>
+  <string name="tz_stat_gain">Gain</string>
+  <string name="tz_stat_altitude">Altitude</string>
+  <string name="tz_stat_summit_in">Summit in</string>
+  <string name="tz_stat_avg_grade">Avg grade</string>
+  <!-- R5 climbs -->
+  <string name="tz_climb_number">CLIMB %1$d</string>
+  <string name="tz_climb_pill">CLIMB %1$d/%2$d</string>
+  <string name="tz_no_climbs_ahead">NO CLIMBS AHEAD</string>
+  <string name="tz_climb_view_climb">Climb</string>
+  <string name="tz_climb_view_route">Full route</string>
+  <string name="tz_unit_min">min</string>
   <!-- R3: ETA and remaining while off route -->
   <string name="tz_eta_unknown" translatable="false">--:--</string>
   <string name="tz_value_unknown" translatable="false">--</string>

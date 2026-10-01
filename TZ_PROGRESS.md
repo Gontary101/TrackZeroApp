@@ -166,3 +166,16 @@ Approach changed: TrackZero host activity instead of hiding MwmActivity views (T
 - Verified on the emulator (Aubière → Clermont 6.6 km, real Puy-de-Dôme map): 14 maneuvers, "Turn right · Avenue
   Blaise Pascal" with THEN row, mint imminent state, R3 after a 70 m parallel detour (dashed line, `--:--`),
   back on route, restore after reinstall rebuilds the engine. `emu_gps_play.py` gained a lateral offset.
+
+## Phase 11 — Climbs (R5)
+
+- `follow/Climb`, `ClimbDetector`, `ClimbTracker` (current / next climb, to summit, gained, summit in),
+  `ClimbNames`; `RouteGeometry` v2 (line-axis profile, 50 m elevation, waypoints); service prepares climbs with the
+  follow engine and names them (SDK `nativeGetSummitName`: peaks and mountain passes). R5 page rebuilt to the
+  board (header + pill, GRADE / TO SUMMIT / GAINED, Climb / Full route card with animated range, island); free
+  ride and routes without elevation show ELEVATION with the ridden trace.
+- Tests: ClimbDetector (9), ClimbTracker (5), ClimbNames (3), RouteGeometry (+7) — codex worker + reviewed; it found
+  the start-trimming window too long (fixed). 130 TrackZero tests.
+- Verified on the emulator, Clermont-Ferrand 70.7 km from km 48: "COL DE CEYSSAT" (map pass), CLIMB 5/5, to summit
+  4.7 km, gained +33 m, summit in 15 min, avg 5.4 %, rider dot on the climb profile, Full route toggle; free ride
+  shows ELEVATION. Real routes: 5 climbs each on the 70 km loops (10.8 km at 5.6 %, 5.5 km at 5.4 %…).

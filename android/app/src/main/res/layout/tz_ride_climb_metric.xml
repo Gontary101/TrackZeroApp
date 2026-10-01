@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- One R5 metric: label over a 56sp number. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:app="http://schemas.android.com/apk/res-auto"
+  android:layout_width="0dp"
+  android:layout_height="wrap_content"
+  android:layout_marginEnd="@dimen/tz_space_8"
+  android:layout_weight="1"
+  android:orientation="vertical">
+
+  <TextView
+    android:id="@+id/tz_cell_label"
+    style="@style/TzText.Label"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:maxLines="1" />
+
+  <app.trackzero.ui.TzMetricView
+    android:id="@+id/tz_cell_value"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="@dimen/tz_climb_metric_gap"
+    app:tzNumberSize="56"
+    app:tzNumberStyle="@style/TzText.MetricL" />
+</LinearLayout>

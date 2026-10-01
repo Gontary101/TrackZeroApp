@@ -145,6 +145,10 @@ public class Framework
   @NonNull
   public static native int[] nativeRoadJunctions(double[] lat, double[] lon, double radiusM);
 
+  /// TrackZero: the closest named peak or mountain pass within radiusM, "" when none. Safe off the main thread.
+  @NonNull
+  public static native String nativeGetSummitName(double lat, double lon, double radiusM);
+
   public static native void nativePlacePageActivationListener(@NonNull PlacePageActivationListener listener);
 
   public static native void nativeRemovePlacePageActivationListener(@NonNull PlacePageActivationListener listener);

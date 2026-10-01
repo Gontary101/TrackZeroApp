@@ -237,3 +237,18 @@ The emulator's constant barometer pins the ride altitude after calibration; alti
   first GPS offset held (`AltitudeFilter.relativeM`), so the 60 s calibration is not counted as climbing (22.7 %
   max grade on a flat ride); a hop between fixes faster than 150 km/h is a GPS jump, not distance; the shown speed
   drops to 0 when fixes stop for 5 s.
+
+## D28 · Climbs (Phase 11)
+- One distance axis: the route profile is measured along the simplified line the rider is snapped to (each GPX
+  point placed on it in proportion), so TO SUMMIT and the rider dot agree with the follow engine even far into a
+  long route (the raw GPX path is ~0.5 % longer). Geometry cache v2 adds the elevation every 50 m (climbs and the
+  R5 profile) and the waypoints.
+- Detection is the plan's (low → peak, closed by a 10 m drop; ≥ 30 m, ≥ 500 m, ≥ 3 %), but the start moves up to
+  where the road rises at 3 % over 100 m: the lowest point can be kilometres of flat before the climb, which
+  would dilute the average under 3 % and hide it (or report 7 % for an 8 % climb).
+- Names: the map's peak or mountain pass within 300 m of the summit first (the design's rule; it names the place,
+  "Col de Ceyssat"), else a GPX waypoint there, cleaned of list numbers ("1 — ") and ignoring route-planner markers
+  ("via12", "from"); else CLIMB N. Long names shrink to fit (26 → 16 sp).
+- GAINED comes from the route profile (rider's place on it minus the climb's start), consistent with the chart;
+  SUMMIT IN uses the speed ridden on this climb, shown after a minute of it; AVG GRADE is the climb's.
+- After the last climb: NO CLIMBS AHEAD over the full profile, island ALTITUDE · GAIN · GRADE (as a free ride).
