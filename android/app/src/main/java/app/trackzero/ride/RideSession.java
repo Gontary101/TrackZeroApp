@@ -111,7 +111,7 @@ public final class RideSession
       if (mTrack.add(p))
         RideJournal.segment(mJournal);
       RideJournal.point(mJournal, p);
-      trace(mStats.distanceM(), p.altM);
+      trace(mStats.distanceM(), mStats.climbAltitudeM());
     }
     mStats.advance(f, recording);
   }
@@ -259,7 +259,7 @@ public final class RideSession
     return Arrays.copyOf(mTraceDist, mTraceSize);
   }
 
-  /** Altitude (m) every 10 m ridden, a copy. */
+  /** Altitude (m, for its shape: {@link RideStats#climbAltitudeM}) every 10 m ridden, a copy. */
   @NonNull
   public float[] traceAltitudes()
   {

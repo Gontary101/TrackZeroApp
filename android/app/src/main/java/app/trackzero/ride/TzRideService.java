@@ -25,14 +25,21 @@ import app.trackzero.TzConfig;
 import app.trackzero.TzIo;
 import app.trackzero.TzPrefs;
 import app.trackzero.base.TzActivity;
+import app.trackzero.base.TzRoads;
+import app.trackzero.follow.FollowEngine;
+import app.trackzero.follow.FollowRoute;
+import app.trackzero.follow.ManeuverBuilder;
+import app.trackzero.follow.RouteManeuver;
 import app.trackzero.format.TzFormat;
+import app.trackzero.routes.RouteStore;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Records the ride in the foreground (plan §8.2): owns the {@link RideSession}, feeds it fixes, keeps the
- * notification and the crash journal up to date. Screens bind to it to read the session and send commands.
+ * notification and the crash journal up to date, and on a route ride follows the route and speaks the turns.
+ * Screens bind to it to read the session and send commands.
  * Everything runs on the main thread; files are written on the {@link TzIo} thread.
  */
 public final class TzRideService extends Service
@@ -80,6 +87,11 @@ public final class TzRideService extends Service
   private TzLocationSource mLocation;
   @Nullable
   private BarometerSource mBarometer;
+  /** Turn-by-turn on a route ride, once the route is loaded. */
+  @Nullable
+  private FollowEngine mFollow;
+  @Nullable
+  private TzVoice mVoice;
   private long mLastFlushMs;
   private long mLastNotificationMs;
   @Nullable
@@ -160,6 +172,7 @@ public final class TzRideService extends Service
         mSession = RideSession.restore(content, TzPrefs.autoPause(this));
         sRiding = true;
         startSources();
+        startFollowing();
         changed();
       });
     }
@@ -177,6 +190,7 @@ public final class TzRideService extends Service
   public void onDestroy()
   {
     stopSources();
+    stopFollowing();
     super.onDestroy();
   }
 
@@ -187,6 +201,13 @@ public final class TzRideService extends Service
   public RideSession session()
   {
     return mSession;
+  }
+
+  /** Turn-by-turn state of a route ride; null on a free ride or while the route loads. */
+  @Nullable
+  public FollowEngine follow()
+  {
+    return mFollow;
   }
 
   public void addListener(@NonNull Listener l)
@@ -232,6 +253,7 @@ public final class TzRideService extends Service
     final RideStats.Snapshot totals = s.stats().snapshot(now);
     s.end(now);
     stopSources();
+    stopFollowing();
     changed();
     final RideStore.Finished finished = new RideStore.Finished(s.routeId(), s.name(), s.startedAt(),
                                                                System.currentTimeMillis(), s.track().segments(),
@@ -256,6 +278,7 @@ public final class TzRideService extends Service
     RideStore.get(this).startJournal(mSession.drainJournal(now));
     mLastFlushMs = now;
     startSources();
+    startFollowing();
     changed();
   }
 
@@ -283,6 +306,94 @@ public final class TzRideService extends Service
     mBarometer = null;
   }
 
+  /** Loads the route of a route ride and starts turn-by-turn on it. */
+  private void startFollowing()
+  {
+    final String routeId = mSession == null ? null : mSession.routeId();
+    if (routeId == null)
+      return;
+    final RouteStore routes = RouteStore.get(this);
+    routes.find(routeId, route -> {
+      if (route == null || mSession == null)
+        return;
+      routes.loadGeometry(route, g -> {
+        if (g == null || g.lineLat.length < 2 || mSession == null)
+          return;
+        // The junction lookup reads the maps: off the main thread.
+        final boolean maps = TzRoads.ready(this);
+        TzIo.submit(() -> {
+          final FollowRoute line = new FollowRoute(g.lineLat, g.lineLon);
+          final List<RouteManeuver> maneuvers = ManeuverBuilder.build(line, maps ? TzRoads::junctions : null);
+          Log.i(TAG, "Following " + Math.round(line.totalM()) + " m, " + maneuvers.size() + " maneuvers"
+                     + (maps ? "" : " (maps not loaded: every bend)"));
+          return new FollowEngine(line, maneuvers, mFollowEvents);
+        }, engine -> {
+          if (mSession == null || mFollow != null)
+            return;
+          mFollow = engine;
+          mVoice = new TzVoice(this);
+        });
+      });
+    });
+  }
+
+  private void stopFollowing()
+  {
+    mFollow = null;
+    if (mVoice != null)
+      mVoice.shutdown();
+    mVoice = null;
+  }
+
+  private final FollowEngine.Events mFollowEvents = new FollowEngine.Events() {
+    @Override
+    public void onTurnSoon(@NonNull RouteManeuver m, double distanceM)
+    {
+      if (voiceOn())
+        mVoice.turnSoon(m, distanceM);
+    }
+
+    @Override
+    public void onTurnNow(@NonNull RouteManeuver m)
+    {
+      if (voiceOn())
+        mVoice.turnNow(m);
+    }
+
+    @Override
+    public void onOffRoute()
+    {
+      if (voiceOn())
+        mVoice.say(R.string.tz_voice_off_route);
+    }
+
+    @Override
+    public void onBackOnRoute()
+    {
+      if (voiceOn())
+        mVoice.say(R.string.tz_voice_back_on_route);
+    }
+
+    @Override
+    public void onArrived()
+    {
+      if (voiceOn())
+        mVoice.say(R.string.tz_voice_arrived);
+    }
+
+    @Override
+    public void onStreetWanted(@NonNull RouteManeuver m, @NonNull double[] lat, @NonNull double[] lon)
+    {
+      TzRoads.nameAt(TzRideService.this, lat, lon, name -> m.street = name);
+    }
+
+    /** Silent while the rider has paused the ride (walking the bike, a café stop). */
+    private boolean voiceOn()
+    {
+      return mVoice != null && mSession != null && mSession.state() != RideSession.State.PAUSED;
+    }
+  };
+
   private void onFix(@NonNull TzFix f)
   {
     final RideSession s = mSession;
@@ -290,6 +401,12 @@ public final class TzRideService extends Service
       return;
     final RideSession.State before = s.state();
     s.onFix(f);
+    if (mFollow != null && f.accuracyM <= TzConfig.IGNORE_FIX_ACCURACY_M)
+    {
+      final double speedMps = f.hasSpeed ? f.speedMps : s.stats().speedKmh() / 3.6;
+      mFollow.update(f.lat, f.lon, f.hasBearing ? f.bearingDeg : Double.NaN, speedMps, f.elapsedMs,
+                     s.stats().distanceM(), s.stats().movingMs(f.elapsedMs));
+    }
     if (s.state() != before || f.elapsedMs - mLastFlushMs >= JOURNAL_FLUSH_MS)
       flushJournal();
     changed();
@@ -384,6 +501,7 @@ public final class TzRideService extends Service
   {
     sRiding = false;
     stopSources();
+    stopFollowing();
     ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE);
     stopSelf();
   }

@@ -2,7 +2,9 @@ package app.trackzero.geo;
 
 public final class Geo
 {
-  static final double EARTH_RADIUS_M = 6371000;
+  public static final double EARTH_RADIUS_M = 6371000;
+  /** Metres per degree of latitude (and of longitude at the equator) on the same sphere. */
+  public static final double M_PER_DEG = EARTH_RADIUS_M * Math.PI / 180;
 
   private Geo()
   {

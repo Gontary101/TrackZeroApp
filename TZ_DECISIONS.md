@@ -211,3 +211,29 @@ DEBUG_REPLAY only feeds the ride recorder; the map's rider keeps the device posi
 `tools/trackzero/emu_gps_play.py route.gpx [km/h]` drives the emulator GPS itself (`adb emu geo fix` with speed —
 this emulator ignores `geo nmea`), so the map and the recorder see the same moving rider through the real GPS path.
 The emulator's constant barometer pins the ride altitude after calibration; altitude/gain checks need replay mode.
+
+## D27 · Turn-by-turn on a GPX track (Phase 10)
+- The engine (`follow/`) is pure Java and runs in the ride service, so voice works with the screen off; the ride
+  screen only reads it. Route and maneuvers are prepared off the main thread at ride start (and on restore).
+- **Turns come from the map, not only the shape.** A track's bends cannot tell a crossroads from a curve: on a
+  winding road the plan's geometry rules gave 271 "maneuvers" in 70 km. The SDK gains `nativeRoadJunctions`: for
+  each candidate, are there 3+ road arms within 12 m (a way ending at a node counts 1, passing through it 2, its own
+  vertex or not). Bends away from junctions are dropped, except a U-turn where the track comes back along itself
+  (an out-and-back, not a hairpin). Without a downloaded map, every bend stays (the plan's behaviour).
+- Bends closer than 20 m are one maneuver measured across the group, so a jog across a junction cancels out.
+- Street names (plan §10.1 step 5): `nativeGetAddress` only finds buildings under a point, so the SDK gains
+  `nativeGetStreetName` (closest named street within 20 m, core reverse geocoder). The street after a turn is the one
+  found at both 30 m and 80 m into the next leg (one probe named the road being left); none → the line is hidden.
+- Snapping: a search window around the last place on the route, and a 15 m handicap for segments running against
+  the rider's course (> 120°): the two legs of an out-and-back lie on the same road. While off route the place stays
+  where the rider left; only a rejoin within 20 m anywhere (a shortcut) moves it. The first snap takes the earliest
+  of equally close places (a loop that ends at its start). Projection and distances use one sphere (`Geo`).
+- R3 (off route): "Head back to the route" (no rerouting in v1), the route line dashed in 45 % mint without glow
+  (pre-composited colour, see D18), ETA `--:--`, REMAINING `-- km`, haptic reject + "Off route".
+- Voice: phrases are spoken in the language they are written in (`tz_voice_language`), never an English phrase in
+  a French voice. "In 200 meters" is rounded like speech and follows the unit setting. Nothing while manually
+  paused. No "in 200 m" for the arrival (only "You have arrived").
+- Ride numbers fixed while testing (Phase 8 code): gain, grade and the elevation trace use the barometer with the
+  first GPS offset held (`AltitudeFilter.relativeM`), so the 60 s calibration is not counted as climbing (22.7 %
+  max grade on a flat ride); a hop between fixes faster than 150 km/h is a GPS jump, not distance; the shown speed
+  drops to 0 when fixes stop for 5 s.

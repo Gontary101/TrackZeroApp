@@ -17,6 +17,7 @@ public final class TzRouteLayer
   private static double[] sLat;
   @Nullable
   private static double[] sLon;
+  private static boolean sDimmed;
 
   private TzRouteLayer() {}
 
@@ -26,6 +27,17 @@ public final class TzRouteLayer
     hide();
     sLat = lat;
     sLon = lon;
+    sDimmed = false;
+    draw();
+  }
+
+  /** Off route (R3): the line dashed, at 45 %, without its glow. */
+  public static void setDimmed(boolean dimmed)
+  {
+    if (sDimmed == dimmed)
+      return;
+    sDimmed = dimmed;
+    removeLine();
     draw();
   }
 
@@ -33,6 +45,12 @@ public final class TzRouteLayer
   {
     sLat = null;
     sLon = null;
+    sDimmed = false;
+    removeLine();
+  }
+
+  private static void removeLine()
+  {
     if (sLineIds == null)
       return;
     Framework.nativeRemoveTrackLine(sLineIds);
@@ -53,6 +71,6 @@ public final class TzRouteLayer
   private static void draw()
   {
     if (sLat != null && sLon != null)
-      sLineIds = Framework.nativeShowTrackLine(sLat, sLon);
+      sLineIds = Framework.nativeShowTrackLine(sLat, sLon, sDimmed);
   }
 }

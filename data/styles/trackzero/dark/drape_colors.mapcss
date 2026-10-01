@@ -1,7 +1,8 @@
 /* TrackZero drape colours: copy of default/dark/drape_colors.mapcss with the mint rule applied (rider arrow,
    accuracy halo, selection, default track), the ruler text in text2 and the Track* colours of the GPX route line.
    TrackGlow is design's mint at 18 % pre-composited on the black ground: dense GPX segments overlap at the glow's
-   width, and a translucent line would blend once per overlap (streaks).
+   width, and a translucent line would blend once per overlap (streaks). TrackLineOff is the off-route line (R3):
+   the mint at 45 % on black, pre-composited for the same reason.
    kothic reads only the first colors{} block, so this file replaces the default one instead of overriding it. */
 
 colors
@@ -24,6 +25,7 @@ colors
   RouteBicycle-color: #FF4B8C;
   RouteBicycle-opacity: 0.7;
   TrackLine-color: #A9F7B9;
+  TrackLineOff-color: #4C6F53;
   TrackGlow-color: #1E2C21;
   TrackMarkerCenter-color: #000000;
   RouteRuler-color: #924ab5;

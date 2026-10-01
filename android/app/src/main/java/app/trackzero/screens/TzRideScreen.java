@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.res.ColorStateList;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -12,6 +13,7 @@ import android.os.Looper;
 import android.os.SystemClock;
 import android.text.format.DateFormat;
 import android.util.TypedValue;
+import android.view.HapticFeedbackConstants;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -30,8 +32,7 @@ import app.trackzero.TzNavigator;
 import app.trackzero.TzPrefs;
 import app.trackzero.base.TzMap;
 import app.trackzero.base.TzRouteLayer;
-import app.trackzero.follow.Maneuver;
-import app.trackzero.follow.TurnState;
+import app.trackzero.follow.FollowEngine;
 import app.trackzero.format.TzFormat;
 import app.trackzero.ride.RideSession;
 import app.trackzero.ride.RideStats;
@@ -80,6 +81,8 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
   @Nullable
   private Route mRoute;
   private boolean mRouteRequested;
+  /** The follow engine said off route at the last render (R3). */
+  private boolean mOffRoute;
   private boolean mEnding;
   private int mZoom = -1;
   private int mZoomCandidate = -1;
@@ -500,23 +503,35 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
     final boolean route = s.routeId() != null;
     mPill.setVisibility(route ? View.GONE : View.VISIBLE);
     mLocate.setVisibility(route ? View.GONE : View.VISIBLE);
-    mTurn.setVisibility(route ? View.VISIBLE : View.GONE);
+    final FollowEngine follow = mService == null ? null : mService.follow();
+    mTurn.setVisibility(route && follow != null ? View.VISIBLE : View.GONE);
 
-    final TzFormat.Value speed = TzFormat.speed(st.speedKmh(), units, locale);
+    final TzFormat.Value speed = TzFormat.speed(st.speedKmh(now), units, locale);
     mStats.setCell(0, getString(R.string.tz_stat_speed), speed.number, speed.unit);
-    if (route && mRoute != null)
+    if (route && follow != null)
     {
-      // Until the follow engine (phase 10): remaining = route length − ridden, ETA from the average speed.
-      final double remaining = Math.max(0, mRoute.distanceM - st.distanceM());
-      final double avg = st.avgKmh(now);
-      final double kmh = avg > 1 ? avg : TzConfig.ETA_FALLBACK_KMH;
-      final long eta = System.currentTimeMillis() + Math.round(remaining / (kmh / 3.6) * 1000);
-      mStats.setCell(1, getString(R.string.tz_stat_eta),
-                     TzFormat.clock(eta, TimeZone.getDefault(), DateFormat.is24HourFormat(requireContext())), "");
-      final TzFormat.Value rem = TzFormat.distance(remaining, units, locale);
-      mStats.setCell(2, getString(R.string.tz_stat_remaining), rem.number, rem.unit);
+      final boolean off = follow.phase() == FollowEngine.Phase.OFF_ROUTE;
+      if (off && !mOffRoute)
+        mTurn.performHapticFeedback(Build.VERSION.SDK_INT >= Build.VERSION_CODES.R ? HapticFeedbackConstants.REJECT
+                                                                                   : HapticFeedbackConstants.LONG_PRESS);
+      if (off != mOffRoute)
+        TzRouteLayer.setDimmed(off);
+      mOffRoute = off;
+      final TzFormat.Value rem = TzFormat.distance(follow.remainingM(), units, locale);
+      if (off)
+      {
+        mStats.setCell(1, getString(R.string.tz_stat_eta), getString(R.string.tz_eta_unknown), "");
+        mStats.setCell(2, getString(R.string.tz_stat_remaining), getString(R.string.tz_value_unknown), rem.unit);
+      }
+      else
+      {
+        final long eta = System.currentTimeMillis() + Math.round(follow.etaSeconds() * 1000);
+        mStats.setCell(1, getString(R.string.tz_stat_eta),
+                       TzFormat.clock(eta, TimeZone.getDefault(), DateFormat.is24HourFormat(requireContext())), "");
+        mStats.setCell(2, getString(R.string.tz_stat_remaining), rem.number, rem.unit);
+      }
       mTurn.setUnits(units);
-      mTurn.bind(new TurnState(Maneuver.STRAIGHT, remaining, mRoute.name, 0, null, 0, "", false, false));
+      mTurn.bind(follow.turnState());
     }
     else
     {
@@ -527,7 +542,7 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
     // R7 on the map: the RESUME button takes the island's place, the island moves up over it.
     final float lift = manuallyPaused ? -(mResume.getHeight() + getResources().getDimension(R.dimen.tz_space_12)) : 0;
     mStats.setTranslationY(lift);
-    autoZoom(st.speedKmh(), now);
+    autoZoom(st.speedKmh(now), now);
   }
 
   /** z17 below 15 km/h, z16 up to 30, z15 above; a new band must hold for 5 s. */
@@ -569,7 +584,7 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
     if (mHero == null)
       return;
     renderChip(mSpeedChip, s.state());
-    final TzFormat.Value speed = TzFormat.speed(paused ? 0 : st.speedKmh(), units, locale);
+    final TzFormat.Value speed = TzFormat.speed(paused ? 0 : st.speedKmh(now), units, locale);
     mHero.setText(speed.number);
     mHero.setAlpha(paused ? PAUSED_HERO_ALPHA : 1f);
     mHeroUnit.setText(units == TzFormat.Units.IMPERIAL ? R.string.tz_unit_mph_dot : R.string.tz_unit_kmh_dot);

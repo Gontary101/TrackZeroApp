@@ -40,7 +40,11 @@
 #include "geometry/mercator.hpp"
 #include "geometry/point_with_altitude.hpp"
 
+#include "geometry/parametrized_segment.hpp"
+
 #include "indexer/feature_altitude.hpp"
+#include "indexer/ftypes_matcher.hpp"
+#include "indexer/scales.hpp"
 #include "indexer/validate_and_format_contacts.hpp"
 
 #include "routing/following_info.hpp"
@@ -76,6 +80,11 @@
 #include <android/api-level.h>
 
 #include "drape/accessibility_data.hpp"
+
+#include "search/mwm_context.hpp"
+#include "search/reverse_geocoder.hpp"
+
+#include "storage/country_info_getter.hpp"
 
 using namespace std;
 using namespace std::placeholders;
@@ -926,6 +935,109 @@ JNIEXPORT jstring JNICALL Java_app_organicmaps_sdk_Framework_nativeGetAddress(JN
 {
   auto const info = frm()->GetAddressAtPoint(mercator::FromLatLon(lat, lon));
   return jni::ToJavaString(env, info.FormatAddress());
+}
+
+// TrackZero: name of the street closest to a point, within maxDistanceM; "" when there is none or no map.
+// nativeGetAddress only looks at buildings under the point, so it can't name the road a route turns into.
+JNIEXPORT jstring JNICALL Java_app_organicmaps_sdk_Framework_nativeGetStreetName(JNIEnv * env, jclass, jdouble lat,
+                                                                                jdouble lon, jdouble maxDistanceM)
+{
+  m2::PointD const pt = mercator::FromLatLon(lat, lon);
+  auto const & dataSource = frm()->GetDataSource();
+  auto const mwmId = dataSource.GetMwmIdByCountryFile(
+      platform::CountryFile(frm()->GetCountryInfoGetter().GetRegionCountryId(pt)));
+  auto handle = dataSource.GetMwmHandleById(mwmId);
+  if (!handle.IsAlive())
+    return jni::ToJavaString(env, "");
+  search::MwmContext context(std::move(handle));
+  auto const streets = search::ReverseGeocoder::GetNearbyStreets(context, pt, maxDistanceM);
+  if (streets.empty() || streets.front().m_distanceMeters > maxDistanceM)
+    return jni::ToJavaString(env, "");
+  return jni::ToJavaString(env, streets.front().m_name);
+}
+
+// TrackZero: for each point, whether the road network has a junction (3 or more road arms meeting) within radiusM:
+// 1 yes, 0 no, -1 unknown (no map there). Tells a turn at a crossroads from a bend in a single road.
+// A way counts 1 arm at a node it ends at and 2 at a node it passes through. Its own vertex or not: the generator may
+// drop a straight road's node where a side road joins it.
+JNIEXPORT jintArray JNICALL Java_app_organicmaps_sdk_Framework_nativeRoadJunctions(JNIEnv * env, jclass,
+                                                                                  jdoubleArray lats, jdoubleArray lons,
+                                                                                  jdouble radiusM)
+{
+  double constexpr kSameNodeM = 1.0;
+  jsize const n = env->GetArrayLength(lats);
+  std::vector<jint> result(n, -1);
+  jdouble * lat = env->GetDoubleArrayElements(lats, nullptr);
+  jdouble * lon = env->GetDoubleArrayElements(lons, nullptr);
+  auto const & dataSource = frm()->GetDataSource();
+  auto const & infoGetter = frm()->GetCountryInfoGetter();
+  auto const & isWay = ftypes::IsWayChecker::Instance();
+
+  std::vector<std::vector<m2::PointD>> ways;  // In metres around the point.
+  for (jsize i = 0; i < n; ++i)
+  {
+    m2::PointD const center = mercator::FromLatLon(lat[i], lon[i]);
+    auto const mwmId = dataSource.GetMwmIdByCountryFile(platform::CountryFile(infoGetter.GetRegionCountryId(center)));
+    if (!mwmId.IsAlive())
+      continue;
+
+    // Mercator is conformal: one scale for both axes this close to the point.
+    double const metresPerUnit = mercator::DistanceOnEarth(center, center + m2::PointD(1e-4, 0)) / 1e-4;
+    ways.clear();
+    dataSource.ForEachInRectForMWM([&](FeatureType & ft)
+    {
+      if (ft.GetGeomType() != feature::GeomType::Line || !isWay(ft))
+        return;
+      ft.ParseGeometry(FeatureType::BEST_GEOMETRY);
+      auto & way = ways.emplace_back();
+      for (size_t k = 0; k < ft.GetPointsCount(); ++k)
+        way.push_back((ft.GetPoint(k) - center) * metresPerUnit);
+    }, mercator::RectByCenterXYAndSizeInMeters(center, 2 * (radiusM + kSameNodeM)), scales::GetUpperScale(), mwmId);
+
+    auto const armsAt = [&ways](m2::PointD const & node)
+    {
+      int arms = 0;
+      for (auto const & way : ways)
+      {
+        bool const closed = way.size() > 2 && way.front().Length(way.back()) < kSameNodeM;
+        if (!closed && (node.Length(way.front()) < kSameNodeM || node.Length(way.back()) < kSameNodeM))
+        {
+          arms += 1;
+          continue;
+        }
+        for (size_t k = 0; k + 1 < way.size(); ++k)
+        {
+          m2::ParametrizedSegment<m2::PointD> const segment(way[k], way[k + 1]);
+          if (segment.SquaredDistanceToPoint(node) < kSameNodeM * kSameNodeM)
+          {
+            arms += 2;
+            break;
+          }
+        }
+      }
+      return arms;
+    };
+
+    result[i] = 0;
+    for (auto const & way : ways)
+    {
+      for (auto const & node : way)
+      {
+        if (node.Length() <= radiusM && armsAt(node) >= 3)
+        {
+          result[i] = 1;
+          break;
+        }
+      }
+      if (result[i] == 1)
+        break;
+    }
+  }
+  env->ReleaseDoubleArrayElements(lats, lat, JNI_ABORT);
+  env->ReleaseDoubleArrayElements(lons, lon, JNI_ABORT);
+  jintArray out = env->NewIntArray(n);
+  env->SetIntArrayRegion(out, 0, n, result.data());
+  return out;
 }
 
 JNIEXPORT void JNICALL Java_app_organicmaps_sdk_Framework_nativeClearApiPoints(JNIEnv * env, jclass clazz)
@@ -1822,7 +1934,8 @@ JNIEXPORT void JNICALL Java_app_organicmaps_sdk_Framework_nativeShowRect(JNIEnv 
 // 5.5dp line, and a start ring. Returns the drape subroute ids for nativeRemoveTrackLine, or null when the engine
 // isn't running.
 JNIEXPORT jintArray JNICALL Java_app_organicmaps_sdk_Framework_nativeShowTrackLine(JNIEnv * env, jclass,
-                                                                                   jdoubleArray lats, jdoubleArray lons)
+                                                                                   jdoubleArray lats, jdoubleArray lons,
+                                                                                   jboolean dimmed)
 {
   auto engine = frm()->GetDrapeEngine();
   jsize const n = env->GetArrayLength(lats);
@@ -1840,22 +1953,25 @@ JNIEXPORT jintArray JNICALL Java_app_organicmaps_sdk_Framework_nativeShowTrackLi
   // RouteType::Track is 8dp wide on each side at every zoom; the line is capped to 5.5dp.
   float constexpr kTrackHalfWidthDp = 8.0f;
   float constexpr kLineWidthDp = 5.5f;
-  auto const makeSubroute = [&polyline](df::ColorConstant const & color, double depthIndex)
+  auto const makeSubroute = [&polyline](df::ColorConstant const & color, double depthIndex,
+                                        df::RoutePattern const & pattern)
   {
     auto subroute = std::make_unique<df::Subroute>();
     subroute->m_routeType = df::RouteType::Track;
     subroute->m_polyline = polyline;
     subroute->m_baseDepthIndex = depthIndex;
     // Same colour inside and out: the shader's outline band would otherwise show as a stripe.
-    subroute->AddStyle(df::SubrouteStyle(color, color));
+    subroute->AddStyle(df::SubrouteStyle(color, color, pattern));
     // The whole line is real route: no "fake" (grey) head or tail. Distances are in mercator units.
     subroute->m_headFakeDistance = -1.0;
     subroute->m_tailFakeDistance = polyline.GetLength() + 1.0;
     return subroute;
   };
 
-  auto glow = makeSubroute("TrackGlow", 0.0);
-  auto line = makeSubroute("TrackLine", 1.0);
+  // Dimmed (off route, R3): no glow, the line dashed in 45 % mint. Dash and gap are in line half-widths.
+  auto glow = dimmed ? nullptr : makeSubroute("TrackGlow", 0.0, df::RoutePattern());
+  auto line = makeSubroute(dimmed ? "TrackLineOff" : "TrackLine", 1.0,
+                           dimmed ? df::RoutePattern(2.0, 3.0) : df::RoutePattern());
   line->m_maxPixelWidth = kLineWidthDp * static_cast<float>(df::VisualParams::Instance().GetVisualScale());
 
   // Start ring: 13dp black disc with a 3dp mint ring and a 4.5dp mint dot. Markers stack in list order and are
@@ -1873,10 +1989,12 @@ JNIEXPORT jintArray JNICALL Java_app_organicmaps_sdk_Framework_nativeShowTrackLi
   addCircle("TrackMarkerCenter", 11.5f);
   addCircle("TrackLine", 4.5f);
 
-  jint const ids[] = {static_cast<jint>(engine->AddSubroute(df::SubrouteConstPtr(glow.release()))),
-                      static_cast<jint>(engine->AddSubroute(df::SubrouteConstPtr(line.release())))};
-  jintArray result = env->NewIntArray(2);
-  env->SetIntArrayRegion(result, 0, 2, ids);
+  std::vector<jint> ids;
+  if (glow)
+    ids.push_back(static_cast<jint>(engine->AddSubroute(df::SubrouteConstPtr(glow.release()))));
+  ids.push_back(static_cast<jint>(engine->AddSubroute(df::SubrouteConstPtr(line.release()))));
+  jintArray result = env->NewIntArray(static_cast<jsize>(ids.size()));
+  env->SetIntArrayRegion(result, 0, static_cast<jsize>(ids.size()), ids.data());
   return result;
 }
 

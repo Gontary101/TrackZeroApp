@@ -165,4 +165,43 @@ public class RideStatsTest
     ride(s, at(61, 305, 300, 18));
     assertEquals(440, s.altitudeM(), 0.2);
   }
+
+  @Test
+  public void calibrationIsNotClimbing()
+  {
+    final RideStats s = new RideStats();
+    s.startRecording(0);
+    // Flat road, constant pressure; the first GPS altitude is 15 m low (a cold start), then right.
+    s.onBarometer(400);
+    for (int t = 0; t <= 60; t++)
+      ride(s, at(t, 5 * t, t == 0 ? 415 : 430, 18));
+    assertEquals(0, s.gainM(), 0.01);
+    assertEquals(0, s.maxGradePct(), 0.01);
+    assertEquals(430, s.altitudeM(), 0.3);
+  }
+
+  @Test
+  public void gpsJumpIsNotRidden()
+  {
+    final RideStats s = new RideStats();
+    s.startRecording(0);
+    ride(s, at(0, 0, 400, 18));
+    ride(s, at(1, 5, 400, 18));
+    // 5 km in one second.
+    ride(s, at(2, 5005, 400, 18));
+    ride(s, at(3, 5010, 400, 18));
+    assertEquals(10, s.distanceM(), 0.1);
+  }
+
+  @Test
+  public void speedDropsToZeroWhenFixesStop()
+  {
+    final RideStats s = new RideStats();
+    s.startRecording(0);
+    for (int t = 0; t < 3; t++)
+      ride(s, at(t, 5 * t, 400, 18));
+    assertEquals(18, s.speedKmh(2_000), 0.01);
+    assertEquals(18, s.speedKmh(7_000), 0.01);
+    assertEquals(0, s.speedKmh(7_001), 0.01);
+  }
 }

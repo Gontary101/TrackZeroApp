@@ -136,6 +136,15 @@ public class Framework
 
   public static native String nativeGetAddress(double lat, double lon);
 
+  /// TrackZero: the closest street's name within maxDistanceM, "" when none. Safe off the main thread.
+  @NonNull
+  public static native String nativeGetStreetName(double lat, double lon, double maxDistanceM);
+
+  /// TrackZero: per point, 1 if roads meet (3+ arms) within radiusM, 0 if not, -1 without a map. Safe off the main
+  /// thread.
+  @NonNull
+  public static native int[] nativeRoadJunctions(double[] lat, double[] lon, double radiusM);
+
   public static native void nativePlacePageActivationListener(@NonNull PlacePageActivationListener listener);
 
   public static native void nativeRemovePlacePageActivationListener(@NonNull PlacePageActivationListener listener);
@@ -346,10 +355,10 @@ public class Framework
   public static native void nativeShowRect(double minLat, double minLon, double maxLat, double maxLon,
                                            boolean animate);
 
-  /// TrackZero: draws a polyline as a route line (non-persistent). Returns the ids for nativeRemoveTrackLine, null
-  /// when the map engine isn't running.
+  /// TrackZero: draws a polyline as a route line (non-persistent); dimmed = dashed without glow (off route).
+  /// Returns the ids for nativeRemoveTrackLine, null when the map engine isn't running.
   @Nullable
-  public static native int[] nativeShowTrackLine(double[] lat, double[] lon);
+  public static native int[] nativeShowTrackLine(double[] lat, double[] lon, boolean dimmed);
 
   public static native void nativeRemoveTrackLine(int[] ids);
 

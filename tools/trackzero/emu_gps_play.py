@@ -2,7 +2,9 @@
 """TrackZero dev tool: drives the emulator's GPS along a GPX at a constant speed (1 fix/s), so the map and the
 ride recorder both see the same moving rider.
 
-    python3 tools/trackzero/emu_gps_play.py route.gpx [km/h=25] [start metres=0]
+    python3 tools/trackzero/emu_gps_play.py route.gpx [km/h=25] [start metres=0] [offset metres=0]
+
+A positive offset rides parallel to the track that many metres to its right (an off-route detour).
 
 Uses `adb emu geo fix` with a speed: this emulator ignores `geo nmea`, and geo fix cannot set the course, so the
 heading comes from the movement.
@@ -10,6 +12,7 @@ heading comes from the movement.
 import math, re, subprocess, sys, time
 path, kmh = sys.argv[1], float(sys.argv[2]) if len(sys.argv) > 2 else 25
 start_m = float(sys.argv[3]) if len(sys.argv) > 3 else 0
+offset_m = float(sys.argv[4]) if len(sys.argv) > 4 else 0
 s = open(path).read()
 pts = []
 for m in re.finditer(r'<(?:trkpt|rtept)([^>]*)>(.*?)</(?:trkpt|rtept)>', s, re.S):
@@ -38,6 +41,10 @@ v = kmh / 3.6
 d = start_m
 while True:
     lat, lon, ele, brg = at(min(d, cum[-1]))
+    if offset_m:
+        right = math.radians(brg + 90)
+        lat += offset_m * math.cos(right) / 111195
+        lon += offset_m * math.sin(right) / (111195 * math.cos(math.radians(lat)))
     moving = d < cum[-1]
     knots = v * 1.943844 if moving else 0.0
     # This emulator ignores NMEA; geo fix takes altitude, satellites and speed (knots), not the course.

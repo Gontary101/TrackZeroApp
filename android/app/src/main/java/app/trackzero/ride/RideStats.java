@@ -18,6 +18,10 @@ public final class RideStats
   static final int SPEED_WINDOW = 3;
   static final double MIN_DISPLAY_KMH = 1.5;
   static final double GRADE_EMA_ALPHA = 0.3;
+  /** Faster than this between two fixes is a GPS jump (a cold start, a tunnel exit), not riding. */
+  static final double MAX_PLAUSIBLE_KMH = 150;
+  /** The speed shown drops to 0 when fixes stop coming for this long. */
+  static final long SPEED_STALE_MS = 5_000;
 
   /** What survives a crash (plan §8.3): the totals, not the smoothing state. */
   public static final class Snapshot
@@ -52,6 +56,8 @@ public final class RideStats
   private int mSpeedNext;
   private double mDisplayKmh;
   private double mAltitudeM = Double.NaN;
+  /** Altitude for gain, grade and the profile ({@link AltitudeFilter#relativeM}). */
+  private double mClimbAltM = Double.NaN;
 
   private double mDistanceM;
   private long mMovingMs;
@@ -99,7 +105,9 @@ public final class RideStats
     final double avg = sum / mSpeedCount;
     mDisplayKmh = avg < MIN_DISPLAY_KMH ? 0 : avg;
 
-    mAltitudeM = mAltitude.onFix(f);
+    mAltitude.onFix(f);
+    mAltitudeM = mAltitude.absoluteM();
+    mClimbAltM = mAltitude.relativeM();
     return true;
   }
 
@@ -107,7 +115,12 @@ public final class RideStats
   void record(@NonNull TzFix f)
   {
     if (mLinked)
-      mDistanceM += Geo.distance(mPrevLat, mPrevLon, f.lat, f.lon);
+    {
+      final double d = Geo.distance(mPrevLat, mPrevLon, f.lat, f.lon);
+      final double hours = (f.elapsedMs - mPrevElapsedMs) / 3_600_000.0;
+      if (hours > 0 && d / 1000 / hours <= MAX_PLAUSIBLE_KMH)
+        mDistanceM += d;
+    }
     if (mRecordingSinceMs >= 0 && f.elapsedMs > mRecordingSinceMs)
     {
       mMovingMs += f.elapsedMs - mRecordingSinceMs;
@@ -115,7 +128,7 @@ public final class RideStats
     }
     mLinked = true;
     mMaxKmh = Math.max(mMaxKmh, mDisplayKmh);
-    mGain.add(mAltitudeM);
+    mGain.add(mClimbAltM);
     updateGrade();
   }
 
@@ -158,12 +171,12 @@ public final class RideStats
 
   private void updateGrade()
   {
-    if (Double.isNaN(mAltitudeM))
+    if (Double.isNaN(mClimbAltM))
       return;
     if (mGradeEnd == mGradeDist.length)
       compactGrade();
     mGradeDist[mGradeEnd] = mDistanceM;
-    mGradeAlt[mGradeEnd] = mAltitudeM;
+    mGradeAlt[mGradeEnd] = mClimbAltM;
     mGradeEnd++;
 
     final double window = TzConfig.GRADE_WINDOW_M;
@@ -180,7 +193,7 @@ public final class RideStats
     final double span = mGradeDist[i + 1] - mGradeDist[i];
     final double t = span > 0 ? (target - mGradeDist[i]) / span : 1;
     final double altBack = mGradeAlt[i] + t * (mGradeAlt[i + 1] - mGradeAlt[i]);
-    final double raw = (mAltitudeM - altBack) / window * 100;
+    final double raw = (mClimbAltM - altBack) / window * 100;
     mGradeEma = Double.isNaN(mGradeEma) ? raw : mGradeEma + GRADE_EMA_ALPHA * (raw - mGradeEma);
     mGradePct = mGradeEma;
     if (mDisplayKmh >= TzConfig.GRADE_MIN_KMH)
@@ -224,6 +237,12 @@ public final class RideStats
     return mDisplayKmh;
   }
 
+  /** {@link #speedKmh()} as of {@code elapsedMs}: 0 once the fixes have stopped (no signal, standing indoors). */
+  public double speedKmh(long elapsedMs)
+  {
+    return mHasPrev && elapsedMs - mPrevElapsedMs > SPEED_STALE_MS ? 0 : mDisplayKmh;
+  }
+
   public double distanceM()
   {
     return mDistanceM;
@@ -247,10 +266,16 @@ public final class RideStats
     return mMaxKmh;
   }
 
-  /** NaN while unknown. */
+  /** Above sea level, NaN while unknown. */
   public double altitudeM()
   {
     return mAltitudeM;
+  }
+
+  /** Altitude to measure climbing with: changes are right from the first fix, the level may be off. NaN unknown. */
+  public double climbAltitudeM()
+  {
+    return mClimbAltM;
   }
 
   public double gainM()

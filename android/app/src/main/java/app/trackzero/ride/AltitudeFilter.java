@@ -5,6 +5,10 @@ import androidx.annotation.NonNull;
 /**
  * The ride altitude (plan §8.4). With a barometer: barometric altitude plus the mean GPS − baro offset measured over
  * the first 60 s of accurate fixes. Without one (or until calibrated): GPS altitude smoothed with an EMA.
+ *
+ * Climbing (gain, grade, profile) needs only changes, which the barometer measures well from the start; the offset
+ * moving while it calibrates is not climbing. So there are two readings: {@link #absoluteM} for the altitude shown
+ * and saved, {@link #relativeM} with the offset held at its first value for everything measured from changes.
  */
 final class AltitudeFilter
 {
@@ -17,6 +21,9 @@ final class AltitudeFilter
   private double mOffsetSum;
   private int mOffsetCount;
   private double mGpsEma = Double.NaN;
+  private double mFirstOffset = Double.NaN;
+  private double mAbsoluteM = Double.NaN;
+  private double mRelativeM = Double.NaN;
 
   /** Pressure altitude against the standard atmosphere. */
   void onBarometer(double altM)
@@ -24,8 +31,7 @@ final class AltitudeFilter
     mBaroAltM = altM;
   }
 
-  /** The altitude after this fix, NaN while unknown. */
-  double onFix(@NonNull TzFix f)
+  void onFix(@NonNull TzFix f)
   {
     if (f.hasAlt)
     {
@@ -36,13 +42,27 @@ final class AltitudeFilter
           mCalibrationStartMs = f.elapsedMs;
         if (f.elapsedMs - mCalibrationStartMs <= CALIBRATION_MS)
         {
+          if (mOffsetCount == 0)
+            mFirstOffset = f.altM - mBaroAltM;
           mOffsetSum += f.altM - mBaroAltM;
           mOffsetCount++;
         }
       }
     }
-    if (mOffsetCount > 0 && !Double.isNaN(mBaroAltM))
-      return mBaroAltM + mOffsetSum / mOffsetCount;
-    return mGpsEma;
+    final boolean baro = mOffsetCount > 0 && !Double.isNaN(mBaroAltM);
+    mAbsoluteM = baro ? mBaroAltM + mOffsetSum / mOffsetCount : mGpsEma;
+    mRelativeM = baro ? mBaroAltM + mFirstOffset : mGpsEma;
+  }
+
+  /** Best estimate of the altitude above sea level, NaN while unknown. */
+  double absoluteM()
+  {
+    return mAbsoluteM;
+  }
+
+  /** Altitude for measuring changes: a constant away from {@link #absoluteM} once calibrated. NaN while unknown. */
+  double relativeM()
+  {
+    return mRelativeM;
   }
 }

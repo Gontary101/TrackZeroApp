@@ -154,3 +154,15 @@ Approach changed: TrackZero host activity instead of hiding MwmActivity views (T
   auto-pause (no RESUME button), restore after the app was killed mid-ride (opens on RIDE, paused), route ride from
   B5 (line, turn card, SPEED · ETA · REMAINING, voice toggle shown), hold to end → R8, EXPORT GPX share sheet
   ("Clermont-Ferrand (70.7km).gpx"), DONE → map, route listed under Recent.
+
+## Phase 10 — GPX follow engine (R2, R3, voice)
+
+- `follow/`: `FollowRoute` (projection + cumulative distance), `ManeuverBuilder` (DP 8 m, ±30 m bearings, merge
+  < 20 m, map junction filter), `Snapper`, `FollowEngine` (head to start, next/then maneuver, imminent, off-route
+  5 s / back < 20 m, arrival, ETA over 15 min of moving time with the 18 km/h fallback, voice events, street
+  requests). `ride/TzVoice` (TTS, ducking focus). `base/TzRoads` (street names, junctions). SDK:
+  `nativeGetStreetName`, `nativeRoadJunctions`, `nativeShowTrackLine(…, dimmed)`; drape colour `TrackLineOff`.
+- Tests: ManeuverBuilder (15), Snapper (5), FollowEngine (9, codex worker + reviewed), RideStats (+3).
+- Verified on the emulator (Aubière → Clermont 6.6 km, real Puy-de-Dôme map): 14 maneuvers, "Turn right · Avenue
+  Blaise Pascal" with THEN row, mint imminent state, R3 after a 70 m parallel detour (dashed line, `--:--`),
+  back on route, restore after reinstall rebuilds the engine. `emu_gps_play.py` gained a lateral offset.

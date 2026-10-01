@@ -39,6 +39,15 @@
   <string name="tz_mnv_reroute">Head back to the route</string>
   <string name="tz_mnv_head_to_start">Head to start</string>
 
+  <!-- Voice announcements. tz_voice_language is the language these phrases are written in (the TTS voice). -->
+  <string name="tz_voice_language">en</string>
+  <string name="tz_voice_in">In %1$s, %2$s</string>
+  <string name="tz_voice_meters">%d meters</string>
+  <string name="tz_voice_feet">%d feet</string>
+  <string name="tz_voice_off_route">Off route</string>
+  <string name="tz_voice_back_on_route">Back on route</string>
+  <string name="tz_voice_arrived">You have arrived</string>
+
   <!-- Route card -->
   <string name="tz_cd_add_favorite">Add to favorites</string>
   <string name="tz_cd_remove_favorite">Remove from favorites</string>
@@ -149,6 +158,9 @@
   <string name="tz_stat_grade">Grade</string>
   <string name="tz_stat_eta">ETA</string>
   <string name="tz_stat_remaining">Remaining</string>
+  <!-- R3: ETA and remaining while off route -->
+  <string name="tz_eta_unknown" translatable="false">--:--</string>
+  <string name="tz_value_unknown" translatable="false">--</string>
   <string name="tz_ride_sheet_summary">%1$s · %2$s</string>
   <string name="tz_ride_needs_location">TrackZero needs your location to record a ride.</string>
   <string name="tz_ride_not_saved">The ride couldn\'t be saved. It will come back next time you open TrackZero.</string>
