@@ -189,3 +189,12 @@ Approach changed: TrackZero host activity instead of hiding MwmActivity views (T
 - Verified on the emulator (non-debuggable build for search speed): "puy de dome" → Puy de Dôme · Volcano · 1464 m
   first; tap → map centred on the summit with the mint selection, a tap elsewhere clears it; Water chip → springs,
   drinking water and taps nearest first.
+
+## Phase 13 — More (B7) + History
+
+- More rows all live: Offline maps (downloaded regions · size → downloader), Ride history (n rides → HISTORY),
+  Units (toggle, applied to CoMaps), Voice guidance (language → system TTS settings), Display (keep awake in ride),
+  Auto-pause ("Below 3 km/h" / Off), About (version → ABOUT). New screens `TzHistoryScreen`, `TzAboutScreen`;
+  R8 from history returns to it. `TzBase.downloadedMaps / syncUnits / versionName`, `TzFormat.speedWhole`.
+- Verified on the emulator: "Puy-de-Dôme · 73 MB", 8 rides, history → R8 → DONE → history, units → Imperial shows
+  "GPS ±16 FT" on the map, About with the licence texts.

@@ -276,6 +276,7 @@ public class TzActivity extends BaseMwmFragmentActivity
   public void onRenderingCreated()
   {
     UnitLocale.initializeCurrentUnits();
+    TzBase.syncUnits(this);
   }
 
   @Override

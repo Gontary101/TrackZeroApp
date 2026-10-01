@@ -270,3 +270,15 @@ The emulator's constant barometer pins the ride altitude after calibration; alti
   Phase 15).
 - Debug builds search 2-3x slower: on the emulator "puy de dome" hit the engine's deadline before the summit was
   found; a non-debuggable build finds it first.
+
+## D30 · More and history (Phase 13)
+- Units: TrackZero's setting is the one source and drives CoMaps' too (scale bar, GPS chip accuracy). On first
+  start it takes CoMaps' default for the phone's country instead of always metric (a US phone gets miles); after
+  that TzActivity applies it to the map at every start and More applies changes at once.
+- Offline maps detail lists the downloaded regions, not the world overview that comes with the app; the top level
+  of "my maps" is countries partly downloaded, so their regions are listed ("Puy-de-Dôme · 73 MB", "+2" for more).
+- Voice guidance shows the language the announcements are spoken in (the phrases' own, D27) and opens the system
+  text-to-speech settings, where the voice is installed or chosen.
+- History reuses the B3 card with the date in place of the route kind and no star; a ride opens R8, whose DONE and
+  Back return to History. About shows the version without build flavor/type, credits, and the font licences from
+  the bundled OFL texts.

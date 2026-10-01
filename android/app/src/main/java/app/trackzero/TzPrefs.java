@@ -29,6 +29,12 @@ public final class TzPrefs
     return "imperial".equals(prefs(c).getString(UNITS, "metric")) ? TzFormat.Units.IMPERIAL : TzFormat.Units.METRIC;
   }
 
+  /** False until units were chosen (or taken from the map's default, {@code TzBase.syncUnits}). */
+  public static boolean hasUnits(@NonNull Context c)
+  {
+    return prefs(c).contains(UNITS);
+  }
+
   public static void setUnits(@NonNull Context c, @NonNull TzFormat.Units units)
   {
     prefs(c).edit().putString(UNITS, units == TzFormat.Units.IMPERIAL ? "imperial" : "metric").apply();

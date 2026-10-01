@@ -94,6 +94,12 @@ public class TzRouteCard extends LinearLayout
     setFavorite(favorite);
   }
 
+  /** Rides have no favorites: their cards hide the star. */
+  public void setStarVisible(boolean visible)
+  {
+    mStar.setVisibility(visible ? VISIBLE : GONE);
+  }
+
   public void setFavorite(boolean favorite)
   {
     mStar.setImageResource(favorite ? R.drawable.ic_tz_star_filled : R.drawable.ic_tz_star);

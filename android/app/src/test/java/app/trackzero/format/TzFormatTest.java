@@ -87,4 +87,11 @@ public class TzFormatTest
     assertEquals("00:05", TzFormat.clock(5 * 60_000L, utc, true));
     assertEquals("12:05 AM", TzFormat.clock(5 * 60_000L, utc, false));
   }
+
+  @Test
+  public void wholeSpeedForSettings()
+  {
+    assertEquals("3 km/h", TzFormat.speedWhole(3, TzFormat.Units.METRIC, Locale.US).toString());
+    assertEquals("2 mph", TzFormat.speedWhole(3, TzFormat.Units.IMPERIAL, Locale.US).toString());
+  }
 }

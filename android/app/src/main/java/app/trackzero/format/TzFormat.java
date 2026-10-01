@@ -57,6 +57,14 @@ public final class TzFormat
     return new Value(oneDecimalOrInteger(kmh, locale), "km/h");
   }
 
+  /** A speed in whole units ("3 km/h", "2 mph"), for thresholds in settings. */
+  @NonNull
+  public static Value speedWhole(double kmh, @NonNull Units units, @NonNull Locale locale)
+  {
+    final double v = units == Units.IMPERIAL ? kmh / KMH_PER_MPH : kmh;
+    return new Value(String.format(locale, "%d", Math.round(v)), speed(kmh, units, locale).unit);
+  }
+
   /**
    * Metric: below 1 km in meters (rounded to 5 below 100 m, else to 10), else km with 1 decimal (integer from 100).
    * Imperial: below 0.1 mi in feet rounded to 10, else miles with the same rules.

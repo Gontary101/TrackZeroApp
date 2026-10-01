@@ -28,6 +28,8 @@ import java.util.TimeZone;
 public class TzSummaryScreen extends TzScreen
 {
   public static final String ARG_RIDE_ID = "rideId";
+  /** Opened from ride history: DONE and Back return there instead of to the map. */
+  public static final String ARG_FROM_HISTORY = "fromHistory";
 
   @Nullable
   private Ride mRide;
@@ -45,8 +47,7 @@ public class TzSummaryScreen extends TzScreen
   {
     mRide = null;
     view.findViewById(R.id.tz_summary_export).setOnClickListener(v -> exportGpx());
-    view.findViewById(R.id.tz_summary_done).setOnClickListener(
-        v -> TzNavigator.show(TzNavigator.Screen.MAP, null));
+    view.findViewById(R.id.tz_summary_done).setOnClickListener(v -> close());
     final TzSilhouetteView track = view.findViewById(R.id.tz_summary_track);
     track.setStrokeWidthPx(getResources().getDimension(R.dimen.tz_silhouette_stroke_large));
     track.setBoxSizePx(getResources().getDimension(R.dimen.tz_summary_track_box));
@@ -66,6 +67,19 @@ public class TzSummaryScreen extends TzScreen
       mRide = ride;
       bindRide(ride);
     });
+  }
+
+  @Override
+  public boolean onBackPressed()
+  {
+    close();
+    return true;
+  }
+
+  private void close()
+  {
+    final boolean fromHistory = getArguments() != null && getArguments().getBoolean(ARG_FROM_HISTORY);
+    TzNavigator.show(fromHistory ? TzNavigator.Screen.HISTORY : TzNavigator.Screen.MAP, null);
   }
 
   @Override

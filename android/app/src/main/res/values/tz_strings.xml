@@ -103,14 +103,34 @@
   <string name="tz_more_display">Display</string>
   <string name="tz_more_auto_pause">Auto-pause</string>
   <string name="tz_more_about">About TrackZero</string>
-  <string name="tz_more_footer">No account. No tracking. Rides and routes stay on this phone.\nMap data © OpenStreetMap contributors.</string>
+  <plurals name="tz_more_rides">
+    <item quantity="one">%d ride</item>
+    <item quantity="other">%d rides</item>
+  </plurals>
+  <string name="tz_more_maps_one">%1$s · %2$s</string>
+  <string name="tz_more_maps_many">%1$s +%2$d · %3$s</string>
   <string name="tz_units_metric">Metric</string>
   <string name="tz_units_imperial">Imperial</string>
   <string name="tz_display_on">Always on in ride</string>
   <string name="tz_display_off">Off</string>
-  <string name="tz_auto_pause_on">Below 3 km/h</string>
-  <string name="tz_auto_pause_on_imperial">Below 2 mph</string>
-  <string name="tz_off">Off</string>
+  <string name="tz_auto_pause_on">Below %1$s</string>
+  <string name="tz_auto_pause_off">Off</string>
+  <string name="tz_version">v%1$s</string>
+  <string name="tz_no_tts_settings">No text-to-speech settings on this phone.</string>
+  <!-- Ride history -->
+  <string name="tz_history_title">HISTORY</string>
+  <string name="tz_history_empty">No rides yet. Rides you finish are saved here.</string>
+  <string name="tz_cd_back_to_more">Back to More</string>
+  <!-- About -->
+  <string name="tz_about_title">ABOUT</string>
+  <string name="tz_about_app">TrackZero</string>
+  <string name="tz_about_tagline">A fast, offline cycling computer and GPX navigator.</string>
+  <string name="tz_about_base">Built on CoMaps, a fork of Organic Maps (Apache-2.0).</string>
+  <string name="tz_about_osm">Map data © OpenStreetMap contributors (ODbL).</string>
+  <string name="tz_about_fonts">Font licences</string>
+  <string name="tz_about_fonts_detail">OFL 1.1</string>
+  <string name="tz_about_fonts_list">Barlow, Barlow Condensed and Doto are used under the SIL Open Font License 1.1.</string>
+  <string name="tz_more_footer">No account. No tracking. Rides and routes stay on this phone.\nMap data © OpenStreetMap contributors.</string>
 
   <!-- Hold button -->
   <string name="tz_hold_to_end">HOLD TO END &amp; SAVE</string>

@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- About TrackZero (from More): version, credits, licences. Opaque. -->
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:app="http://schemas.android.com/apk/res-auto"
+  android:layout_width="match_parent"
+  android:layout_height="match_parent"
+  android:background="@color/tz_bg"
+  android:clickable="true"
+  android:fillViewport="true">
+
+  <LinearLayout
+    android:id="@+id/tz_about_content"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <LinearLayout
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_marginBottom="@dimen/tz_space_20"
+      android:paddingStart="@dimen/tz_space_8"
+      android:gravity="center_vertical"
+      android:orientation="horizontal">
+
+      <ImageButton
+        android:id="@+id/tz_about_back"
+        android:layout_width="@dimen/tz_touch_48"
+        android:layout_height="@dimen/tz_touch_48"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/tz_cd_back_to_more"
+        android:src="@drawable/ic_tz_back"
+        app:tint="@color/tz_text1" />
+
+      <TextView
+        style="@style/TzText.DotXL"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/tz_space_4"
+        android:text="@string/tz_about_title" />
+    </LinearLayout>
+
+    <LinearLayout
+      style="@style/TzListGroup"
+      android:layout_marginStart="@dimen/tz_gutter"
+      android:layout_marginEnd="@dimen/tz_gutter"
+      android:padding="@dimen/tz_space_20"
+      android:showDividers="none">
+
+      <TextView
+        style="@style/TzText.TitleL"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/tz_about_app" />
+
+      <TextView
+        android:id="@+id/tz_about_version"
+        style="@style/TzText.Caption"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/tz_space_4" />
+
+      <TextView
+        style="@style/TzText.Body"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/tz_space_12"
+        android:text="@string/tz_about_tagline" />
+
+      <TextView
+        style="@style/TzText.Body"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/tz_space_12"
+        android:text="@string/tz_about_base" />
+
+      <TextView
+        style="@style/TzText.Body"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/tz_space_4"
+        android:text="@string/tz_about_osm" />
+    </LinearLayout>
+
+    <LinearLayout
+      style="@style/TzListGroup"
+      android:layout_marginStart="@dimen/tz_gutter"
+      android:layout_marginTop="@dimen/tz_space_16"
+      android:layout_marginEnd="@dimen/tz_gutter">
+
+      <app.trackzero.ui.TzListRow
+        android:id="@+id/tz_about_fonts"
+        style="@style/TzListRow"
+        app:tzIcon="@drawable/ic_tz_info"
+        app:tzTitle="@string/tz_about_fonts" />
+    </LinearLayout>
+
+    <TextView
+      android:id="@+id/tz_about_licences"
+      style="@style/TzText.Caption"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_marginStart="@dimen/tz_space_20"
+      android:layout_marginTop="@dimen/tz_space_16"
+      android:layout_marginEnd="@dimen/tz_space_20"
+      android:textIsSelectable="true"
+      android:visibility="gone" />
+  </LinearLayout>
+</ScrollView>
