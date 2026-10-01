@@ -183,6 +183,24 @@
     <item name="android:textColor">@color/tz_mint</item>
   </style>
 
+  <!-- B2: field 18sp SemiBold, result name 17sp SemiBold, kind 14sp Medium text2 -->
+  <style name="TzText.SearchInput">
+    <item name="android:fontFamily">@font/barlow_semibold</item>
+    <item name="android:textSize">@dimen/tz_text_18</item>
+    <item name="android:textColor">@color/tz_text1</item>
+    <item name="android:textColorHint">@color/tz_text2</item>
+  </style>
+  <style name="TzText.ResultName">
+    <item name="android:fontFamily">@font/barlow_semibold</item>
+    <item name="android:textSize">@dimen/tz_text_17</item>
+    <item name="android:textColor">@color/tz_text1</item>
+  </style>
+  <style name="TzText.ResultSubtitle">
+    <item name="android:fontFamily">@font/barlow_medium</item>
+    <item name="android:textSize">@dimen/tz_text_14</item>
+    <item name="android:textColor">@color/tz_text2</item>
+  </style>
+
   <style name="TzText.SheetSummary">
     <item name="android:fontFamily">@font/barlow_condensed_semibold</item>
     <item name="android:textSize">@dimen/tz_text_20</item>

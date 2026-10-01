@@ -23,6 +23,7 @@ import app.trackzero.screens.TzPreviewScreen;
 import app.trackzero.screens.TzRideScreen;
 import app.trackzero.screens.TzRoutesScreen;
 import app.trackzero.screens.TzScreen;
+import app.trackzero.screens.TzSearchScreen;
 import app.trackzero.screens.TzSummaryScreen;
 import app.trackzero.ui.TzBottomIsland;
 
@@ -189,6 +190,7 @@ public final class TzNavigator
     return switch (screen)
     {
       case MAP -> new TzMapScreen();
+      case SEARCH -> new TzSearchScreen();
       case ROUTES -> new TzRoutesScreen();
       case PREVIEW -> new TzPreviewScreen();
       case MORE -> new TzMoreScreen();

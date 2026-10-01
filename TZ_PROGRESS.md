@@ -179,3 +179,13 @@ Approach changed: TrackZero host activity instead of hiding MwmActivity views (T
 - Verified on the emulator, Clermont-Ferrand 70.7 km from km 48: "COL DE CEYSSAT" (map pass), CLIMB 5/5, to summit
   4.7 km, gained +33 m, summit in 15 min, avg 5.4 %, rider dot on the climb profile, Full route toggle; free ride
   shows ELEVATION. Real routes: 5 climbs each on the 70 km loops (10.8 km at 5.6 %, 5.5 km at 5.4 %…).
+
+## Phase 12 — Search (B2)
+
+- `base/TzSearch` (CoMaps search engine: text and category queries, result kinds, subtitles, map region name),
+  `screens/TzSearchScreen` (field + keyboard on open, 250 ms debounce, Water / Bike repair / Café / Shelter chips,
+  72dp result rows, caption "Searching offline map data · Puy-de-Dôme"), result → MAP centred and selected.
+  SDK: `SearchEngine.nativeGetResultType`. TzActivity keeps a search result's selection. Test: TzSearchTest (3).
+- Verified on the emulator (non-debuggable build for search speed): "puy de dome" → Puy de Dôme · Volcano · 1464 m
+  first; tap → map centred on the summit with the mint selection, a tap elsewhere clears it; Water chip → springs,
+  drinking water and taps nearest first.

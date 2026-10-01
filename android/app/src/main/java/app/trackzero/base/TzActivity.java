@@ -368,12 +368,14 @@ public class TzActivity extends BaseMwmFragmentActivity
       LocationState.nativeStartPendingPositionMode();
   }
 
-  // PlacePageActivationListener: TrackZero has no place page, tapping a POI does nothing.
+  // PlacePageActivationListener: TrackZero has no place page, tapping a POI does nothing. A search result shown on
+  // the map keeps its selection as its pin until the next tap.
 
   @Override
   public void onPlacePageActivated(@NonNull PlacePageData data)
   {
-    Framework.nativeDeactivatePopup();
+    if (!TzSearch.takeShowing())
+      Framework.nativeDeactivatePopup();
   }
 
   @Override

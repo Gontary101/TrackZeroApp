@@ -208,6 +208,11 @@ public enum SearchEngine implements SearchListener, MapSearchListener,
     nativeUpdateViewportWithLastResults();
   }
 
+  /// TrackZero: the classifier type ("natural-peak") of result {@code index} of the last results delivered, "" for
+  /// suggestions. Call from {@link SearchListener#onResultsUpdate}.
+  @NonNull
+  public static native String nativeGetResultType(int index);
+
   public void initialize()
   {
     nativeInit();

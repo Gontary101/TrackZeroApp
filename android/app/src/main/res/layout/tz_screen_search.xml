@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- B2 Search: field, cyclist category chips, results sorted by distance. Opaque, no island. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:app="http://schemas.android.com/apk/res-auto"
+  android:layout_width="match_parent"
+  android:layout_height="match_parent"
+  android:background="@color/tz_bg"
+  android:orientation="vertical">
+
+  <LinearLayout
+    android:id="@+id/tz_search_field"
+    android:layout_width="match_parent"
+    android:layout_height="@dimen/tz_search_field_h"
+    android:layout_marginStart="@dimen/tz_gutter"
+    android:layout_marginEnd="@dimen/tz_gutter"
+    android:background="@drawable/tz_bg_surface2_r30"
+    android:elevation="@dimen/tz_elev2"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingStart="@dimen/tz_search_field_pad"
+    android:paddingEnd="@dimen/tz_search_field_pad">
+
+    <ImageButton
+      android:id="@+id/tz_search_back"
+      android:layout_width="@dimen/tz_touch_48"
+      android:layout_height="@dimen/tz_touch_48"
+      android:background="?attr/selectableItemBackgroundBorderless"
+      android:contentDescription="@string/tz_cd_back_to_map"
+      android:src="@drawable/ic_tz_back"
+      app:tint="@color/tz_text1" />
+
+    <EditText
+      android:id="@+id/tz_search_input"
+      style="@style/TzText.SearchInput"
+      android:layout_width="0dp"
+      android:layout_height="@dimen/tz_touch_48"
+      android:layout_marginStart="@dimen/tz_space_4"
+      android:layout_weight="1"
+      android:background="@null"
+      android:hint="@string/tz_search_hint"
+      android:imeOptions="actionSearch"
+      android:importantForAutofill="no"
+      android:inputType="text"
+      android:maxLines="1" />
+
+    <ImageButton
+      android:id="@+id/tz_search_clear"
+      android:layout_width="@dimen/tz_touch_48"
+      android:layout_height="@dimen/tz_touch_48"
+      android:background="?attr/selectableItemBackgroundBorderless"
+      android:contentDescription="@string/tz_cd_clear_search"
+      android:padding="@dimen/tz_space_12"
+      android:scaleType="fitCenter"
+      android:src="@drawable/ic_tz_close"
+      android:visibility="invisible"
+      app:tint="@color/tz_text2" />
+  </LinearLayout>
+
+  <HorizontalScrollView
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="@dimen/tz_search_gap"
+    android:clipToPadding="false"
+    android:paddingStart="@dimen/tz_gutter"
+    android:paddingEnd="@dimen/tz_gutter"
+    android:scrollbars="none">
+
+    <LinearLayout
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:orientation="horizontal">
+
+      <app.trackzero.ui.TzCategoryChip
+        android:id="@+id/tz_search_chip_water"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/tz_search_chip_water" />
+
+      <app.trackzero.ui.TzCategoryChip
+        android:id="@+id/tz_search_chip_bike"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/tz_space_8"
+        android:text="@string/tz_search_chip_bike" />
+
+      <app.trackzero.ui.TzCategoryChip
+        android:id="@+id/tz_search_chip_cafe"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/tz_space_8"
+        android:text="@string/tz_search_chip_cafe" />
+
+      <app.trackzero.ui.TzCategoryChip
+        android:id="@+id/tz_search_chip_shelter"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/tz_space_8"
+        android:text="@string/tz_search_chip_shelter" />
+    </LinearLayout>
+  </HorizontalScrollView>
+
+  <androidx.recyclerview.widget.RecyclerView
+    android:id="@+id/tz_search_results"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:layout_marginTop="@dimen/tz_search_gap"
+    android:clipToPadding="false"
+    android:scrollbars="none" />
+</LinearLayout>

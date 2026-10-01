@@ -3,6 +3,8 @@
 #include "app/organicmaps/sdk/platform/AndroidPlatform.hpp"
 #include "app/organicmaps/sdk/util/Distance.hpp"
 
+#include "indexer/classificator.hpp"
+
 #include "map/bookmarks_search_params.hpp"
 #include "map/everywhere_search_params.hpp"
 #include "map/place_page_info.hpp"
@@ -339,6 +341,19 @@ JNIEXPORT void JNICALL Java_app_organicmaps_sdk_search_SearchEngine_nativeShowRe
                                                                                      jint index)
 {
   g_framework->NativeFramework()->ShowSearchResult(g_results[index]);
+}
+
+// TrackZero: the classifier type ("natural-peak") of a result of the last search, "" for other result kinds. Call
+// from onResultsUpdate, while the results are current.
+JNIEXPORT jstring JNICALL Java_app_organicmaps_sdk_search_SearchEngine_nativeGetResultType(JNIEnv * env, jclass,
+                                                                                         jint index)
+{
+  if (index < 0 || static_cast<size_t>(index) >= g_results.GetCount())
+    return jni::ToJavaString(env, "");
+  auto const & r = g_results[index];
+  if (r.GetResultType() != search::Result::Type::Feature)
+    return jni::ToJavaString(env, "");
+  return jni::ToJavaString(env, classif().GetReadableObjectName(r.GetFeatureType()));
 }
 
 JNIEXPORT void JNICALL Java_app_organicmaps_sdk_search_SearchEngine_nativeCancelInteractiveSearch(JNIEnv * env,

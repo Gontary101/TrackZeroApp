@@ -252,3 +252,21 @@ The emulator's constant barometer pins the ride altitude after calibration; alti
 - GAINED comes from the route profile (rider's place on it minus the climb's start), consistent with the chart;
   SUMMIT IN uses the speed ridden on this climb, shown after a minute of it; AVG GRADE is the climb's.
 - After the last climb: NO CLIMBS AHEAD over the full profile, island ALTITUDE · GAIN · GRADE (as a free ride).
+
+## D29 · Search (Phase 12)
+- Text results keep the search engine's order; only category results are sorted by distance. The plan and the
+  board say "sorted by distance", but the engine already weighs distance against how well the name matches: sorted
+  by distance, "puy de dome" listed twenty nearer roads named after the volcano before the volcano itself (the
+  board's own sample is not in distance order either). Every result of a category is equally relevant.
+- Chips run CoMaps category searches: the category's English name plus a space, `isCategory` (the core always
+  understands English); "bike" matches both repair stations and bike shops. The chip's label fills the field.
+- A result opens MAP through the core's ShowSearchResult: zoom chosen for the kind of place (a summit closer than
+  a town) instead of a fixed z16, centred in the visible area, marked by the map selection (mint, D3). TzActivity
+  normally drops any selection (no place page); it keeps the one a search result makes until the next tap.
+- Result icons come from the classifier type (SDK `SearchEngine.nativeGetResultType`): summit/volcano/pass, water
+  (taps, fountains, springs), café, bike; else a pin. Subtitles: type · detail (a summit's height) or the town;
+  CoMaps' description repeats the type and uses "•" and "▲", which are dropped.
+- Not done: the board's note "chip tap shows results on the map" and the bottom card with NAVIGATE HERE (routing is
+  Phase 15).
+- Debug builds search 2-3x slower: on the emulator "puy de dome" hit the engine's deadline before the summit was
+  found; a non-debuggable build finds it first.

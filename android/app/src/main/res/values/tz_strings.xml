@@ -177,4 +177,21 @@
   <string name="tz_ride_sheet_summary">%1$s · %2$s</string>
   <string name="tz_ride_needs_location">TrackZero needs your location to record a ride.</string>
   <string name="tz_ride_not_saved">The ride couldn\'t be saved. It will come back next time you open TrackZero.</string>
+
+  <!-- B2 Search -->
+  <string name="tz_search_hint">Search places offline</string>
+  <string name="tz_cd_back_to_map">Back to map</string>
+  <string name="tz_cd_clear_search">Clear search</string>
+  <string name="tz_search_chip_water">Water</string>
+  <string name="tz_search_chip_bike">Bike repair</string>
+  <string name="tz_search_chip_cafe">Café</string>
+  <string name="tz_search_chip_shelter">Shelter</string>
+  <!-- Category queries: the search engine's English category names (it always understands English). -->
+  <string name="tz_search_category_water" translatable="false">Water</string>
+  <string name="tz_search_category_bike" translatable="false">bike</string>
+  <string name="tz_search_category_cafe" translatable="false">Cafe</string>
+  <string name="tz_search_category_shelter" translatable="false">Shelter</string>
+  <string name="tz_search_caption">Searching offline map data</string>
+  <string name="tz_search_caption_region">Searching offline map data · %1$s</string>
+  <string name="tz_search_nothing">Nothing found in the downloaded maps</string>
 </resources>

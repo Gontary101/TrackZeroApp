@@ -56,6 +56,7 @@
   <dimen name="tz_text_13">13sp</dimen>
   <dimen name="tz_text_15">15sp</dimen>
   <dimen name="tz_text_16">16sp</dimen>
+  <dimen name="tz_text_14">14sp</dimen>
   <dimen name="tz_text_17">17sp</dimen>
   <dimen name="tz_text_18">18sp</dimen>
   <dimen name="tz_text_22">22sp</dimen>
@@ -112,4 +113,14 @@
   <dimen name="tz_summary_track_box">176dp</dimen>
   <dimen name="tz_silhouette_start_r">5dp</dimen>
   <dimen name="tz_silhouette_start_stroke">2dp</dimen>
+
+  <!-- B2 Search -->
+  <dimen name="tz_touch_48">48dp</dimen>
+  <dimen name="tz_search_field_h">60dp</dimen>
+  <dimen name="tz_search_field_pad">6dp</dimen>
+  <dimen name="tz_search_gap">14dp</dimen>
+  <dimen name="tz_search_tile">44dp</dimen>
+  <dimen name="tz_search_tile_pad">11dp</dimen>
+  <dimen name="tz_search_row_gap">14dp</dimen>
+  <dimen name="tz_search_row_text_gap">3dp</dimen>
 </resources>
