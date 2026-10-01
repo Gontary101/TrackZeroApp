@@ -378,7 +378,7 @@
         android:theme="@style/MwmTheme.MainActivity"
         android:launchMode="singleTask"
         android:configChanges="uiMode"
-        android:screenOrientation="fullUser"
+        android:screenOrientation="portrait"
         android:windowSoftInputMode="stateAlwaysHidden|adjustPan"/>
 
     <activity-alias
