@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <style name="TzText">
+    <item name="android:textColor">@color/tz_text1</item>
+    <item name="android:fontFeatureSettings">tnum</item>
+    <item name="android:includeFontPadding">false</item>
+  </style>
+  <!-- Numbers: Barlow Condensed -->
+  <style name="TzText.Hero"><item name="android:fontFamily">@font/barlow_condensed_bold</item><item name="android:textSize">208sp</item><item name="android:letterSpacing">-0.02</item><item name="android:textColor">@color/tz_text_hero</item></style>
+  <style name="TzText.Turn"><item name="android:fontFamily">@font/barlow_condensed_bold</item><item name="android:textSize">64sp</item><item name="android:textColor">@color/tz_text_hero</item></style>
+  <style name="TzText.MetricXL"><item name="android:fontFamily">@font/barlow_condensed_semibold</item><item name="android:textSize">56sp</item></style>
+  <style name="TzText.MetricL"><item name="android:fontFamily">@font/barlow_condensed_semibold</item><item name="android:textSize">50sp</item></style>
+  <style name="TzText.MetricM"><item name="android:fontFamily">@font/barlow_condensed_semibold</item><item name="android:textSize">32sp</item></style>
+  <style name="TzText.MetricS"><item name="android:fontFamily">@font/barlow_condensed_semibold</item><item name="android:textSize">22sp</item></style>
+  <style name="TzText.Unit"><item name="android:fontFamily">@font/barlow_condensed_semibold</item><item name="android:textColor">@color/tz_text2</item></style> <!-- set textSize = 50% of its number in code -->
+  <!-- Dot-matrix headers: Doto -->
+  <style name="TzText.DotXL"><item name="android:fontFamily">@font/doto</item><item name="android:textSize">44sp</item><item name="android:letterSpacing">0.05</item></style>
+  <style name="TzText.DotL"><item name="android:fontFamily">@font/doto</item><item name="android:textSize">32sp</item><item name="android:letterSpacing">0.06</item></style>
+  <style name="TzText.DotM"><item name="android:fontFamily">@font/doto</item><item name="android:textSize">22sp</item><item name="android:letterSpacing">0.05</item></style>
+  <!-- UI text: Barlow -->
+  <style name="TzText.TitleL"><item name="android:fontFamily">@font/barlow_bold</item><item name="android:textSize">24sp</item></style>
+  <style name="TzText.TitleM"><item name="android:fontFamily">@font/barlow_semibold</item><item name="android:textSize">18sp</item></style>
+  <style name="TzText.Body"><item name="android:fontFamily">@font/barlow_medium</item><item name="android:textSize">16sp</item><item name="android:textColor">@color/tz_text2</item><item name="android:lineSpacingMultiplier">1.3</item></style>
+  <style name="TzText.Caption"><item name="android:fontFamily">@font/barlow_medium</item><item name="android:textSize">13sp</item><item name="android:textColor">@color/tz_text2</item></style>
+  <style name="TzText.Label"><item name="android:fontFamily">@font/barlow_semibold</item><item name="android:textSize">12sp</item><item name="android:letterSpacing">0.13</item><item name="android:textAllCaps">true</item><item name="android:textColor">@color/tz_text2</item></style>
+  <style name="TzText.IslandLabel"><item name="android:fontFamily">@font/barlow_semibold</item><item name="android:textSize">11sp</item><item name="android:letterSpacing">0.1</item><item name="android:textAllCaps">true</item></style>
+  <style name="TzText.Button"><item name="android:fontFamily">@font/barlow_condensed_bold</item><item name="android:textSize">22sp</item><item name="android:letterSpacing">0.09</item><item name="android:textAllCaps">true</item></style>
+</resources>

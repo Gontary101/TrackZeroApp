@@ -4,5 +4,12 @@
   <application
     android:gwpAsanMode="always"
     android:memtagMode="sync"
-    tools:replace="android:memtagMode" />
+    tools:replace="android:memtagMode">
+    <!-- TrackZero component gallery: adb shell am start -n app.trackzero.debug/app.trackzero.TzGalleryActivity -->
+    <activity
+      android:name="app.trackzero.TzGalleryActivity"
+      android:exported="true"
+      android:screenOrientation="portrait"
+      android:theme="@style/TzGalleryTheme" />
+  </application>
 </manifest>

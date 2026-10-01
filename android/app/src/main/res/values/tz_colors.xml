@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <!-- Surfaces -->
+  <color name="tz_bg">#000000</color>
+  <color name="tz_well">#0B0C0D</color>
+  <color name="tz_surface1">#141517</color>
+  <color name="tz_surface2">#161719</color>
+  <color name="tz_surface3">#202225</color>
+  <color name="tz_divider">#202225</color>
+  <color name="tz_grabber">#2E3135</color>
+  <!-- Text -->
+  <color name="tz_text1">#F4F5F2</color>
+  <color name="tz_text_hero">#FFFFFF</color>
+  <color name="tz_text2">#9BA0A6</color>
+  <color name="tz_text3">#3A3D42</color>
+  <!-- Signal: mint is ONLY for live data + the two start CTAs -->
+  <color name="tz_mint">#A9F7B9</color>
+  <color name="tz_mint_16">#29A9F7B9</color>
+  <color name="tz_mint_38">#61A9F7B9</color>
+  <color name="tz_on_mint">#000000</color>
+  <color name="tz_amber">#FFB547</color>
+  <color name="tz_amber_bg">#2A1E06</color>
+  <color name="tz_amber_well">#3A2A08</color>
+  <color name="tz_amber_text2">#E9C891</color>
+  <color name="tz_danger">#FF7A7A</color>
+  <color name="tz_danger_bg">#2D1316</color>
+  <color name="tz_danger_fill">#5A1F25</color>
+  <color name="tz_scrim">#A3000000</color> <!-- 64% black -->
+  <!-- Map style targets (Phase 3) -->
+  <color name="tz_map_road_major">#2A2D32</color>
+  <color name="tz_map_road_minor">#17191C</color>
+  <color name="tz_map_cycleway">#4A6355</color>
+  <color name="tz_map_water">#0A1620</color>
+  <color name="tz_map_park">#06100A</color>
+  <color name="tz_map_label">#5C6167</color>
+</resources>

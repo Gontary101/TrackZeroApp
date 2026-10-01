@@ -24,3 +24,16 @@
 - `AndroidManifest.xml`: `MwmActivity` locked to `portrait`.
 - Verified: `aapt2 dump badging` label `TrackZero`, package `app.trackzero.debug` installs next to
   `app.comaps.fdroid.debug`; first-run download + map render work.
+
+## Phase 2 — Tokens, fonts, icons
+
+- Fonts: full Barlow (Medium/SemiBold/Bold) and Barlow Condensed (SemiBold/Bold) from google/fonts; Doto as a
+  static wght-900 instance (D3) → `res/font/`. OFL texts → `assets/licenses/`.
+- `res/values/tz_colors.xml`, `tz_dimens.xml`, `tz_type.xml` extracted verbatim from the plan (Dot styles
+  without `textStyle=bold`, D3).
+- 39 icons from Appendix A (+ `flag`, D5) and 7 `_bold` maneuver variants. Worker-generated, then verified
+  byte-for-byte against the appendix by script.
+- `app.trackzero.ui.TzTextSize.applyCapped` (font-scale cap 1.3×) + `TzTextSizeTest`.
+- Debug-only `app.trackzero.TzGalleryActivity` (src/debug) shows every text style and icon; checked on the
+  emulator against the Tokens/Icons boards (Doto glyphs identical to the board).
+- Shape drawables (2.5) are created with the components that use them (Phase 4).

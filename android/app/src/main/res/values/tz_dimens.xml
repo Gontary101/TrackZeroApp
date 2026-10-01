@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <dimen name="tz_space_4">4dp</dimen>  <dimen name="tz_space_8">8dp</dimen>
+  <dimen name="tz_space_12">12dp</dimen> <dimen name="tz_space_16">16dp</dimen>
+  <dimen name="tz_space_20">20dp</dimen> <dimen name="tz_space_24">24dp</dimen>
+  <dimen name="tz_space_32">32dp</dimen> <dimen name="tz_space_40">40dp</dimen>
+  <dimen name="tz_gutter">16dp</dimen>
+  <dimen name="tz_gutter_ride">12dp</dimen>
+  <dimen name="tz_top_inset_extra">8dp</dimen>     <!-- added below the status bar inset -->
+  <dimen name="tz_bottom_inset_extra">16dp</dimen> <!-- added above the gesture-nav inset -->
+
+  <dimen name="tz_radius_chip">14dp</dimen>
+  <dimen name="tz_radius_map_btn">18dp</dimen>
+  <dimen name="tz_radius_button">20dp</dimen>
+  <dimen name="tz_radius_card">24dp</dimen>
+  <dimen name="tz_radius_feature">28dp</dimen>
+  <dimen name="tz_radius_sheet">32dp</dimen>
+
+  <dimen name="tz_touch_min_browse">48dp</dimen>
+  <dimen name="tz_touch_min_ride">56dp</dimen>
+
+  <dimen name="tz_island_h">72dp</dimen>  <dimen name="tz_island_pad">6dp</dimen>
+  <dimen name="tz_island_slot_h">60dp</dimen> <dimen name="tz_island_ride_w">76dp</dimen>
+  <dimen name="tz_stats_island_h">88dp</dimen>
+  <dimen name="tz_handle_h">44dp</dimen>
+  <dimen name="tz_map_btn">56dp</dimen>
+  <dimen name="tz_maneuver_well">88dp</dimen> <dimen name="tz_maneuver_glyph">56dp</dimen>
+  <dimen name="tz_route_card_h">104dp</dimen> <dimen name="tz_silhouette">80dp</dimen>
+  <dimen name="tz_button_h">64dp</dimen> <dimen name="tz_button_resume_h">72dp</dimen>
+  <dimen name="tz_toggle_row_h">72dp</dimen>
+  <dimen name="tz_list_row_h">64dp</dimen> <dimen name="tz_search_row_h">72dp</dimen>
+  <dimen name="tz_chip_h">44dp</dimen> <dimen name="tz_segment_h">44dp</dimen>
+  <dimen name="tz_peek_h">72dp</dimen>
+  <dimen name="tz_icon">24dp</dimen>
+
+  <dimen name="tz_elev1">2dp</dimen> <dimen name="tz_elev2">8dp</dimen> <dimen name="tz_elev3">16dp</dimen>
+</resources>
