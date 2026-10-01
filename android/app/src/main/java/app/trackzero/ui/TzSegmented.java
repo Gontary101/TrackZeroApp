@@ -51,7 +51,7 @@ public class TzSegmented extends LinearLayout
       option.setOnClickListener(v -> {
         if (index == mSelected)
           return;
-        setSelected(index);
+        select(index);
         if (mListener != null)
           mListener.onSelected(index);
       });
@@ -61,7 +61,7 @@ public class TzSegmented extends LinearLayout
       addView(option, lp);
     }
     mSelected = -1;
-    setSelected(0);
+    select(0);
   }
 
   public void setListener(@Nullable Listener listener)
@@ -75,7 +75,7 @@ public class TzSegmented extends LinearLayout
   }
 
   /** Selects without notifying the listener. */
-  public void setSelected(int index)
+  public void select(int index)
   {
     mSelected = index;
     for (int i = 0; i < getChildCount(); i++)

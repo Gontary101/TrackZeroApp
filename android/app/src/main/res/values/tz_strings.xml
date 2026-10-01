@@ -46,6 +46,34 @@
   <string name="tz_kind_out_and_back">Out &amp; back</string>
   <string name="tz_kind_point_to_point">Point to point</string>
 
+  <!-- B3 / B4 Routes -->
+  <string name="tz_routes_title">ROUTES</string>
+  <string name="tz_import">IMPORT</string>
+  <string name="tz_import_gpx">IMPORT GPX</string>
+  <string name="tz_filter_all">All</string>
+  <string name="tz_filter_favorites">Favorites</string>
+  <string name="tz_filter_recent">Recent</string>
+  <plurals name="tz_routes_count">
+    <item quantity="one">%d route · newest first</item>
+    <item quantity="other">%d routes · newest first</item>
+  </plurals>
+  <plurals name="tz_routes_count_recent">
+    <item quantity="one">%d route · last ridden first</item>
+    <item quantity="other">%d routes · last ridden first</item>
+  </plurals>
+  <string name="tz_routes_empty_title">No routes yet</string>
+  <string name="tz_routes_empty_body">Import a GPX file from your phone, or share one to TrackZero from any app.</string>
+  <string name="tz_routes_no_favorites">Star a route to keep it here.</string>
+  <string name="tz_routes_no_recent">Routes you ride in the next 30 days show up here.</string>
+  <string name="tz_route_imported">Route imported</string>
+  <string name="tz_import_no_track">This GPX has no track.</string>
+  <string name="tz_import_not_gpx">This file isn\'t a GPX route.</string>
+  <string name="tz_route_rename">Rename</string>
+  <string name="tz_route_delete">Delete</string>
+  <string name="tz_route_delete_confirm">Delete “%1$s”? The GPX file is removed from this phone.</string>
+  <string name="tz_cancel">Cancel</string>
+  <string name="tz_save">Save</string>
+
   <!-- B7 More -->
   <string name="tz_more_title">MORE</string>
   <string name="tz_more_offline_maps">Offline maps</string>

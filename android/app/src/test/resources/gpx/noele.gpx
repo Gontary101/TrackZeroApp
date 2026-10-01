@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.0" creator="TrackZero test" xmlns="http://www.topografix.com/GPX/1/0">
+  <trk>
+    <name> Old trail </name>
+    <trkseg>
+      <trkpt lat="45.0" lon="3.0"/>
+      <trkpt lat="45.1" lon="3.1"/>
+    </trkseg>
+  </trk>
+</gpx>

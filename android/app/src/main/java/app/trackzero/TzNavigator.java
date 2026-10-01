@@ -18,6 +18,7 @@ import app.organicmaps.R;
 import app.trackzero.base.TzMap;
 import app.trackzero.screens.TzMapScreen;
 import app.trackzero.screens.TzMoreScreen;
+import app.trackzero.screens.TzRoutesScreen;
 import app.trackzero.screens.TzScreen;
 import app.trackzero.ui.TzBottomIsland;
 
@@ -180,6 +181,7 @@ public final class TzNavigator
     return switch (screen)
     {
       case MAP -> new TzMapScreen();
+      case ROUTES -> new TzRoutesScreen();
       case MORE -> new TzMoreScreen();
       default -> null;
     };

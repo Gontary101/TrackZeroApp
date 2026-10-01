@@ -3,12 +3,55 @@
   <style name="TzTheme" parent="Theme.MaterialComponents.NoActionBar">
     <item name="android:windowBackground">@color/tz_bg</item>
     <item name="android:colorBackground">@color/tz_bg</item>
-    <item name="colorPrimary">@color/tz_mint</item>
-    <item name="colorOnPrimary">@color/tz_on_mint</item>
-    <item name="colorAccent">@color/tz_mint</item>
+    <!-- Mint is reserved for live data and the start CTAs (§X1); system widgets use text1. -->
+    <item name="colorPrimary">@color/tz_text1</item>
+    <item name="colorOnPrimary">@color/tz_bg</item>
+    <item name="colorAccent">@color/tz_text1</item>
     <item name="colorSurface">@color/tz_surface1</item>
     <item name="colorOnSurface">@color/tz_text1</item>
     <item name="android:textColorPrimary">@color/tz_text1</item>
     <item name="android:textColorSecondary">@color/tz_text2</item>
+    <!-- Dark-theme elevation overlays would lighten surfaces; separation comes from surface steps instead. -->
+    <item name="elevationOverlayEnabled">false</item>
+    <item name="materialAlertDialogTheme">@style/ThemeOverlay.TrackZero.Dialog</item>
+    <item name="android:fontFamily">@font/barlow_medium</item>
+  </style>
+
+  <style name="ThemeOverlay.TrackZero.Dialog" parent="ThemeOverlay.MaterialComponents.MaterialAlertDialog">
+    <item name="colorSurface">@color/tz_surface1</item>
+    <item name="colorPrimary">@color/tz_text1</item>
+    <item name="colorAccent">@color/tz_text1</item>
+    <item name="elevationOverlayEnabled">false</item>
+    <item name="shapeAppearanceOverlay">@style/TzShape.Dialog</item>
+    <item name="materialAlertDialogTitleTextStyle">@style/TzDialog.Title</item>
+    <item name="materialAlertDialogBodyTextStyle">@style/TzDialog.Body</item>
+    <item name="buttonBarPositiveButtonStyle">@style/TzDialog.Button</item>
+    <item name="buttonBarNegativeButtonStyle">@style/TzDialog.Button.Secondary</item>
+    <item name="android:textColorPrimary">@color/tz_text1</item>
+    <item name="android:textColorAlertDialogListItem">@color/tz_text1</item>
+    <item name="android:fontFamily">@font/barlow_semibold</item>
+  </style>
+  <style name="TzShape.Dialog" parent="">
+    <item name="cornerFamily">rounded</item>
+    <item name="cornerSize">@dimen/tz_radius_feature</item>
+  </style>
+  <style name="TzDialog.Title" parent="MaterialAlertDialog.MaterialComponents.Title.Text">
+    <item name="android:fontFamily">@font/barlow_bold</item>
+    <item name="android:textSize">@dimen/tz_text_18</item>
+    <item name="android:textColor">@color/tz_text1</item>
+  </style>
+  <style name="TzDialog.Body" parent="MaterialAlertDialog.MaterialComponents.Body.Text">
+    <item name="android:fontFamily">@font/barlow_medium</item>
+    <item name="android:textSize">@dimen/tz_text_16</item>
+    <item name="android:textColor">@color/tz_text2</item>
+  </style>
+  <style name="TzDialog.Button" parent="Widget.MaterialComponents.Button.TextButton.Dialog">
+    <item name="android:fontFamily">@font/barlow_condensed_bold</item>
+    <item name="android:textSize">@dimen/tz_text_18</item>
+    <item name="android:letterSpacing">0.09</item>
+    <item name="android:textColor">@color/tz_text1</item>
+  </style>
+  <style name="TzDialog.Button.Secondary">
+    <item name="android:textColor">@color/tz_text2</item>
   </style>
 </resources>

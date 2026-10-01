@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- B3 · Routes / B4 · Routes · empty. Opaque. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:app="http://schemas.android.com/apk/res-auto"
+  android:layout_width="match_parent"
+  android:layout_height="match_parent"
+  android:background="@color/tz_bg"
+  android:clickable="true">
+  <LinearLayout
+    android:id="@+id/tz_routes_content"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+    <LinearLayout
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_marginStart="@dimen/tz_gutter"
+      android:layout_marginEnd="@dimen/tz_gutter"
+      android:gravity="center_vertical"
+      android:orientation="horizontal">
+      <TextView
+        style="@style/TzText.DotXL"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/tz_space_4"
+        android:layout_weight="1"
+        android:text="@string/tz_routes_title" />
+      <com.google.android.material.button.MaterialButton
+        android:id="@+id/tz_routes_import"
+        style="@style/TzButton.Import"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/tz_import"
+        app:icon="@drawable/ic_tz_import" />
+    </LinearLayout>
+
+    <LinearLayout
+      android:id="@+id/tz_routes_library"
+      android:layout_width="match_parent"
+      android:layout_height="0dp"
+      android:layout_weight="1"
+      android:orientation="vertical">
+      <app.trackzero.ui.TzSegmented
+        android:id="@+id/tz_routes_filter"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/tz_gutter"
+        android:layout_marginTop="@dimen/tz_space_16" />
+      <TextView
+        android:id="@+id/tz_routes_caption"
+        style="@style/TzText.Caption"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/tz_space_20"
+        android:layout_marginTop="@dimen/tz_space_16" />
+      <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginTop="@dimen/tz_space_16">
+        <androidx.recyclerview.widget.RecyclerView
+          android:id="@+id/tz_routes_list"
+          android:layout_width="match_parent"
+          android:layout_height="match_parent"
+          android:clipToPadding="false"
+          android:paddingStart="@dimen/tz_gutter"
+          android:paddingEnd="@dimen/tz_gutter" />
+        <TextView
+          android:id="@+id/tz_routes_filter_empty"
+          style="@style/TzText.Caption"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:layout_gravity="center"
+          android:layout_marginStart="@dimen/tz_space_24"
+          android:layout_marginEnd="@dimen/tz_space_24"
+          android:gravity="center"
+          android:visibility="gone" />
+      </FrameLayout>
+    </LinearLayout>
+
+    <!-- B4: no routes at all -->
+    <LinearLayout
+      android:id="@+id/tz_routes_empty"
+      android:layout_width="match_parent"
+      android:layout_height="0dp"
+      android:layout_weight="1"
+      android:gravity="center"
+      android:orientation="vertical"
+      android:paddingStart="@dimen/tz_space_40"
+      android:paddingEnd="@dimen/tz_space_40"
+      android:paddingBottom="@dimen/tz_empty_bottom_pad"
+      android:visibility="gone">
+      <FrameLayout
+        android:layout_width="@dimen/tz_empty_well"
+        android:layout_height="@dimen/tz_empty_well"
+        android:background="@drawable/tz_bg_well_r32">
+        <ImageView
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:layout_gravity="center"
+          android:importantForAccessibility="no"
+          android:src="@drawable/ic_tz_empty_loop"
+          app:tint="@color/tz_text2" />
+      </FrameLayout>
+      <TextView
+        style="@style/TzText.EmptyTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/tz_space_20"
+        android:text="@string/tz_routes_empty_title" />
+      <TextView
+        style="@style/TzText.Body"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/tz_space_8"
+        android:gravity="center"
+        android:text="@string/tz_routes_empty_body" />
+      <com.google.android.material.button.MaterialButton
+        android:id="@+id/tz_routes_empty_import"
+        style="@style/TzButton.Primary.Empty"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/tz_space_20"
+        android:text="@string/tz_import_gpx"
+        app:icon="@drawable/ic_tz_import_bold" />
+    </LinearLayout>
+  </LinearLayout>
+</FrameLayout>

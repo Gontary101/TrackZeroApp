@@ -88,3 +88,16 @@ Approach changed: TrackZero host activity instead of hiding MwmActivity views (T
 - Verified on emulator: launch → B1 as on the board; island Map ↔ More; Back More → Map → leaves app; Offline
   maps opens the downloader and Back returns to More. Routes/Search/RIDE show "coming" toasts until their phases.
 - The CoMaps startup attribution ("Map data © OpenStreetMap") still shows briefly next to the ruler at launch.
+
+## Phase 6 — GPX import and routes library
+
+- `routes/`: GpxTrack, GpxParser (SAX, D15), GpxException, RouteStats (distance, 5-pt smoothing + 3 m hysteresis
+  gain, high point, loop / out & back / point-to-point), Route (+JSON incl. silhouette, D16), RouteStore
+  (files/tz/routes/<uuid>.gpx + atomic routes.json, single IO thread), TzImport (picker + VIEW/SEND intents).
+  `TzIo` (IO thread + atomic write). Parser/stats + tests by a codex worker, reviewed (fixed API-24 call).
+- `screens/TzRoutesScreen`: B3 (header + IMPORT, All/Favorites/Recent, caption, cards, island clearance),
+  B4 empty state (pre-computed dashed loop vector), favorites/recent empty captions, long-press Rename/Delete.
+- Verified on the emulator with the user's GPX files: picker import of "Clermont-Ferrand (70.7km)" (70.5 km,
+  1,293 m, LOOP); "Open with" VIEW intent of the 4.5 MB Massif Central traverse (1,437 km, point to point);
+  favourite survives force-stop; Favorites filter; rename; delete removes index entry and GPX file.
+- Unit tests: 41 pass (GpxParserTest 10, RouteStatsTest 10 added).

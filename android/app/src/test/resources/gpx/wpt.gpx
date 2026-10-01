@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="TrackZero test" xmlns="http://www.topografix.com/GPX/1/1">
+  <wpt lat="45.7723" lon="2.9658"><name> Puy de Dôme </name></wpt>
+  <wpt lat="45.8000" lon="3.0000"><name>Col des Goules</name></wpt>
+  <wpt lat="45.8100" lon="3.0100"/>
+  <trk><trkseg><trkpt lat="45.0" lon="3.0"><name>Not the track name</name></trkpt></trkseg></trk>
+</gpx>

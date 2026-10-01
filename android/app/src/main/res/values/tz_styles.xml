@@ -120,4 +120,30 @@
     <item name="android:layout_width">match_parent</item>
     <item name="android:layout_height">wrap_content</item>
   </style>
+
+  <!-- B3 header IMPORT: 48dp surface3 pill, mint icon, Barlow Bold 15sp -->
+  <style name="TzButton.Import" parent="TzButton">
+    <item name="android:minHeight">@dimen/tz_import_btn_h</item>
+    <item name="android:paddingStart">@dimen/tz_import_pad_start</item>
+    <item name="android:paddingEnd">@dimen/tz_import_pad_end</item>
+    <item name="android:fontFamily">@font/barlow_bold</item>
+    <item name="android:textSize">@dimen/tz_text_15</item>
+    <item name="android:letterSpacing">0.07</item>
+    <item name="cornerRadius">@dimen/tz_radius_card</item>
+    <item name="iconSize">@dimen/tz_import_icon</item>
+    <item name="iconPadding">@dimen/tz_space_8</item>
+    <item name="backgroundTint">@color/tz_surface3</item>
+    <item name="android:textColor">@color/tz_text1</item>
+    <item name="iconTint">@color/tz_mint</item>
+  </style>
+  <!-- B4 IMPORT GPX: primary, 60dp -->
+  <style name="TzButton.Primary.Empty">
+    <item name="android:minHeight">@dimen/tz_empty_cta_h</item>
+    <item name="android:paddingStart">@dimen/tz_empty_cta_pad</item>
+    <item name="android:paddingEnd">@dimen/tz_empty_cta_pad</item>
+  </style>
+  <style name="TzText.EmptyTitle">
+    <item name="android:fontFamily">@font/barlow_bold</item>
+    <item name="android:textSize">@dimen/tz_text_24</item>
+  </style>
 </resources>

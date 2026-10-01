@@ -59,10 +59,21 @@
   <dimen name="tz_text_17">17sp</dimen>
   <dimen name="tz_text_18">18sp</dimen>
   <dimen name="tz_text_22">22sp</dimen>
+  <dimen name="tz_text_24">24sp</dimen>
   <dimen name="tz_text_28">28sp</dimen>
 
   <!-- B1: ruler / attribution sit 16dp above the island (bottom = gesture inset + 104), 20dp from the edges -->
   <dimen name="tz_map_footer_bottom">104dp</dimen>
   <dimen name="tz_map_footer_side">20dp</dimen>
   <dimen name="tz_text_10">10sp</dimen>
+
+  <!-- B3 / B4 -->
+  <dimen name="tz_import_btn_h">48dp</dimen>
+  <dimen name="tz_import_icon">20dp</dimen>
+  <dimen name="tz_import_pad_start">14dp</dimen>
+  <dimen name="tz_import_pad_end">18dp</dimen>
+  <dimen name="tz_empty_well">140dp</dimen>
+  <dimen name="tz_empty_cta_h">60dp</dimen>
+  <dimen name="tz_empty_cta_pad">28dp</dimen>
+  <dimen name="tz_empty_bottom_pad">200dp</dimen>
 </resources>

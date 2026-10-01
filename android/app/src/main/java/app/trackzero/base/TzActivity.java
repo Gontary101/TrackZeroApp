@@ -6,6 +6,7 @@ import static android.Manifest.permission.ACCESS_FINE_LOCATION;
 import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Color;
+import android.net.Uri;
 import android.os.Bundle;
 import androidx.activity.EdgeToEdge;
 import androidx.activity.SystemBarStyle;
@@ -32,6 +33,7 @@ import app.organicmaps.sdk.widget.placepage.PlacePageData;
 import app.organicmaps.util.ThemeSwitcher;
 import app.trackzero.TzConfig;
 import app.trackzero.TzNavigator;
+import app.trackzero.routes.TzImport;
 
 /**
  * TrackZero's main activity: a full-screen CoMaps map with the TrackZero overlay ({@code tz_root}) on top.
@@ -216,6 +218,14 @@ public class TzActivity extends BaseMwmFragmentActivity
     if (intent == null || intent.getBooleanExtra(EXTRA_CONSUMED, false))
       return;
     intent.putExtra(EXTRA_CONSUMED, true);
+
+    // "Open with" / "Share to" TrackZero: the base app's intent filters bring GPX files here.
+    final Uri file = TzImport.fileOf(intent);
+    if (file != null)
+    {
+      TzImport.importUri(this, file);
+      return;
+    }
 
     // "Explore" from the map downloader.
     final String countryId = intent.getStringExtra(MwmActivity.EXTRA_COUNTRY_ID);

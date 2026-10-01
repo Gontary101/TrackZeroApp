@@ -107,3 +107,22 @@ The plan reuses CoMaps' DownloaderActivity for Offline maps, and the first launc
 "Download the world overview map" screen. They are CoMaps' green Material UI, which the user does not want
 anywhere in TrackZero. Phase 13 adds TrackZero-styled offline-maps and first-run screens built on the SDK's
 `MapManager` API, and the base screens become unreachable.
+
+## D15 · GPX parsing with SAX instead of XmlPullParser (Phase 6)
+Android's `XmlPullParser` is a stub in plain JVM unit tests, so the parser would need Robolectric or an extra
+library to be tested. `javax.xml.parsers` SAX exists on Android and the JVM, so `GpxParser` stays pure and is
+tested without new dependencies. External entities/DTDs are disabled. Measured on the user's 20 routes: distances
+within 0.4 % of the lengths in their file names; the 4.5 MB / 53,696-point traverse parses in 168 ms (JVM).
+
+## D16 · Route index stores the card silhouette (Phase 6)
+Each `routes.json` entry carries `"sil"`: ≤ 200 Douglas–Peucker points (5-decimal lat/lon) computed at import, so
+the library never parses GPX files to draw cards. All library IO runs on one background thread (`TzIo`), which
+also serialises the atomic index writes without locks.
+
+## D17 · System widgets follow the mint rule; dialogs are TrackZero-styled (Phase 6)
+`TzTheme` sets `colorPrimary/colorAccent` to text1 (mint is only for live data and start CTAs, §X1), disables
+dark-theme elevation overlays (they lighten surfaces), and `ThemeOverlay.TrackZero.Dialog` gives
+MaterialAlertDialogs surface1, 28dp corners and Barlow type; destructive confirmations use the danger colour.
+Recent with no rides shows "Routes you ride in the next 30 days show up here." (plan only defines Favorites).
+GPX "Open with / Share to" reuses the base manifest's existing GPX filters on SplashActivity (no duplicates);
+the intent reaches TzActivity, which imports it.
