@@ -15,6 +15,8 @@
   <string name="tz_gps_accuracy">GPS ±%1$s</string>
   <string name="tz_gps_none">NO GPS</string>
 
+  <string name="tz_osm_attribution">© OpenStreetMap</string>
+
   <!-- Ride state chip -->
   <string name="tz_rec">REC</string>
   <string name="tz_paused">PAUSED</string>
@@ -43,6 +45,25 @@
   <string name="tz_kind_loop">Loop</string>
   <string name="tz_kind_out_and_back">Out &amp; back</string>
   <string name="tz_kind_point_to_point">Point to point</string>
+
+  <!-- B7 More -->
+  <string name="tz_more_title">MORE</string>
+  <string name="tz_more_offline_maps">Offline maps</string>
+  <string name="tz_more_manage">Manage</string>
+  <string name="tz_more_history">Ride history</string>
+  <string name="tz_more_units">Units</string>
+  <string name="tz_more_voice">Voice guidance</string>
+  <string name="tz_more_display">Display</string>
+  <string name="tz_more_auto_pause">Auto-pause</string>
+  <string name="tz_more_about">About TrackZero</string>
+  <string name="tz_more_footer">No account. No tracking. Rides and routes stay on this phone.\nMap data © OpenStreetMap contributors.</string>
+  <string name="tz_units_metric">Metric</string>
+  <string name="tz_units_imperial">Imperial</string>
+  <string name="tz_display_on">Always on in ride</string>
+  <string name="tz_display_off">Off</string>
+  <string name="tz_auto_pause_on">Below 3 km/h</string>
+  <string name="tz_auto_pause_on_imperial">Below 2 mph</string>
+  <string name="tz_off">Off</string>
 
   <!-- Hold button -->
   <string name="tz_hold_to_end">HOLD TO END &amp; SAVE</string>

@@ -199,7 +199,9 @@ public class TzActivity extends BaseMwmFragmentActivity
 
   void setRulerOffset(int xPx, int yPx)
   {
-    mMapController.updateBottomWidgetsOffset(xPx, yPx);
+    // The SDK adds its own margin_ruler to the offsets.
+    final int margin = getResources().getDimensionPixelSize(app.organicmaps.sdk.R.dimen.margin_ruler);
+    mMapController.updateBottomWidgetsOffset(Math.max(0, xPx - margin), Math.max(0, yPx - margin));
   }
 
   @NonNull

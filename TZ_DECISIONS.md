@@ -90,3 +90,20 @@ cancels the request. FOLLOW→FOLLOW_AND_ROTATE is refused by the core until a h
   API 26 where `ValueAnimator.areAnimatorsEnabled()` doesn't exist).
 - `TzElevationProfileView`, `TzSilhouetteView`, `geo.Geo`, `geo.DouglasPeucker` (+ tests) were written by a codex
   worker from a precise spec and reviewed/adjusted (XML `tzCompact` attribute, motion check).
+
+## D12 · The navigator owns the bottom island (Phase 5)
+The Flow board says switching Map/Routes/Search/More is a "crossfade 150 ms, island stays". A per-screen island
+would fade out and back in with every tab switch, so `TzNavigator` adds one `TzBottomIsland` above the screen
+container and shows/hides it per screen (`Screen.islandTab`); HISTORY keeps the island with MORE active. The
+navigator also decides map rendering from `Screen.opaque` (RIDE manages its pages itself), which avoids the
+resume-then-pause flicker of doing it in each fragment's onResume/onPause.
+
+## D13 · Page-title screens start 16dp under the status bar (Phase 5)
+B3/B4/B7 boards place the Doto title at y=64 on a 48dp status bar (padding 64); map overlays (B1/B5/R*) use
+status + 8 as in §X2. Opaque list screens therefore use `top + tz_space_16`.
+
+## D14 · Remaining base-app UI will be replaced (Phase 5 → Phase 13)
+The plan reuses CoMaps' DownloaderActivity for Offline maps, and the first launch still shows CoMaps' splash and
+"Download the world overview map" screen. They are CoMaps' green Material UI, which the user does not want
+anywhere in TrackZero. Phase 13 adds TrackZero-styled offline-maps and first-run screens built on the SDK's
+`MapManager` API, and the base screens become unreachable.

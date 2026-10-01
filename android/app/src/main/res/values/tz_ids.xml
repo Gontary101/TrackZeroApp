@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <!-- Fixed ids so FragmentManager can restore TrackZero screens after recreation. -->
+  <item name="tz_screen_container" type="id" />
+  <item name="tz_island" type="id" />
+</resources>

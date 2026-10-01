@@ -72,3 +72,19 @@ Approach changed: TrackZero host activity instead of hiding MwmActivity views (T
 - Unit tests: 21 pass (TzFormat 8, Geo 4, DouglasPeucker 8, TzTextSize 1). No warnings in `app.trackzero`
   (EdgeToEdge API replaces the deprecated bar-colour setters).
 - Emulator now runs headless (`-no-window`, 2 GB): the desktop display became unreachable, and one instance only.
+
+## Phase 5 — Navigator, map screen, more skeleton
+
+- `TzNavigator`: Screen enum (opaque flag + island tab), fragment container + persistent island in `tz_root`,
+  crossfade 150 ms (`animator/tz_fade_in/out`), Back mapping via OnBackPressedCallback (enabled off-MAP; RIDE is
+  delegated to the screen), insets forwarded to the current screen, restore after recreation.
+- `screens/TzScreen` (base: `onInsets`, `onBackPressed`), `screens/TzMapScreen` (B1), `screens/TzMoreScreen`
+  (B7 layout; Offline maps opens the downloader).
+- `TzPrefs` (tz_prefs), `base/TzLocation` (LocationHelper feed), `base/TzBase` (downloader entry);
+  `TzMap.centerOn`, ruler positioned in real coordinates (SDK margin handled in TzActivity).
+- B1: GPS chip (mint ≤ 20 m, amber above, NO GPS without fix/permission), map controls (locate tint mint while
+  following), ruler + "© OpenStreetMap" 16dp above the island, rider centred between status bar and island
+  (visible area), first launch centres on the rider at z15 once.
+- Verified on emulator: launch → B1 as on the board; island Map ↔ More; Back More → Map → leaves app; Offline
+  maps opens the downloader and Back returns to More. Routes/Search/RIDE show "coming" toasts until their phases.
+- The CoMaps startup attribution ("Map data © OpenStreetMap") still shows briefly next to the ruler at launch.

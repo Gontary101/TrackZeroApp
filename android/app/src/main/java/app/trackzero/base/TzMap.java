@@ -64,6 +64,12 @@ public final class TzMap
       Framework.nativeZoomToPoint(loc.getLatitude(), loc.getLongitude(), level, true);
   }
 
+  /** Centres the map on a point at a zoom level (no animation). */
+  public static void centerOn(double lat, double lon, int zoom)
+  {
+    Framework.nativeSetViewportCenter(lat, lon, zoom);
+  }
+
   public static void followRider(boolean headingUp)
   {
     sRequestedMode = headingUp ? LocationState.FOLLOW_AND_ROTATE : LocationState.FOLLOW;
@@ -110,7 +116,7 @@ public final class TzMap
     Framework.nativeShowRect(minLat, minLon, maxLat, maxLon, true);
   }
 
-  /** Positions the scale ruler: offsets in pixels from the left and bottom edge of the map. */
+  /** Positions the scale ruler: its left and bottom edges, in pixels from the left and bottom of the map. */
   public static void setRulerPosition(int xPx, int yPx)
   {
     if (sHost != null)

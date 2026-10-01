@@ -96,4 +96,28 @@
     <item name="android:fontFamily">@font/barlow_semibold</item>
     <item name="android:textSize">@dimen/tz_text_15</item>
   </style>
+
+  <style name="TzText.Attribution">
+    <item name="android:fontFamily">@font/barlow_medium</item>
+    <item name="android:textSize">@dimen/tz_text_10</item>
+    <item name="android:textColor">@color/tz_attribution</item>
+  </style>
+
+  <style name="TzText.Footer" parent="TzText.Caption">
+    <item name="android:lineSpacingMultiplier">1.5</item>
+  </style>
+
+  <!-- A card of TzListRows with inset dividers (B7). -->
+  <style name="TzListGroup">
+    <item name="android:layout_width">match_parent</item>
+    <item name="android:layout_height">wrap_content</item>
+    <item name="android:orientation">vertical</item>
+    <item name="android:background">@drawable/tz_bg_surface1_r24</item>
+    <item name="android:divider">@drawable/tz_list_divider</item>
+    <item name="android:showDividers">middle</item>
+  </style>
+  <style name="TzListRow">
+    <item name="android:layout_width">match_parent</item>
+    <item name="android:layout_height">wrap_content</item>
+  </style>
 </resources>

@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- B1 · Map: transparent overlay; touches outside the controls reach the map. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+  android:layout_width="match_parent"
+  android:layout_height="match_parent">
+  <app.trackzero.ui.TzChip
+    android:id="@+id/tz_map_gps"
+    android:layout_width="wrap_content"
+    android:layout_height="@dimen/tz_chip_small_h"
+    android:layout_gravity="top|start"
+    android:layout_marginStart="@dimen/tz_gutter" />
+  <app.trackzero.ui.TzMapControls
+    android:id="@+id/tz_map_controls"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_gravity="top|end"
+    android:layout_marginEnd="@dimen/tz_gutter" />
+  <TextView
+    android:id="@+id/tz_map_attribution"
+    style="@style/TzText.Attribution"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_gravity="bottom|end"
+    android:layout_marginEnd="@dimen/tz_map_footer_side"
+    android:text="@string/tz_osm_attribution" />
+</FrameLayout>
