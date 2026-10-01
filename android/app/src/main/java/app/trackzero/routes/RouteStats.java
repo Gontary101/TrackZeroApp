@@ -4,6 +4,7 @@ import androidx.annotation.Nullable;
 
 import app.trackzero.TzConfig;
 import app.trackzero.geo.DouglasPeucker;
+import app.trackzero.geo.GainCounter;
 import app.trackzero.geo.Geo;
 
 public final class RouteStats
@@ -120,20 +121,12 @@ public final class RouteStats
 
   static double gain(double[] smoothed, double hysteresisM)
   {
-    double gain = 0, ref = smoothed[0];
+    final GainCounter counter = new GainCounter(hysteresisM);
     for (double e : smoothed)
     {
-      if (e > ref + hysteresisM)
-      {
-        gain += e - ref;
-        ref = e;
-      }
-      else if (e < ref)
-      {
-        ref = e;
-      }
+      counter.add(e);
     }
-    return gain;
+    return counter.gainM();
   }
 
   static Kind classify(double[] lat, double[] lon)

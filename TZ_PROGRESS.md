@@ -117,3 +117,22 @@ Approach changed: TrackZero host activity instead of hiding MwmActivity views (T
 - Verified on the emulator: Clermont loop and the 1,437 km traverse frame inside the 24dp-padded area between the
   top buttons and the card; line/glow/start ring match B5; panning collapses to the B6 peek and it returns;
   back returns to B3 and the line is gone. Unit tests: 44 pass (RouteGeometryTest 3 added).
+
+## Phase 8 — Ride core
+
+- `ride/`: TzFix (UTC + monotonic time), TzLocationSource, GpsLocationSource (GPS provider, 1 s, MSL altitude
+  on API 34+), ReplayLocationSource + ReplayPath (debug, 25 km/h along `tz/replay.gpx`), BarometerSource,
+  AltitudeFilter (baro + 60 s GPS offset, else GPS EMA), RideStats (§8.4), RideSession (state machine,
+  auto-pause dated from the slow-down, D22), RideTrack, RideJournal (crash journal, D23), GpxWriter, Ride,
+  RideStore (rides/<id>.gpx + atomic rides.json, marks the route ridden), TzRideService (foreground location
+  service, notification "{elapsed} · {distance}" every 10 s + Pause/Resume, binder, sticky restore).
+  `geo/GainCounter` shared with RouteStats. TzActivity restores an unfinished ride at launch.
+- Debug-only `TzRideDebugActivity` (start / pause / resume / end + live numbers) until the ride screens exist.
+- Codex workers wrote GpxWriter(+test) and ReplayPath(+test); reviewed — GpxWriter's per-point String.format
+  replaced with a fixed-point append.
+- Verified on the emulator with DEBUG_REPLAY and the 3.2 km Clermont → Aubière file: recording continued through
+  2 min of screen-off (journal 66 → 190 lines), notification "TrackZero · Recording / 0:03:31 · 1.5 km",
+  auto-pause at the end of the track, saved GPX 3,226 m vs 3,238 m file length (−0.4 %), journal removed,
+  rides.json entry written. `am crash` mid-ride: the service came back within 2 s, PAUSED, with the last
+  flushed totals (632 m / 91 s). Found and fixed: replay altitude pinned by the emulator barometer.
+- Unit tests: 77 TrackZero tests pass (RideStats 11, RideSession 7, GpxWriter 6, ReplayPath 9 added).

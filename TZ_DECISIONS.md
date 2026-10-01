@@ -158,3 +158,29 @@ positions the rider), `showRect(…, paddingPx)` grows the rect in mercator so t
 the visible area on every side. The preview frames between the top buttons and the card with 24dp padding and
 stops following the rider first (the preview is about the route; the follow animation would also fight the rect
 animation).
+
+## D21 · Ride recording: own GPS subscription, no wake lock, monotonic clock (Phase 8)
+- `GpsLocationSource` subscribes to the GPS provider itself (plan §8.1) instead of riding on CoMaps'
+  `LocationHelper`: the app stops `LocationHelper` in the background and when the rider turns location off, so
+  using it would need base hooks; a second subscription to the same chip costs nothing extra.
+- No `PARTIAL_WAKE_LOCK` for real GPS (plan §8.2 asks for one while RECORDING). Fixes arrive once a second and
+  wake the process; journal flushes and notification updates are driven by fixes, not timers, so nothing needs
+  the CPU between fixes. Only the timer-driven `ReplayLocationSource` (debug) holds a wake lock, and replay rides
+  don't use the barometer (it knows nothing about the replayed track: on the emulator its constant pressure
+  pinned the altitude and gain stayed 0).
+- Fixes carry both UTC (`timeMs`, for the GPX) and `elapsedMs` (`elapsedRealtime`): every duration is measured on
+  the monotonic clock, so GPS-vs-system clock offsets and clock changes can't produce negative or doubled time.
+- Altitude prefers `Location.getMslAltitudeMeters()` (API 34+) — GPX elevations are MSL, while
+  `getAltitude()` is above the ellipsoid (~50 m higher in France).
+
+## D22 · Auto-pause dates the stop from when the rider slowed down (Phase 8)
+Speed below 3 km/h for 5 s → AUTO_PAUSED (plan); the 5 s of waiting are taken back out of the moving time, so
+each traffic light doesn't add 5 s to TIME and lower the average. Thresholds use the displayed (3-fix average)
+speed. Turning auto-pause off while AUTO_PAUSED resumes recording.
+
+## D23 · Crash journal = points + totals (Phase 8)
+`current.partial` holds a header (start time, route, name), the recorded points with segment breaks, and a
+totals line (distance, moving time, gain, max speed, max grade) appended at every flush (30 s and every state
+change). A restored ride keeps its numbers instead of recomputing them from points, and a line cut short by the
+crash is ignored. The ride restores PAUSED from `START_STICKY` restarts and, after a reboot, from app start.
+Gain uses one `GainCounter` (3 m hysteresis) shared with `RouteStats`.

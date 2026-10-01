@@ -11,5 +11,11 @@
       android:exported="true"
       android:screenOrientation="portrait"
       android:theme="@style/TzGalleryTheme" />
+    <!-- Ride controls until the ride screens exist: adb shell am start -n app.trackzero.debug/app.trackzero.TzRideDebugActivity -->
+    <activity
+      android:name="app.trackzero.TzRideDebugActivity"
+      android:exported="true"
+      android:screenOrientation="portrait"
+      android:theme="@style/TzGalleryTheme" />
   </application>
 </manifest>

@@ -110,4 +110,12 @@
 
   <!-- Carousel handle -->
   <string name="tz_cd_page_handle">Ride page %1$d of %2$d. Swipe up for ride controls</string>
+
+  <!-- Ride recording (service notification) -->
+  <string name="tz_ride_channel">Ride recording</string>
+  <string name="tz_ride_notification_recording">TrackZero · Recording</string>
+  <string name="tz_ride_notification_paused">TrackZero · Paused</string>
+  <string name="tz_ride_notification_text">%1$s · %2$s</string>
+  <string name="tz_ride_pause">Pause</string>
+  <string name="tz_ride_resume">Resume</string>
 </resources>

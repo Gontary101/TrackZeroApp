@@ -34,6 +34,7 @@ import app.organicmaps.sdk.widget.placepage.PlacePageData;
 import app.organicmaps.util.ThemeSwitcher;
 import app.trackzero.TzConfig;
 import app.trackzero.TzNavigator;
+import app.trackzero.ride.TzRideService;
 import app.trackzero.routes.TzImport;
 
 /**
@@ -92,6 +93,8 @@ public class TzActivity extends BaseMwmFragmentActivity
 
     TzMap.attach(this);
     TzNavigator.attach(this, findViewById(R.id.tz_root));
+    if (savedInstanceState == null)
+      TzRideService.restoreIfNeeded(this);
 
     // Not called again when the activity is recreated with an already running engine.
     if (Map.isEngineCreated())
