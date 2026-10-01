@@ -126,3 +126,35 @@ MaterialAlertDialogs surface1, 28dp corners and Barlow type; destructive confirm
 Recent with no rides shows "Routes you ride in the next 30 days show up here." (plan only defines Favorites).
 GPX "Open with / Share to" reuses the base manifest's existing GPX filters on SplashActivity (no duplicates);
 the intent reaches TzActivity, which imports it.
+
+## D18 · The route line is an engine subroute, not a bookmark import (Phase 7)
+The plan imports the GPX into a hidden bookmark category. That persists data into the base app's bookmark store
+(visible in base lists, synced into its KML files) and bookmark tracks can't be styled like the design. Instead
+`Framework.nativeShowTrackLine` hands drape a `df::Subroute` built from the simplified line: nothing persists and
+`TzRouteLayer.hide()` removes it. To match the boards (5.5dp mint line over a 16dp glow, 13dp black start disc with
+a 3dp mint ring and 4.5dp dot):
+- new `df::RouteType::Track` with a constant 8dp half-width table; the line subroute is capped to 5.5dp
+  (`m_maxPixelWidth`), the glow subroute below it uses the full width;
+- `TrackLine` / `TrackGlow` / `TrackMarkerCenter` colours in the TrackZero drape palette. The glow is opaque
+  (#1E2C21 = mint 18 % on the black ground): GPX lines are dense, overlapping segments of a translucent 16dp line
+  blend once per overlap and show streaks;
+- markers in one subroute get their own depth slots so the ring is three stacked circles (base change: one loop
+  in `RouteShape::PrepareMarkersGeometry`; one marker behaves exactly as before);
+- the subroute's fake head/tail are disabled (the default 0 tail paints the whole line in the grey "fake" colour).
+Engine bug fixed at the source: `GenerateJoinNormals` took `acos` of a float dot product that comes out just below
+-1 at an exact U-turn (every out-and-back GPX), producing NaN → INT_MIN segments → `std::length_error` abort.
+The cosine is clamped.
+
+## D19 · Route geometry is computed once at import and cached (Phase 7)
+`RouteGeometry` (2 m Douglas–Peucker line, ≤ 600-point profile, bounds) is written to `routes/<id>.geo` (versioned
+binary, ~420 KB for the 53k-point traverse) at import; opening a route reads it instead of re-parsing the GPX.
+Measured on the emulator, non-debuggable build: that file imports in 1.1–1.3 s (parse ≈ 1.0 s, one-time) and its
+preview loads in 12 ms instead of a full re-parse. Missing / old-format caches are rebuilt from the GPX on first open.
+The card silhouette is now simplified from the cached line instead of the raw track.
+
+## D20 · Framing padding lives in `TzMap.showRect` (Phase 7)
+The engine fits a rect edge to edge into the visible viewport. Rather than shrinking the visible area (which also
+positions the rider), `showRect(…, paddingPx)` grows the rect in mercator so the original sits `paddingPx` inside
+the visible area on every side. The preview frames between the top buttons and the card with 24dp padding and
+stops following the rider first (the preview is about the route; the follow animation would also fight the rect
+animation).

@@ -343,6 +343,13 @@ public class Framework
   public static native void nativeShowRect(double minLat, double minLon, double maxLat, double maxLon,
                                            boolean animate);
 
+  /// TrackZero: draws a polyline as a route line (non-persistent). Returns the ids for nativeRemoveTrackLine, null
+  /// when the map engine isn't running.
+  @Nullable
+  public static native int[] nativeShowTrackLine(double[] lat, double[] lon);
+
+  public static native void nativeRemoveTrackLine(int[] ids);
+
   // Navigation.
   public static native boolean nativeIsRouteFinished();
 

@@ -387,10 +387,13 @@ void RouteShape::PrepareMarkersGeometry(std::vector<SubrouteMarker> const & mark
   static float constexpr kInnerRadius = 0.6f;
   static float constexpr kOuterRadius = 1.0f;
 
-  float const depth = baseDepth - 0.5f;
-  float const innerDepth = baseDepth + 0.5f;
+  // Each marker gets its own depth slot, so markers stacked at one point draw in list order.
+  float markerDepth = baseDepth;
   for (SubrouteMarker const & marker : markers)
   {
+    float const depth = markerDepth - 0.5f;
+    float const innerDepth = markerDepth + 0.5f;
+    markerDepth += 2.0f;
     if (marker.m_colors.empty())
     {
       LOG(LWARNING, ("Colors have not been specified."));

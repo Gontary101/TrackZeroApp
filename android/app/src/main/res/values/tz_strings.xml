@@ -74,6 +74,16 @@
   <string name="tz_cancel">Cancel</string>
   <string name="tz_save">Save</string>
 
+  <!-- B5 / B6 Route preview -->
+  <string name="tz_preview_starts_away">%1$s · Starts %2$s away</string>
+  <string name="tz_preview_distance">Distance</string>
+  <string name="tz_preview_gain">Gain</string>
+  <string name="tz_preview_high">High point</string>
+  <string name="tz_start_ride">Start ride</string>
+  <string name="tz_cd_back_to_routes">Back to routes</string>
+  <string name="tz_cd_show_details">Show route details</string>
+  <string name="tz_route_unreadable">This route\'s GPX file can\'t be read.</string>
+
   <!-- B7 More -->
   <string name="tz_more_title">MORE</string>
   <string name="tz_more_offline_maps">Offline maps</string>

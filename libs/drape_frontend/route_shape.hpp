@@ -59,6 +59,10 @@ std::array<float, 20> constexpr kRouteHalfWidthInPixelTransit = {
     // 11   12    13    14    15   16    17    18    19     20
     1.8f, 2.1f, 2.5f, 2.8f, 3.5, 4.5f, 5.0f, 7.0f, 11.0f, 13.0f};
 
+std::array<float, 20> constexpr kRouteHalfWidthInPixelTrack = {
+    8.0f, 8.0f, 8.0f, 8.0f, 8.0f, 8.0f, 8.0f, 8.0f, 8.0f, 8.0f,
+    8.0f, 8.0f, 8.0f, 8.0f, 8.0f, 8.0f, 8.0f, 8.0f, 8.0f, 8.0f};
+
 std::array<float, 20> constexpr kRouteHalfWidthInPixelOthers = {
     // 1   2     3     4     5     6     7     8     9     10
     1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.1f, 1.2f, 1.3f,
@@ -72,7 +76,9 @@ enum class RouteType : uint8_t
   Bicycle,
   Taxi,
   Transit,
-  Ruler
+  Ruler,
+  // A route line drawn by the app itself (TrackZero GPX routes): constant width at every zoom.
+  Track
 };
 
 struct RoutePattern

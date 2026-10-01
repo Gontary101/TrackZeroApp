@@ -7,6 +7,7 @@ import java.time.DateTimeException;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import javax.xml.XMLConstants;
@@ -112,12 +113,19 @@ public final class GpxParser
 
   private static final class Handler extends DefaultHandler
   {
+    // Element kinds by position in the document. Anything not listed is OTHER, and so is everything under it.
+    static final int NONE = 0, OTHER = 1, GPX = 2, METADATA = 3, TRK = 4, RTE = 5, TRKSEG = 6, TRKPT = 7,
+                     RTEPT = 8, WPT = 9, METADATA_NAME = 10, TRK_NAME = 11, RTE_NAME = 12, WPT_NAME = 13, ELE = 14,
+                     TIME = 15;
+
     final List<Point> tracks = new ArrayList<>();
     final List<Point> routes = new ArrayList<>();
     final List<GpxTrack.Waypoint> waypoints = new ArrayList<>();
     final StringBuilder text = new StringBuilder();
-    String path = "";
-    String capturePath;
+    int[] stack = new int[16];
+    int depth;
+    /** Depth of the element whose text is being collected, or -1. */
+    int captureDepth = -1;
     String metadataName, trackName, routeName;
     int trackCount, routeCount;
     Point point;
@@ -140,42 +148,63 @@ public final class GpxParser
       throw e;
     }
 
+    static int kind(int parent, String name)
+    {
+      switch (parent)
+      {
+      case NONE: return "gpx".equals(name) ? GPX : NONE;
+      case GPX:
+        switch (name)
+        {
+        case "metadata": return METADATA;
+        case "trk": return TRK;
+        case "rte": return RTE;
+        case "wpt": return WPT;
+        default: return OTHER;
+        }
+      case METADATA: return "name".equals(name) ? METADATA_NAME : OTHER;
+      case TRK: return "name".equals(name) ? TRK_NAME : "trkseg".equals(name) ? TRKSEG : OTHER;
+      case TRKSEG: return "trkpt".equals(name) ? TRKPT : OTHER;
+      case RTE: return "name".equals(name) ? RTE_NAME : "rtept".equals(name) ? RTEPT : OTHER;
+      case WPT: return "name".equals(name) ? WPT_NAME : OTHER;
+      case TRKPT:
+      case RTEPT: return "ele".equals(name) ? ELE : "time".equals(name) ? TIME : OTHER;
+      default: return OTHER;
+      }
+    }
+
     @Override
     public void startElement(String uri, String localName, String qName, Attributes attributes)
         throws SAXException
     {
-      if (path.isEmpty() && !"gpx".equals(localName))
+      final int kind = kind(depth == 0 ? NONE : stack[depth - 1], localName);
+      if (kind == NONE)
       {
         throw new SAXException("Root element is not GPX");
       }
-      path += "/" + localName;
-      if (path.equals("/gpx/trk"))
+      if (depth == stack.length)
       {
-        trackCount++;
+        stack = Arrays.copyOf(stack, depth * 2);
       }
-      else if (path.equals("/gpx/rte"))
+      stack[depth++] = kind;
+      switch (kind)
       {
-        routeCount++;
-      }
-      else if (path.equals("/gpx/trk/trkseg/trkpt") || path.equals("/gpx/rte/rtept")
-               || path.equals("/gpx/wpt"))
+      case TRK -> trackCount++;
+      case RTE -> routeCount++;
+      case TRKPT, RTEPT, WPT -> point = new Point(attributes);
+      case METADATA_NAME, TRK_NAME, RTE_NAME, WPT_NAME, ELE, TIME ->
       {
-        point = new Point(attributes);
-      }
-      if (path.equals("/gpx/metadata/name") || path.equals("/gpx/trk/name")
-          || path.equals("/gpx/rte/name") || path.equals("/gpx/wpt/name")
-          || path.equals("/gpx/trk/trkseg/trkpt/ele") || path.equals("/gpx/rte/rtept/ele")
-          || path.equals("/gpx/trk/trkseg/trkpt/time") || path.equals("/gpx/rte/rtept/time"))
-      {
-        capturePath = path;
+        captureDepth = depth;
         text.setLength(0);
+      }
+      default -> {}
       }
     }
 
     @Override
     public void characters(char[] ch, int start, int length)
     {
-      if (capturePath != null)
+      if (captureDepth >= 0)
       {
         text.append(ch, start, length);
       }
@@ -184,55 +213,50 @@ public final class GpxParser
     @Override
     public void endElement(String uri, String localName, String qName)
     {
-      if (path.equals(capturePath))
+      final int kind = stack[depth - 1];
+      if (depth-- == captureDepth)
       {
-        String value = text.toString().trim();
-        if (localName.equals("ele") && point != null)
+        captureDepth = -1;
+        final String value = text.toString().trim();
+        switch (kind)
         {
-          point.ele = number(value);
-        }
-        else if (localName.equals("time") && point != null)
+        case ELE -> point.ele = number(value);
+        case TIME -> point.timeMs = time(value);
+        case METADATA_NAME ->
         {
-          point.timeMs = time(value);
-        }
-        else if (!value.isEmpty())
-        {
-          if (path.equals("/gpx/metadata/name") && metadataName == null)
-          {
+          if (metadataName == null && !value.isEmpty())
             metadataName = value;
-          }
-          else if (path.equals("/gpx/trk/name") && trackCount == 1 && trackName == null)
-          {
-            trackName = value;
-          }
-          else if (path.equals("/gpx/rte/name") && routeCount == 1 && routeName == null)
-          {
-            routeName = value;
-          }
-          else if (path.equals("/gpx/wpt/name") && point != null)
-          {
-            point.name = value;
-          }
         }
-        capturePath = null;
+        case TRK_NAME ->
+        {
+          if (trackCount == 1 && trackName == null && !value.isEmpty())
+            trackName = value;
+        }
+        case RTE_NAME ->
+        {
+          if (routeCount == 1 && routeName == null && !value.isEmpty())
+            routeName = value;
+        }
+        case WPT_NAME -> point.name = value;
+        default -> {}
+        }
+        return;
       }
-      if (path.equals("/gpx/trk/trkseg/trkpt") || path.equals("/gpx/rte/rtept")
-          || path.equals("/gpx/wpt"))
+      if (kind == TRKPT || kind == RTEPT || kind == WPT)
       {
         if (point.valid())
         {
-          if (path.equals("/gpx/wpt"))
+          if (kind == WPT)
           {
             waypoints.add(new GpxTrack.Waypoint(point.lat, point.lon, point.name));
           }
           else
           {
-            (path.equals("/gpx/rte/rtept") ? routes : tracks).add(point);
+            (kind == RTEPT ? routes : tracks).add(point);
           }
         }
         point = null;
       }
-      path = path.substring(0, path.lastIndexOf('/'));
     }
 
     GpxTrack result()

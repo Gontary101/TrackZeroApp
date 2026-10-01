@@ -101,3 +101,19 @@ Approach changed: TrackZero host activity instead of hiding MwmActivity views (T
   1,293 m, LOOP); "Open with" VIEW intent of the 4.5 MB Massif Central traverse (1,437 km, point to point);
   favourite survives force-stop; Favorites filter; rename; delete removes index entry and GPX file.
 - Unit tests: 41 pass (GpxParserTest 10, RouteStatsTest 10 added).
+
+## Phase 7 — Route preview (B5, B6)
+
+- `base/TzRouteLayer` + SDK `Framework.nativeShowTrackLine/RemoveTrackLine`: the route as two drape subroutes
+  (glow + line) with a start ring, nothing persisted (D18). Drape: `RouteType::Track` width table, per-marker
+  depth slots, clamped join angle (fixes a native abort on U-turns), TrackZero `Track*` colours.
+- `routes/RouteGeometry` (2 m DP line, ≤ 600-pt profile, bounds) cached as `routes/<id>.geo` at import (D19);
+  `RouteStore.loadGeometry` reads the cache, rebuilding it from the GPX when missing. `GpxParser` handler now
+  tracks elements with an int stack instead of building path strings (cold parse of the 53k-point file on the
+  emulator 5.4 s → 3.4 s, debug build; ≈ 1.0 s non-debuggable). Preview load from cache: 12 ms.
+- `TzMap.showRect(…, paddingPx)` (D20); `screens/TzPreviewScreen` (B5 card: kind · starts {d} away, title,
+  DISTANCE/GAIN/HIGH POINT, compact profile, START RIDE → "Coming in phase 9"; B6 peek on pan/pinch, back after
+  1.5 s or on tap; star toggles favourite; back → ROUTES and removes the line).
+- Verified on the emulator: Clermont loop and the 1,437 km traverse frame inside the 24dp-padded area between the
+  top buttons and the card; line/glow/start ring match B5; panning collapses to the B6 peek and it returns;
+  back returns to B3 and the line is gone. Unit tests: 44 pass (RouteGeometryTest 3 added).

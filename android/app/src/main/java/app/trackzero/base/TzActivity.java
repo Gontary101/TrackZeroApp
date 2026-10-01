@@ -8,6 +8,7 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
+import android.view.MotionEvent;
 import androidx.activity.EdgeToEdge;
 import androidx.activity.SystemBarStyle;
 import androidx.activity.result.ActivityResultLauncher;
@@ -166,6 +167,13 @@ public class TzActivity extends BaseMwmFragmentActivity
       processIntent();
   }
 
+  @Override
+  public boolean dispatchTouchEvent(MotionEvent ev)
+  {
+    TzMap.dispatchTouch(ev);
+    return super.dispatchTouchEvent(ev);
+  }
+
   void setMapRenderingEnabled(boolean enabled)
   {
     mRenderingWanted = enabled;
@@ -197,6 +205,16 @@ public class TzActivity extends BaseMwmFragmentActivity
     final int h = mMapView.getHeight();
     if (w > 0 && h > 0)
       Framework.nativeSetVisibleRect(0, mVisibleTopPx, w, h - mVisibleBottomPx);
+  }
+
+  int visibleMapWidth()
+  {
+    return mMapView.getWidth();
+  }
+
+  int visibleMapHeight()
+  {
+    return mMapView.getHeight() - mVisibleTopPx - mVisibleBottomPx;
   }
 
   void setRulerOffset(int xPx, int yPx)

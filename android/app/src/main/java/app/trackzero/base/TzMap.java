@@ -1,6 +1,7 @@
 package app.trackzero.base;
 
 import android.location.Location;
+import android.view.MotionEvent;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import app.organicmaps.MwmApplication;
@@ -21,11 +22,18 @@ public final class TzMap
     void onFollowChanged(boolean following);
   }
 
+  /** Sees every touch on the screen before normal dispatch (e.g. to notice the rider panning the map). */
+  public interface TouchObserver
+  {
+    void onTouch(@NonNull MotionEvent e);
+  }
+
   private static final int NO_REQUEST = -1;
 
   @Nullable
   private static TzActivity sHost;
   private static final List<FollowListener> sFollowListeners = new ArrayList<>();
+  private static final List<TouchObserver> sTouchObservers = new ArrayList<>();
 
   // The core only exposes "switch to next mode" and reports the result asynchronously, so a follow request is
   // driven one step per mode change until the requested mode is reached.
@@ -110,10 +118,36 @@ public final class TzMap
       sHost.setVisibleMapArea(topPx, bottomPx);
   }
 
-  /** Frames the rect inside the area set by {@link #setVisibleArea}. */
-  public static void showRect(double minLat, double minLon, double maxLat, double maxLon)
+  /** Frames the rect inside the area set by {@link #setVisibleArea}, keeping {@code paddingPx} clear on every side. */
+  public static void showRect(double minLat, double minLon, double maxLat, double maxLon, int paddingPx)
   {
-    Framework.nativeShowRect(minLat, minLon, maxLat, maxLon, true);
+    if (sHost == null)
+      return;
+    final int w = sHost.visibleMapWidth();
+    final int h = sHost.visibleMapHeight();
+    if (w <= 2 * paddingPx || h <= 2 * paddingPx)
+      return;
+    // The engine fits a rect edge to edge, so grow the rect (in mercator, where the fit is linear) until the
+    // original one sits inside the padding.
+    final double minY = mercatorY(minLat);
+    final double maxY = mercatorY(maxLat);
+    final double scale = Math.max((maxLon - minLon) / (w - 2 * paddingPx), (maxY - minY) / (h - 2 * paddingPx));
+    final double cx = (minLon + maxLon) / 2;
+    final double cy = (minY + maxY) / 2;
+    final double hx = scale * w / 2;
+    final double hy = scale * h / 2;
+    Framework.nativeShowRect(latitude(cy - hy), cx - hx, latitude(cy + hy), cx + hx, true);
+  }
+
+  /** Mercator y in the core's units (degrees). */
+  private static double mercatorY(double lat)
+  {
+    return Math.toDegrees(Math.log(Math.tan(Math.PI / 4 + Math.toRadians(lat) / 2)));
+  }
+
+  private static double latitude(double mercatorY)
+  {
+    return Math.toDegrees(2 * Math.atan(Math.exp(Math.toRadians(mercatorY))) - Math.PI / 2);
   }
 
   /** Positions the scale ruler: its left and bottom edges, in pixels from the left and bottom of the map. */
@@ -128,6 +162,22 @@ public final class TzMap
   {
     if (sHost != null)
       sHost.setMapRenderingEnabled(on);
+  }
+
+  public static void addTouchObserver(@NonNull TouchObserver o)
+  {
+    sTouchObservers.add(o);
+  }
+
+  public static void removeTouchObserver(@NonNull TouchObserver o)
+  {
+    sTouchObservers.remove(o);
+  }
+
+  static void dispatchTouch(@NonNull MotionEvent e)
+  {
+    for (int i = 0; i < sTouchObservers.size(); i++)
+      sTouchObservers.get(i).onTouch(e);
   }
 
   @Nullable

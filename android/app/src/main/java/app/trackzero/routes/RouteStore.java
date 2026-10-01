@@ -10,6 +10,10 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import app.trackzero.TzIo;
 import app.trackzero.geo.DouglasPeucker;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -110,13 +114,32 @@ public final class RouteStore
     return new File(mDir, route.file);
   }
 
-  /** Parses the route's GPX for the preview / ride. Null if the file can't be read. */
-  public void loadTrack(@NonNull Route route, @NonNull TzIo.Callback<GpxTrack> callback)
+  /** The route prepared for the preview / ride, from its cache (rebuilt from the GPX if missing). Null if unreadable. */
+  public void loadGeometry(@NonNull Route route, @NonNull TzIo.Callback<RouteGeometry> callback)
   {
     TzIo.submit(() -> {
+      final File cache = geometryFile(route.id);
+      if (cache.exists())
+      {
+        try (DataInputStream in = new DataInputStream(new BufferedInputStream(new FileInputStream(cache))))
+        {
+          final RouteGeometry g = RouteGeometry.read(in);
+          if (g != null)
+            return g;
+        }
+        catch (IOException e)
+        {
+          Log.w(TAG, "Rebuilding " + cache, e);
+        }
+      }
       try (InputStream in = new FileInputStream(gpxFile(route)))
       {
-        return GpxParser.parse(in);
+        final GpxTrack track = GpxParser.parse(in);
+        if (track.size() < 2)
+          return null;
+        final RouteGeometry g = RouteGeometry.of(track);
+        saveGeometry(route.id, g);
+        return g;
       }
       catch (IOException e)
       {
@@ -161,6 +184,8 @@ public final class RouteStore
       save();
       //noinspection ResultOfMethodCallIgnored
       gpxFile(r).delete();
+      //noinspection ResultOfMethodCallIgnored
+      geometryFile(r.id).delete();
       notifyChanged();
     });
   }
@@ -228,13 +253,15 @@ public final class RouteStore
     }
 
     final RouteStats stats = RouteStats.compute(track.lat, track.lon, track.ele);
-    final int[] keep = DouglasPeucker.simplifyToMaxPoints(track.lat, track.lon, SILHOUETTE_POINTS);
+    final RouteGeometry geometry = RouteGeometry.of(track);
+    // From the already simplified line: the same shape at card size, for a fraction of the work.
+    final int[] keep = DouglasPeucker.simplifyToMaxPoints(geometry.lineLat, geometry.lineLon, SILHOUETTE_POINTS);
     final double[] silLat = new double[keep.length];
     final double[] silLon = new double[keep.length];
     for (int i = 0; i < keep.length; i++)
     {
-      silLat[i] = track.lat[keep[i]];
-      silLon[i] = track.lon[keep[i]];
+      silLat[i] = geometry.lineLat[keep[i]];
+      silLon[i] = geometry.lineLon[keep[i]];
     }
     final String file = "routes/" + id + ".gpx";
     if (!tmp.renameTo(new File(mDir, file)))
@@ -243,12 +270,42 @@ public final class RouteStore
       tmp.delete();
       return new ImportResult(null, ImportError.NOT_GPX);
     }
+    saveGeometry(id, geometry);
     final Route route = new Route(id, track.name != null ? track.name : displayName(uri), file, stats.distanceM,
                                   stats.gainM, stats.highM, stats.kind, false, System.currentTimeMillis(), 0, silLat,
                                   silLon);
     routes().add(0, route);
     save();
     return new ImportResult(route, null);
+  }
+
+  @NonNull
+  private File geometryFile(@NonNull String id)
+  {
+    return new File(mDir, "routes/" + id + ".geo");
+  }
+
+  /** The cache is derived data: on failure it is simply rebuilt on the next load. */
+  private void saveGeometry(@NonNull String id, @NonNull RouteGeometry g)
+  {
+    final File file = geometryFile(id);
+    final File tmp = new File(file.getPath() + ".tmp");
+    try (DataOutputStream out = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(tmp))))
+    {
+      g.write(out);
+    }
+    catch (IOException e)
+    {
+      Log.w(TAG, "Cannot cache " + file, e);
+      //noinspection ResultOfMethodCallIgnored
+      tmp.delete();
+      return;
+    }
+    if (!tmp.renameTo(file))
+    {
+      //noinspection ResultOfMethodCallIgnored
+      tmp.delete();
+    }
   }
 
   /** File name without extension, or "Route". */

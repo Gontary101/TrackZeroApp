@@ -73,6 +73,8 @@ void InterpolateByZoom(SubrouteConstPtr const & subroute, ScreenBase const & scr
     halfWidthInPixel = &kRouteHalfWidthInPixelCar;
   else if (subroute->m_routeType == RouteType::Transit)
     halfWidthInPixel = &kRouteHalfWidthInPixelTransit;
+  else if (subroute->m_routeType == RouteType::Track)
+    halfWidthInPixel = &kRouteHalfWidthInPixelTrack;
 
   halfWidth = InterpolateByZoomLevels(index, lerpCoef, *halfWidthInPixel);
   halfWidth *= static_cast<float>(df::VisualParams::Instance().GetVisualScale());

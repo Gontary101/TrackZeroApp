@@ -24,6 +24,8 @@
 #include "storage/storage_defines.hpp"
 #include "storage/storage_helpers.hpp"
 
+#include "drape_frontend/drape_engine.hpp"
+#include "drape_frontend/route_shape.hpp"
 #include "drape_frontend/user_event_stream.hpp"
 #include "drape_frontend/visual_params.hpp"
 
@@ -1806,6 +1808,80 @@ JNIEXPORT void JNICALL Java_app_organicmaps_sdk_Framework_nativeShowRect(JNIEnv 
 {
   m2::RectD const rect(mercator::FromLatLon(minLat, minLon), mercator::FromLatLon(maxLat, maxLon));
   frm()->ShowRect(rect, -1 /* maxScale */, animate, true /* useVisibleViewport */);
+}
+
+// TrackZero: draws a lat/lon polyline as a route line (not a bookmark, nothing is persisted): a 16dp glow under a
+// 5.5dp line, and a start ring. Returns the drape subroute ids for nativeRemoveTrackLine, or null when the engine
+// isn't running.
+JNIEXPORT jintArray JNICALL Java_app_organicmaps_sdk_Framework_nativeShowTrackLine(JNIEnv * env, jclass,
+                                                                                   jdoubleArray lats, jdoubleArray lons)
+{
+  auto engine = frm()->GetDrapeEngine();
+  jsize const n = env->GetArrayLength(lats);
+  if (engine == nullptr || n < 2)
+    return nullptr;
+
+  m2::PolylineD polyline;
+  jdouble * lat = env->GetDoubleArrayElements(lats, nullptr);
+  jdouble * lon = env->GetDoubleArrayElements(lons, nullptr);
+  for (jsize i = 0; i < n; ++i)
+    polyline.Add(mercator::FromLatLon(lat[i], lon[i]));
+  env->ReleaseDoubleArrayElements(lats, lat, JNI_ABORT);
+  env->ReleaseDoubleArrayElements(lons, lon, JNI_ABORT);
+
+  // RouteType::Track is 8dp wide on each side at every zoom; the line is capped to 5.5dp.
+  float constexpr kTrackHalfWidthDp = 8.0f;
+  float constexpr kLineWidthDp = 5.5f;
+  auto const makeSubroute = [&polyline](df::ColorConstant const & color, double depthIndex)
+  {
+    auto subroute = std::make_unique<df::Subroute>();
+    subroute->m_routeType = df::RouteType::Track;
+    subroute->m_polyline = polyline;
+    subroute->m_baseDepthIndex = depthIndex;
+    // Same colour inside and out: the shader's outline band would otherwise show as a stripe.
+    subroute->AddStyle(df::SubrouteStyle(color, color));
+    // The whole line is real route: no "fake" (grey) head or tail. Distances are in mercator units.
+    subroute->m_headFakeDistance = -1.0;
+    subroute->m_tailFakeDistance = polyline.GetLength() + 1.0;
+    return subroute;
+  };
+
+  auto glow = makeSubroute("TrackGlow", 0.0);
+  auto line = makeSubroute("TrackLine", 1.0);
+  line->m_maxPixelWidth = kLineWidthDp * static_cast<float>(df::VisualParams::Instance().GetVisualScale());
+
+  // Start ring: 13dp black disc with a 3dp mint ring and a 4.5dp mint dot. Markers stack in list order and are
+  // scaled by the line's half width.
+  auto const addCircle = [&line, &polyline](df::ColorConstant const & color, float radiusDp)
+  {
+    df::SubrouteMarker m;
+    m.m_position = polyline.Front();
+    m.m_colors = {color};
+    m.m_innerColor = color;
+    m.m_scale = radiusDp / (kLineWidthDp / 2);
+    line->m_markers.push_back(std::move(m));
+  };
+  addCircle("TrackLine", 14.5f);
+  addCircle("TrackMarkerCenter", 11.5f);
+  addCircle("TrackLine", 4.5f);
+
+  jint const ids[] = {static_cast<jint>(engine->AddSubroute(df::SubrouteConstPtr(glow.release()))),
+                      static_cast<jint>(engine->AddSubroute(df::SubrouteConstPtr(line.release())))};
+  jintArray result = env->NewIntArray(2);
+  env->SetIntArrayRegion(result, 0, 2, ids);
+  return result;
+}
+
+JNIEXPORT void JNICALL Java_app_organicmaps_sdk_Framework_nativeRemoveTrackLine(JNIEnv * env, jclass, jintArray ids)
+{
+  auto engine = frm()->GetDrapeEngine();
+  if (engine == nullptr)
+    return;
+  jsize const n = env->GetArrayLength(ids);
+  jint * id = env->GetIntArrayElements(ids, nullptr);
+  for (jsize i = 0; i < n; ++i)
+    engine->RemoveSubroute(static_cast<dp::DrapeID>(id[i]), false /* deactivateFollowing */);
+  env->ReleaseIntArrayElements(ids, id, JNI_ABORT);
 }
 
 JNIEXPORT jboolean JNICALL Java_app_organicmaps_sdk_Framework_nativeIsRouteFinished(JNIEnv * env, jclass)

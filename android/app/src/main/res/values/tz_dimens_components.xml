@@ -76,4 +76,10 @@
   <dimen name="tz_empty_cta_h">60dp</dimen>
   <dimen name="tz_empty_cta_pad">28dp</dimen>
   <dimen name="tz_empty_bottom_pad">200dp</dimen>
+
+  <!-- B5 / B6 -->
+  <dimen name="tz_preview_card_pad">20dp</dimen>
+  <dimen name="tz_preview_profile_h">56dp</dimen>
+  <dimen name="tz_preview_peek_pad_start">20dp</dimen>
+  <dimen name="tz_text_26">26sp</dimen>
 </resources>

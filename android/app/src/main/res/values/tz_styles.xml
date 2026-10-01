@@ -146,4 +146,27 @@
     <item name="android:fontFamily">@font/barlow_bold</item>
     <item name="android:textSize">@dimen/tz_text_24</item>
   </style>
+
+  <style name="TzText.PreviewTitle">
+    <item name="android:fontFamily">@font/barlow_bold</item>
+    <item name="android:textSize">@dimen/tz_text_26</item>
+    <item name="android:lineSpacingMultiplier">1.1</item>
+  </style>
+  <style name="TzText.PeekTitle">
+    <item name="android:fontFamily">@font/barlow_bold</item>
+    <item name="android:textSize">@dimen/tz_text_17</item>
+  </style>
+  <style name="TzText.PeekStats">
+    <item name="android:fontFamily">@font/barlow_condensed_semibold</item>
+    <item name="android:textSize">@dimen/tz_text_18</item>
+    <item name="android:textColor">@color/tz_text2</item>
+  </style>
+  <!-- 56dp floating map button (B5 back / star, R1 locate) -->
+  <style name="TzMapButton">
+    <item name="android:layout_width">@dimen/tz_map_btn</item>
+    <item name="android:layout_height">@dimen/tz_map_btn</item>
+    <item name="android:background">@drawable/tz_bg_surface2_r18</item>
+    <item name="android:elevation">@dimen/tz_elev2</item>
+    <item name="tint">@color/tz_text1</item>
+  </style>
 </resources>
