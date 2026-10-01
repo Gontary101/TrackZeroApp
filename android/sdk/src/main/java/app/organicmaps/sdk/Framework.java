@@ -339,6 +339,10 @@ public class Framework
 
   public static native void nativeSetVisibleRect(int left, int top, int right, int bottom);
 
+  /// TrackZero: frames a lat/lon rect inside the visible rect set by nativeSetVisibleRect().
+  public static native void nativeShowRect(double minLat, double minLon, double maxLat, double maxLon,
+                                           boolean animate);
+
   // Navigation.
   public static native boolean nativeIsRouteFinished();
 

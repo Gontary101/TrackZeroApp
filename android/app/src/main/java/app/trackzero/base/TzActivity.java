@@ -1,0 +1,299 @@
+package app.trackzero.base;
+
+import static android.Manifest.permission.ACCESS_COARSE_LOCATION;
+import static android.Manifest.permission.ACCESS_FINE_LOCATION;
+
+import android.app.Activity;
+import android.content.Intent;
+import android.graphics.Color;
+import android.os.Bundle;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsControllerCompat;
+import app.organicmaps.MwmActivity;
+import app.organicmaps.MwmApplication;
+import app.organicmaps.R;
+import app.organicmaps.base.BaseMwmFragmentActivity;
+import app.organicmaps.sdk.Framework;
+import app.organicmaps.sdk.Map;
+import app.organicmaps.sdk.MapController;
+import app.organicmaps.sdk.MapMode;
+import app.organicmaps.sdk.MapRenderingListener;
+import app.organicmaps.sdk.MapView;
+import app.organicmaps.sdk.PlacePageActivationListener;
+import app.organicmaps.sdk.location.LocationHelper;
+import app.organicmaps.sdk.location.LocationState;
+import app.organicmaps.sdk.settings.UnitLocale;
+import app.organicmaps.sdk.util.LocationUtils;
+import app.organicmaps.sdk.widget.placepage.PlacePageData;
+import app.organicmaps.util.ThemeSwitcher;
+import app.trackzero.TzConfig;
+import app.trackzero.TzNavigator;
+
+/**
+ * TrackZero's main activity: a full-screen CoMaps map with the TrackZero overlay ({@code tz_root}) on top.
+ * Replaces MwmActivity when {@link TzConfig#ENABLED}, so none of the base-app chrome is ever created.
+ */
+public class TzActivity extends BaseMwmFragmentActivity
+    implements MapRenderingListener, LocationState.ModeChangeListener, PlacePageActivationListener
+{
+  private static final String STATE_PERMISSION_ASKED = "tz_permission_asked";
+  private static final String EXTRA_CONSUMED = "tz.extra.intent_consumed";
+
+  @SuppressWarnings("NotNullFieldNotInitialized")
+  @NonNull
+  private MapController mMapController;
+  @SuppressWarnings("NotNullFieldNotInitialized")
+  @NonNull
+  private MapView mMapView;
+  @Nullable
+  private ActivityResultLauncher<String[]> mLocationPermissionRequest;
+  private boolean mPermissionAsked;
+
+  // Map drawing runs only while the activity is resumed AND no opaque TrackZero screen covers the map.
+  private boolean mResumed;
+  private boolean mRenderingWanted = true;
+  private boolean mMapResumed;
+
+  private int mVisibleTopPx;
+  private int mVisibleBottomPx;
+
+  /** The activity that shows the map: TrackZero's when enabled, else the base app's. */
+  @NonNull
+  public static Class<? extends Activity> mapActivityClass()
+  {
+    return TzConfig.ENABLED ? TzActivity.class : MwmActivity.class;
+  }
+
+  @Override
+  protected void onSafeCreate(@Nullable Bundle savedInstanceState)
+  {
+    super.onSafeCreate(savedInstanceState);
+    if (savedInstanceState != null)
+      mPermissionAsked = savedInstanceState.getBoolean(STATE_PERMISSION_ASKED);
+
+    setUpEdgeToEdge();
+    setContentView(R.layout.tz_activity);
+
+    mLocationPermissionRequest = registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(),
+                                                           result -> onLocationPermissionsResult());
+
+    final Intent intent = getIntent();
+    final boolean launchByDeepLink = intent != null && !intent.hasCategory(Intent.CATEGORY_LAUNCHER);
+    mMapView = findViewById(R.id.tz_map);
+    mMapController = new MapController(mMapView, locationHelper(), this, null, launchByDeepLink);
+    mMapView.addOnLayoutChangeListener((v, l, t, r, b, ol, ot, or, ob) -> applyVisibleArea());
+
+    TzMap.attach(this);
+    TzNavigator.attach(this, findViewById(R.id.tz_root));
+
+    // Not called again when the activity is recreated with an already running engine.
+    if (Map.isEngineCreated())
+      onRenderingInitializationFinished();
+  }
+
+  private void setUpEdgeToEdge()
+  {
+    WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
+    getWindow().setStatusBarColor(Color.TRANSPARENT);
+    getWindow().setNavigationBarColor(Color.TRANSPARENT);
+    final WindowInsetsControllerCompat insets = WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());
+    insets.setAppearanceLightStatusBars(false);
+    insets.setAppearanceLightNavigationBars(false);
+  }
+
+  @Override
+  protected void onSaveInstanceState(@NonNull Bundle outState)
+  {
+    super.onSaveInstanceState(outState);
+    outState.putBoolean(STATE_PERMISSION_ASKED, mPermissionAsked);
+  }
+
+  @Override
+  protected void onStart()
+  {
+    super.onStart();
+    mMapController.onStart(this);
+    Framework.nativePlacePageActivationListener(this);
+    LocationState.nativeSetListener(this);
+  }
+
+  @Override
+  protected void onResume()
+  {
+    super.onResume();
+    mResumed = true;
+    ThemeSwitcher.INSTANCE.restart(mMapController.isRenderingActive());
+    updateMapRendering();
+  }
+
+  @Override
+  protected void onPause()
+  {
+    mResumed = false;
+    updateMapRendering();
+    super.onPause();
+  }
+
+  @Override
+  protected void onStop()
+  {
+    super.onStop();
+    Framework.nativeRemovePlacePageActivationListener(this);
+    LocationState.nativeRemoveListener();
+    mMapController.onStop(this);
+  }
+
+  @Override
+  protected void onSafeDestroy()
+  {
+    super.onSafeDestroy();
+    mMapController.onDestroy(this);
+    if (mLocationPermissionRequest != null)
+      mLocationPermissionRequest.unregister();
+    mLocationPermissionRequest = null;
+    TzNavigator.detach(this);
+    TzMap.detach(this);
+  }
+
+  @Override
+  protected void onNewIntent(Intent intent)
+  {
+    super.onNewIntent(intent);
+    setIntent(intent);
+    if (mMapController.isRenderingActive())
+      processIntent();
+  }
+
+  void setMapRenderingEnabled(boolean enabled)
+  {
+    mRenderingWanted = enabled;
+    updateMapRendering();
+  }
+
+  private void updateMapRendering()
+  {
+    final boolean run = mResumed && mRenderingWanted;
+    if (run == mMapResumed)
+      return;
+    mMapResumed = run;
+    if (run)
+      mMapController.onResume(this);
+    else
+      mMapController.onPause(this);
+  }
+
+  void setVisibleMapArea(int topPx, int bottomPx)
+  {
+    mVisibleTopPx = topPx;
+    mVisibleBottomPx = bottomPx;
+    applyVisibleArea();
+  }
+
+  private void applyVisibleArea()
+  {
+    final int w = mMapView.getWidth();
+    final int h = mMapView.getHeight();
+    if (w > 0 && h > 0)
+      Framework.nativeSetVisibleRect(0, mVisibleTopPx, w, h - mVisibleBottomPx);
+  }
+
+  void setRulerOffset(int xPx, int yPx)
+  {
+    mMapController.updateBottomWidgetsOffset(xPx, yPx);
+  }
+
+  @NonNull
+  private LocationHelper locationHelper()
+  {
+    return MwmApplication.from(this).getLocationHelper();
+  }
+
+  private void processIntent()
+  {
+    final Intent intent = getIntent();
+    if (intent == null || intent.getBooleanExtra(EXTRA_CONSUMED, false))
+      return;
+    intent.putExtra(EXTRA_CONSUMED, true);
+
+    // "Explore" from the map downloader.
+    final String countryId = intent.getStringExtra(MwmActivity.EXTRA_COUNTRY_ID);
+    if (countryId != null)
+      Framework.nativeShowCountry(countryId, false);
+  }
+
+  // MapRenderingListener
+
+  @Override
+  public void onRenderingCreated()
+  {
+    UnitLocale.initializeCurrentUnits();
+  }
+
+  @Override
+  public void onRenderingInitializationFinished()
+  {
+    // Dark first: only the dark cycling style is shipped (ThemeSwitcher is dark-only when TrackZero is enabled).
+    ThemeSwitcher.INSTANCE.restart(true);
+    // Needs the engine. Persisted by the core, so later launches start in the cycling style directly.
+    MapMode.set(MapMode.Cycling);
+    applyVisibleArea();
+    processIntent();
+  }
+
+  // LocationState.ModeChangeListener: the core drives location updates through position-mode changes.
+
+  @Override
+  public void onMyPositionModeChanged(int newMode)
+  {
+    final LocationHelper locationHelper = locationHelper();
+    if (newMode == LocationState.NOT_FOLLOW_NO_POSITION)
+    {
+      if (locationHelper.isActive())
+        locationHelper.stop();
+    }
+    else if (!LocationUtils.checkLocationPermission(this))
+    {
+      // Calls back with NOT_FOLLOW_NO_POSITION.
+      LocationState.nativeOnLocationError(LocationState.ERROR_DENIED);
+      requestLocationPermission();
+    }
+    else
+    {
+      locationHelper.restartWithNewMode();
+    }
+    TzMap.onModeChanged(newMode);
+  }
+
+  /** Asks at most once per activity instance so a refusal is never nagged about. */
+  void requestLocationPermission()
+  {
+    if (mPermissionAsked || mLocationPermissionRequest == null)
+      return;
+    mPermissionAsked = true;
+    mLocationPermissionRequest.launch(new String[] {ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION});
+  }
+
+  private void onLocationPermissionsResult()
+  {
+    if (LocationUtils.checkLocationPermission(this))
+      LocationState.nativeStartPendingPositionMode();
+  }
+
+  // PlacePageActivationListener: TrackZero has no place page, tapping a POI does nothing.
+
+  @Override
+  public void onPlacePageActivated(@NonNull PlacePageData data)
+  {
+    Framework.nativeDeactivatePopup();
+  }
+
+  @Override
+  public void onPlacePageDeactivated() {}
+
+  @Override
+  public void onSwitchFullScreenMode() {}
+}

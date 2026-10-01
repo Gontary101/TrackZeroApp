@@ -27,6 +27,7 @@ import app.organicmaps.sdk.util.StringUtils;
 import app.organicmaps.util.UiUtils;
 import app.organicmaps.util.bottomsheet.MenuBottomSheetFragment;
 import app.organicmaps.util.bottomsheet.MenuBottomSheetItem;
+import app.trackzero.base.TzActivity;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.textview.MaterialTextView;
 import java.util.ArrayList;
@@ -107,7 +108,7 @@ class DownloaderAdapter extends RecyclerView.Adapter<DownloaderAdapter.ViewHolde
 
   private void onExploreActionSelected(CountryItem item, DownloaderAdapter adapter)
   {
-    Intent intent = new Intent(adapter.mActivity, MwmActivity.class);
+    Intent intent = new Intent(adapter.mActivity, TzActivity.mapActivityClass());
     intent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
     intent.putExtra(MwmActivity.EXTRA_COUNTRY_ID, item.id);
     adapter.mActivity.startActivity(intent);

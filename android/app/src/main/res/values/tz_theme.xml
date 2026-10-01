@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <style name="TzTheme" parent="Theme.MaterialComponents.NoActionBar">
+    <item name="android:windowBackground">@color/tz_bg</item>
+    <item name="android:colorBackground">@color/tz_bg</item>
+    <item name="colorPrimary">@color/tz_mint</item>
+    <item name="colorOnPrimary">@color/tz_on_mint</item>
+    <item name="colorAccent">@color/tz_mint</item>
+    <item name="colorSurface">@color/tz_surface1</item>
+    <item name="colorOnSurface">@color/tz_text1</item>
+    <item name="android:textColorPrimary">@color/tz_text1</item>
+    <item name="android:textColorSecondary">@color/tz_text2</item>
+  </style>
+</resources>

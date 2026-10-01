@@ -14,6 +14,7 @@ import app.organicmaps.sdk.MapAppearance;
 import app.organicmaps.sdk.routing.RoutingController;
 import app.organicmaps.sdk.util.Config;
 import app.organicmaps.sdk.util.concurrency.UiThread;
+import app.trackzero.TzConfig;
 import java.util.Calendar;
 
 public enum ThemeSwitcher
@@ -65,6 +66,16 @@ public enum ThemeSwitcher
   @androidx.annotation.UiThread
   public void restart(boolean isRendererActive)
   {
+    if (TzConfig.ENABLED)
+    {
+      // TrackZero is dark-only: dark UI theme and dark map style, regardless of time or settings.
+      // setTheme() skips the map when it has to recreate the activity, so apply the map appearance here too.
+      UiThread.cancelDelayedTasks(mAutoThemeChecker);
+      setTheme(Config.UiTheme.NIGHT);
+      SetMapAppearance(MapAppearance.Dark);
+      return;
+    }
+
     String theme = Config.UiTheme.getUiThemeSettings();
     if (ThemeUtils.isAutoTheme() || ThemeUtils.isNavAutoTheme())
     {

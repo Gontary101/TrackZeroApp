@@ -1,5 +1,6 @@
 @import("../../default/dark/colors.mapcss");
+@import("../../trackzero/dark/colors.mapcss");
 
 @import("../include/main.mapcss");
 
-@import("../../default/dark/drape_colors.mapcss");
+@import("../../trackzero/dark/drape_colors.mapcss");

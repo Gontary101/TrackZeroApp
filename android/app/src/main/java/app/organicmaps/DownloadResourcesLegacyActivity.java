@@ -40,6 +40,7 @@ import app.organicmaps.sdk.util.StringUtils;
 import app.organicmaps.util.UiUtils;
 import app.organicmaps.util.Utils;
 import app.organicmaps.util.WindowInsetUtils.PaddingInsetsListener;
+import app.trackzero.base.TzActivity;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.checkbox.MaterialCheckBox;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
@@ -361,7 +362,7 @@ public class DownloadResourcesLegacyActivity extends BaseMwmFragmentActivity
     // Re-use original intent to retain all flags and payload.
     // https://github.com/organicmaps/organicmaps/issues/6944
     final Intent intent = Objects.requireNonNull(getIntent());
-    intent.setComponent(new ComponentName(this, MwmActivity.class));
+    intent.setComponent(new ComponentName(this, TzActivity.mapActivityClass()));
 
     // Disable animation because MwmActivity should appear exactly over this one
     intent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION | Intent.FLAG_ACTIVITY_CLEAR_TOP);

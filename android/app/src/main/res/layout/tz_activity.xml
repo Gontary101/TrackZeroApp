@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+  android:layout_width="match_parent"
+  android:layout_height="match_parent"
+  android:background="@color/tz_bg">
+  <app.organicmaps.sdk.MapView
+    android:id="@+id/tz_map"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent" />
+  <!-- Hosts every TrackZero screen. Touches fall through to the map where no TrackZero view is hit. -->
+  <FrameLayout
+    android:id="@+id/tz_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:clipChildren="false"
+    android:fitsSystemWindows="false" />
+</FrameLayout>
