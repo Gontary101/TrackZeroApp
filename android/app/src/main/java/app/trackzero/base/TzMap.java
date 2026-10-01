@@ -54,28 +54,47 @@ public final class TzMap
       sHost = null;
   }
 
+  // Screens may call in before the map engine exists (e.g. the app opening straight on a ride): camera calls are
+  // dropped until then, and a follow request is kept and applied by onEngineReady().
+
   public static void zoomIn()
   {
-    Map.zoomIn();
+    if (Map.isEngineCreated())
+      Map.zoomIn();
   }
 
   public static void zoomOut()
   {
-    Map.zoomOut();
+    if (Map.isEngineCreated())
+      Map.zoomOut();
   }
 
-  /** Zooms around the rider (keeps follow mode). No-op until a position is known. */
-  public static void setZoom(int level)
+  /**
+   * Zooms to a level like a pinch: around the rider while following (follow mode stays on), else around the
+   * visible centre. Returns false (nothing done) until the map is ready.
+   */
+  public static boolean setZoom(int level)
   {
-    final Location loc = riderLocation();
-    if (loc != null)
-      Framework.nativeZoomToPoint(loc.getLatitude(), loc.getLongitude(), level, true);
+    final int current = zoom();
+    if (current <= 0)
+      return false;
+    // Band changes animate; a long way (first zoom of a ride) jumps, as an animation would be cut by follow updates.
+    if (current != level)
+      Framework.nativeScale(Math.pow(2, level - current), Math.abs(level - current) <= 2);
+    return true;
+  }
+
+  /** The current zoom level, 0 until the map is ready. */
+  public static int zoom()
+  {
+    return Map.isEngineCreated() ? Framework.nativeGetDrawScale() : 0;
   }
 
   /** Centres the map on a point at a zoom level (no animation). */
   public static void centerOn(double lat, double lon, int zoom)
   {
-    Framework.nativeSetViewportCenter(lat, lon, zoom);
+    if (Map.isEngineCreated())
+      Framework.nativeSetViewportCenter(lat, lon, zoom);
   }
 
   public static void followRider(boolean headingUp)
@@ -83,13 +102,21 @@ public final class TzMap
     sRequestedMode = headingUp ? LocationState.FOLLOW_AND_ROTATE : LocationState.FOLLOW;
     // FOLLOW -> FOLLOW_AND_ROTATE is silently refused until a heading is known; a new request retries.
     sSwitchPending = false;
-    step(LocationState.getMode());
+    if (Map.isEngineCreated())
+      step(LocationState.getMode());
   }
 
   public static void stopFollowing()
   {
     sRequestedMode = NO_REQUEST;
-    Framework.nativeStopLocationFollow();
+    if (Map.isEngineCreated())
+      Framework.nativeStopLocationFollow();
+  }
+
+  static void onEngineReady()
+  {
+    step(LocationState.getMode());
+    TzRouteLayer.onEngineReady();
   }
 
   public static boolean isFollowing()
@@ -121,7 +148,7 @@ public final class TzMap
   /** Frames the rect inside the area set by {@link #setVisibleArea}, keeping {@code paddingPx} clear on every side. */
   public static void showRect(double minLat, double minLon, double maxLat, double maxLon, int paddingPx)
   {
-    if (sHost == null)
+    if (sHost == null || !Map.isEngineCreated())
       return;
     final int w = sHost.visibleMapWidth();
     final int h = sHost.visibleMapHeight();

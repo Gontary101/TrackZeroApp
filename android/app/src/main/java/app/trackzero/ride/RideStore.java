@@ -5,6 +5,7 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import app.trackzero.TzIo;
+import app.trackzero.geo.DouglasPeucker;
 import app.trackzero.routes.RouteStore;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -27,6 +28,7 @@ import org.json.JSONException;
 public final class RideStore
 {
   private static final String TAG = "TzRideStore";
+  private static final int SILHOUETTE_POINTS = 200;
 
   /** A finished ride handed over for saving; the track is no longer modified. */
   static final class Finished
@@ -132,8 +134,9 @@ public final class RideStore
       final RideStats.Snapshot t = f.totals;
       final long movingS = t.movingMs / 1000;
       final double avgKmh = movingS > 0 ? t.distanceM / movingS * 3.6 : 0;
+      final double[][] sil = silhouette(f.segments);
       final Ride ride = new Ride(id, f.routeId, f.name, file, f.startedAt, f.endedAt, movingS, t.distanceM,
-                                 t.gainM, avgKmh, t.maxKmh, t.maxGradePct);
+                                 t.gainM, avgKmh, t.maxKmh, t.maxGradePct, sil[0], sil[1]);
       rides().add(0, ride);
       saveIndex();
       //noinspection ResultOfMethodCallIgnored
@@ -143,6 +146,54 @@ public final class RideStore
       notifyChanged();
       return ride;
     }, callback);
+  }
+
+  public void find(@NonNull String id, @NonNull TzIo.Callback<Ride> callback)
+  {
+    TzIo.submit(() -> {
+      for (Ride r : rides())
+        if (r.id.equals(id))
+          return r;
+      return null;
+    }, callback);
+  }
+
+  @NonNull
+  public File gpxFile(@NonNull Ride ride)
+  {
+    return new File(mDir, ride.file);
+  }
+
+  /** {lat[], lon[]}: the whole track (segments joined) simplified to at most 200 points. */
+  @NonNull
+  private static double[][] silhouette(@NonNull List<List<RideTrack.Point>> segments)
+  {
+    int n = 0;
+    for (List<RideTrack.Point> s : segments)
+      n += s.size();
+    final double[] lat = new double[n];
+    final double[] lon = new double[n];
+    int i = 0;
+    for (List<RideTrack.Point> s : segments)
+    {
+      for (RideTrack.Point p : s)
+      {
+        lat[i] = p.lat;
+        lon[i] = p.lon;
+        i++;
+      }
+    }
+    if (n < 2)
+      return new double[][] {lat, lon};
+    final int[] keep = DouglasPeucker.simplifyToMaxPoints(lat, lon, SILHOUETTE_POINTS);
+    final double[] sLat = new double[keep.length];
+    final double[] sLon = new double[keep.length];
+    for (int k = 0; k < keep.length; k++)
+    {
+      sLat[k] = lat[keep[k]];
+      sLon[k] = lon[keep[k]];
+    }
+    return new double[][] {sLat, sLon};
   }
 
   // ---- Journal of the ride in progress ----

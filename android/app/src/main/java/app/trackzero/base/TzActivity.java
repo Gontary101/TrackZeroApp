@@ -2,19 +2,24 @@ package app.trackzero.base;
 
 import static android.Manifest.permission.ACCESS_COARSE_LOCATION;
 import static android.Manifest.permission.ACCESS_FINE_LOCATION;
+import static android.Manifest.permission.POST_NOTIFICATIONS;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.MotionEvent;
+import android.widget.Toast;
 import androidx.activity.EdgeToEdge;
 import androidx.activity.SystemBarStyle;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
 import app.organicmaps.MwmActivity;
 import app.organicmaps.MwmApplication;
 import app.organicmaps.R;
@@ -55,6 +60,10 @@ public class TzActivity extends BaseMwmFragmentActivity
   private MapView mMapView;
   @Nullable
   private ActivityResultLauncher<String[]> mLocationPermissionRequest;
+  @Nullable
+  private ActivityResultLauncher<String[]> mRidePermissionRequest;
+  @Nullable
+  private Runnable mOnRidePermitted;
   private boolean mPermissionAsked;
 
   // Map drawing runs only while the activity is resumed AND no opaque TrackZero screen covers the map.
@@ -84,10 +93,14 @@ public class TzActivity extends BaseMwmFragmentActivity
 
     mLocationPermissionRequest = registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(),
                                                            result -> onLocationPermissionsResult());
+    mRidePermissionRequest = registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(),
+                                                       result -> onRidePermissionsResult());
 
     final Intent intent = getIntent();
     final boolean launchByDeepLink = intent != null && !intent.hasCategory(Intent.CATEGORY_LAUNCHER);
     mMapView = findViewById(R.id.tz_map);
+    // No compass in TrackZero's map UI; the ride map is heading-up and says so with the arrow.
+    Map.setCompassEnabled(false);
     mMapController = new MapController(mMapView, locationHelper(), this, null, launchByDeepLink);
     mMapView.addOnLayoutChangeListener((v, l, t, r, b, ol, ot, or, ob) -> applyVisibleArea());
 
@@ -157,6 +170,9 @@ public class TzActivity extends BaseMwmFragmentActivity
     if (mLocationPermissionRequest != null)
       mLocationPermissionRequest.unregister();
     mLocationPermissionRequest = null;
+    if (mRidePermissionRequest != null)
+      mRidePermissionRequest.unregister();
+    mRidePermissionRequest = null;
     TzNavigator.detach(this);
     TzMap.detach(this);
   }
@@ -270,6 +286,7 @@ public class TzActivity extends BaseMwmFragmentActivity
     // Needs the engine. Persisted by the core, so later launches start in the cycling style directly.
     MapMode.set(MapMode.Cycling);
     applyVisibleArea();
+    TzMap.onEngineReady();
     processIntent();
   }
 
@@ -304,6 +321,45 @@ public class TzActivity extends BaseMwmFragmentActivity
       return;
     mPermissionAsked = true;
     mLocationPermissionRequest.launch(new String[] {ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION});
+  }
+
+  /**
+   * Runs {@code onGranted} once precise location is allowed, asking for it (and, on Android 13+, for the ride
+   * notification) first if needed. A refused notification does not stop the ride.
+   */
+  void requestRidePermissions(@NonNull Runnable onGranted)
+  {
+    final boolean location = ContextCompat.checkSelfPermission(this, ACCESS_FINE_LOCATION)
+                             == PackageManager.PERMISSION_GRANTED;
+    final boolean notifications = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU
+                                  || ContextCompat.checkSelfPermission(this, POST_NOTIFICATIONS)
+                                         == PackageManager.PERMISSION_GRANTED;
+    if (location && notifications)
+    {
+      onGranted.run();
+      return;
+    }
+    if (mRidePermissionRequest == null)
+      return;
+    mOnRidePermitted = onGranted;
+    mRidePermissionRequest.launch(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+                                      ? new String[] {ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION, POST_NOTIFICATIONS}
+                                      : new String[] {ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION});
+  }
+
+  private void onRidePermissionsResult()
+  {
+    final Runnable onGranted = mOnRidePermitted;
+    mOnRidePermitted = null;
+    if (ContextCompat.checkSelfPermission(this, ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED)
+    {
+      if (onGranted != null)
+        onGranted.run();
+    }
+    else
+    {
+      Toast.makeText(this, R.string.tz_ride_needs_location, Toast.LENGTH_LONG).show();
+    }
   }
 
   private void onLocationPermissionsResult()

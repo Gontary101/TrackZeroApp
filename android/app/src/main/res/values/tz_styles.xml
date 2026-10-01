@@ -169,4 +169,11 @@
     <item name="android:elevation">@dimen/tz_elev2</item>
     <item name="tint">@color/tz_text1</item>
   </style>
+
+  <!-- Ride controls sheet header: "1:42:18 · 38.2 km" -->
+  <style name="TzText.SheetSummary">
+    <item name="android:fontFamily">@font/barlow_condensed_semibold</item>
+    <item name="android:textSize">@dimen/tz_text_20</item>
+    <item name="android:textColor">@color/tz_text2</item>
+  </style>
 </resources>

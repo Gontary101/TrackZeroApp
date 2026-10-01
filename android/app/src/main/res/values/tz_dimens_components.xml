@@ -82,4 +82,31 @@
   <dimen name="tz_preview_profile_h">56dp</dimen>
   <dimen name="tz_preview_peek_pad_start">20dp</dimen>
   <dimen name="tz_text_26">26sp</dimen>
+  <!-- R8 Ride saved -->
+  <dimen name="tz_summary_track_h">220dp</dimen>
+  <dimen name="tz_text_36">36sp</dimen>
+
+  <!-- Ride screen (R1–R7) -->
+  <dimen name="tz_ride_header_h">40dp</dimen>
+  <dimen name="tz_ride_header_pad">20dp</dimen>
+  <dimen name="tz_ride_hero_area_h">300dp</dimen>
+  <dimen name="tz_ride_hero_unit_gap">10dp</dimen>
+  <dimen name="tz_ride_cell_pad_v">18dp</dimen>
+  <dimen name="tz_ride_cell_pad_h">20dp</dimen>
+  <dimen name="tz_ride_cell_gap">10dp</dimen>
+  <dimen name="tz_ride_pill_pad">16dp</dimen>
+  <dimen name="tz_ride_above_handle">8dp</dimen>
+  <dimen name="tz_ride_resume_above_handle">12dp</dimen>
+  <dimen name="tz_ride_profile_h">300dp</dimen>
+  <dimen name="tz_ride_profile_pad">20dp</dimen>
+  <dimen name="tz_sheet_grabber_w">44dp</dimen>
+  <dimen name="tz_sheet_grabber_h">5dp</dimen>
+  <dimen name="tz_sheet_grabber_r">3dp</dimen>
+  <dimen name="tz_sheet_pad_top">12dp</dimen>
+  <dimen name="tz_sheet_header_pad">4dp</dimen>
+  <dimen name="tz_sheet_header_pad_bottom">6dp</dimen>
+  <dimen name="tz_text_20">20sp</dimen>
+  <dimen name="tz_summary_track_box">176dp</dimen>
+  <dimen name="tz_silhouette_start_r">5dp</dimen>
+  <dimen name="tz_silhouette_start_stroke">2dp</dimen>
 </resources>

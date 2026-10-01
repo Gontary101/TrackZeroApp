@@ -2,6 +2,7 @@ package app.trackzero.ride;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -25,9 +26,15 @@ public final class Ride
   public final double avgKmh;
   public final double maxKmh;
   public final double maxGrade;
+  /** At most 200 simplified points of the track, for thumbnails without parsing the GPX. */
+  @NonNull
+  public final double[] silLat;
+  @NonNull
+  public final double[] silLon;
 
   Ride(@NonNull String id, @Nullable String routeId, @NonNull String name, @NonNull String file, long startedAt,
-       long endedAt, long movingS, double distanceM, double gainM, double avgKmh, double maxKmh, double maxGrade)
+       long endedAt, long movingS, double distanceM, double gainM, double avgKmh, double maxKmh, double maxGrade,
+       @NonNull double[] silLat, @NonNull double[] silLon)
   {
     this.id = id;
     this.routeId = routeId;
@@ -41,11 +48,19 @@ public final class Ride
     this.avgKmh = avgKmh;
     this.maxKmh = maxKmh;
     this.maxGrade = maxGrade;
+    this.silLat = silLat;
+    this.silLon = silLon;
   }
 
   @NonNull
   JSONObject toJson() throws JSONException
   {
+    final JSONArray sil = new JSONArray();
+    for (int i = 0; i < silLat.length; i++)
+    {
+      sil.put(Math.round(silLat[i] * 1e5) / 1e5);
+      sil.put(Math.round(silLon[i] * 1e5) / 1e5);
+    }
     return new JSONObject()
         .put("id", id)
         .put("routeId", routeId == null ? JSONObject.NULL : routeId)
@@ -58,15 +73,25 @@ public final class Ride
         .put("gainM", Math.round(gainM))
         .put("avgKmh", Math.round(avgKmh * 10) / 10.0)
         .put("maxKmh", Math.round(maxKmh * 10) / 10.0)
-        .put("maxGrade", Math.round(maxGrade * 10) / 10.0);
+        .put("maxGrade", Math.round(maxGrade * 10) / 10.0)
+        .put("sil", sil);
   }
 
   @NonNull
   static Ride fromJson(@NonNull JSONObject o) throws JSONException
   {
+    final JSONArray sil = o.optJSONArray("sil");
+    final int n = sil == null ? 0 : sil.length() / 2;
+    final double[] lat = new double[n];
+    final double[] lon = new double[n];
+    for (int i = 0; i < n; i++)
+    {
+      lat[i] = sil.getDouble(2 * i);
+      lon[i] = sil.getDouble(2 * i + 1);
+    }
     return new Ride(o.getString("id"), o.isNull("routeId") ? null : o.getString("routeId"), o.getString("name"),
                     o.getString("file"), o.getLong("startedAt"), o.getLong("endedAt"), o.getLong("movingS"),
                     o.getDouble("distanceM"), o.getDouble("gainM"), o.getDouble("avgKmh"), o.getDouble("maxKmh"),
-                    o.getDouble("maxGrade"));
+                    o.getDouble("maxGrade"), lat, lon);
   }
 }

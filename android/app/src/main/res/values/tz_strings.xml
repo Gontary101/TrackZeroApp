@@ -118,4 +118,38 @@
   <string name="tz_ride_notification_text">%1$s · %2$s</string>
   <string name="tz_ride_pause">Pause</string>
   <string name="tz_ride_resume">Resume</string>
+  <!-- R8 Ride saved -->
+  <string name="tz_ride_saved">RIDE SAVED</string>
+  <string name="tz_export_gpx">EXPORT GPX</string>
+  <string name="tz_done">DONE</string>
+  <string name="tz_stat_moving">Moving</string>
+  <string name="tz_stat_max_speed">Max speed</string>
+  <string name="tz_stat_max_grade">Max grade</string>
+  <string name="tz_stat_avg_speed">Avg speed</string>
+  <string name="tz_cd_ride_track">Track of this ride</string>
+  <string name="tz_gpx_missing">The GPX file is missing</string>
+
+  <!-- Ride screen (R1–R7) -->
+  <string name="tz_free_ride">FREE RIDE</string>
+  <string name="tz_free_ride_name">Free ride %1$s</string>
+  <string name="tz_ride_speed_title">SPEED</string>
+  <string name="tz_ride_elevation_title">ELEVATION</string>
+  <string name="tz_unit_kmh_dot">KM/H</string>
+  <string name="tz_unit_mph_dot">MPH</string>
+  <string name="tz_resume_ride">Resume ride</string>
+  <string name="tz_pause_ride">Pause ride</string>
+  <string name="tz_voice_title">Voice turn announcements</string>
+  <string name="tz_voice_subtitle">At %1$s and %2$s before each turn</string>
+  <string name="tz_keep_awake_title">Keep screen awake</string>
+  <string name="tz_keep_awake_subtitle">Screen stays on until the ride ends</string>
+  <string name="tz_stat_speed">Speed</string>
+  <string name="tz_stat_distance">Distance</string>
+  <string name="tz_stat_time">Time</string>
+  <string name="tz_stat_elevation">Elevation</string>
+  <string name="tz_stat_grade">Grade</string>
+  <string name="tz_stat_eta">ETA</string>
+  <string name="tz_stat_remaining">Remaining</string>
+  <string name="tz_ride_sheet_summary">%1$s · %2$s</string>
+  <string name="tz_ride_needs_location">TrackZero needs your location to record a ride.</string>
+  <string name="tz_ride_not_saved">The ride couldn\'t be saved. It will come back next time you open TrackZero.</string>
 </resources>

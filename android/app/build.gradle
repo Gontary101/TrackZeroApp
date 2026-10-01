@@ -360,6 +360,7 @@ dependencies {
   implementation libs.androidx.fragment
   implementation libs.androidx.preference
   implementation libs.androidx.recyclerview
+  implementation libs.androidx.viewpager2 // TrackZero ride carousel
   implementation libs.androidx.work.runtime
   implementation libs.androidx.lifecycle.process
   implementation libs.androidx.documentfile

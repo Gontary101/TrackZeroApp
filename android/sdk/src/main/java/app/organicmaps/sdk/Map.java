@@ -70,6 +70,14 @@ public final class Map
   @Nullable
   private LocationHelper mLocationHelper;
 
+  /** TrackZero: apps without a compass button skip the widget (it is only drawn once set up). */
+  private static boolean sCompassEnabled = true;
+
+  public static void setCompassEnabled(boolean enabled)
+  {
+    sCompassEnabled = enabled;
+  }
+
   private int mCurrentCompassOffsetX;
   private int mCurrentCompassOffsetY;
   private int mBottomWidgetOffsetX;
@@ -119,6 +127,8 @@ public final class Map
    */
   public void updateCompassOffset(final Context context, int offsetX, int offsetY, boolean forceRedraw)
   {
+    if (!sCompassEnabled)
+      return;
     final int x = offsetX < 0 ? mCurrentCompassOffsetX : offsetX;
     final int y = offsetY < 0 ? mCurrentCompassOffsetY : offsetY;
     final int navPadding = Utils.dimen(context, R.dimen.nav_frame_padding);

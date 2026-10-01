@@ -69,6 +69,9 @@ public final class TzRideService extends Service
     }
   }
 
+  /** A ride is in progress (recording, paused or being saved) in this process. */
+  private static boolean sRiding;
+
   private final LocalBinder mBinder = new LocalBinder();
   private final List<Listener> mListeners = new CopyOnWriteArrayList<>();
   @Nullable
@@ -81,6 +84,11 @@ public final class TzRideService extends Service
   private long mLastNotificationMs;
   @Nullable
   private RideSession.State mNotifiedState;
+
+  public static boolean isRiding()
+  {
+    return sRiding;
+  }
 
   /** Starts recording a ride; {@code routeId} is null for a free ride. */
   public static void start(@NonNull Context context, @Nullable String routeId, @NonNull String name)
@@ -150,6 +158,7 @@ public final class TzRideService extends Service
           return;
         }
         mSession = RideSession.restore(content, TzPrefs.autoPause(this));
+        sRiding = true;
         startSources();
         changed();
       });
@@ -242,6 +251,7 @@ public final class TzRideService extends Service
   {
     final long now = SystemClock.elapsedRealtime();
     mSession = new RideSession(TzPrefs.autoPause(this));
+    sRiding = true;
     mSession.start(System.currentTimeMillis(), now, routeId, name == null ? "" : name);
     RideStore.get(this).startJournal(mSession.drainJournal(now));
     mLastFlushMs = now;
@@ -372,6 +382,7 @@ public final class TzRideService extends Service
 
   private void stopRide()
   {
+    sRiding = false;
     stopSources();
     ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE);
     stopSelf();

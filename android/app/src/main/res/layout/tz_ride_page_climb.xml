@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- R5 page 2 (basic until climbs exist): the altitude ridden so far. Opaque. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+  android:layout_width="match_parent"
+  android:layout_height="match_parent"
+  android:background="@color/tz_bg"
+  android:orientation="vertical">
+
+  <LinearLayout
+    android:id="@+id/tz_ride_climb_header"
+    android:layout_width="match_parent"
+    android:layout_height="@dimen/tz_ride_header_h"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingStart="@dimen/tz_ride_header_pad"
+    android:paddingEnd="@dimen/tz_ride_header_pad">
+
+    <TextView
+      style="@style/TzText.DotL"
+      android:layout_width="0dp"
+      android:layout_height="wrap_content"
+      android:layout_weight="1"
+      android:text="@string/tz_ride_elevation_title" />
+
+    <app.trackzero.ui.TzChip
+      android:id="@+id/tz_ride_climb_chip"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content" />
+  </LinearLayout>
+
+  <FrameLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginStart="@dimen/tz_gutter"
+    android:layout_marginTop="@dimen/tz_space_24"
+    android:layout_marginEnd="@dimen/tz_gutter"
+    android:background="@drawable/tz_bg_surface1_r32"
+    android:padding="@dimen/tz_ride_profile_pad">
+
+    <app.trackzero.ui.TzElevationProfileView
+      android:id="@+id/tz_ride_profile"
+      android:layout_width="match_parent"
+      android:layout_height="@dimen/tz_ride_profile_h" />
+  </FrameLayout>
+</LinearLayout>

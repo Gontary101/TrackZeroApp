@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- R4 page 1: hero speed and a 2 × 3 grid. Opaque: the map does not render behind it. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+  android:layout_width="match_parent"
+  android:layout_height="match_parent"
+  android:background="@color/tz_bg"
+  android:orientation="vertical">
+
+  <LinearLayout
+    android:id="@+id/tz_ride_speed_header"
+    android:layout_width="match_parent"
+    android:layout_height="@dimen/tz_ride_header_h"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingStart="@dimen/tz_ride_header_pad"
+    android:paddingEnd="@dimen/tz_ride_header_pad">
+
+    <TextView
+      style="@style/TzText.DotL"
+      android:layout_width="0dp"
+      android:layout_height="wrap_content"
+      android:layout_weight="1"
+      android:text="@string/tz_ride_speed_title" />
+
+    <app.trackzero.ui.TzChip
+      android:id="@+id/tz_ride_speed_chip"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content" />
+  </LinearLayout>
+
+  <LinearLayout
+    android:id="@+id/tz_ride_hero_box"
+    android:layout_width="match_parent"
+    android:layout_height="@dimen/tz_ride_hero_area_h"
+    android:gravity="center"
+    android:orientation="vertical">
+
+    <TextView
+      android:id="@+id/tz_ride_hero"
+      style="@style/TzText.Hero"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:includeFontPadding="false"
+      android:maxLines="1" />
+
+    <TextView
+      style="@style/TzText.DotM"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_marginTop="@dimen/tz_ride_hero_unit_gap"
+      android:text="@string/tz_unit_kmh_dot"
+      android:textColor="@color/tz_text2"
+      android:textSize="@dimen/tz_text_24"
+      android:id="@+id/tz_ride_hero_unit" />
+  </LinearLayout>
+
+  <FrameLayout
+    android:id="@+id/tz_ride_grid"
+    android:layout_width="match_parent"
+    android:layout_height="0dp"
+    android:layout_weight="1">
+
+    <LinearLayout
+      android:layout_width="match_parent"
+      android:layout_height="match_parent"
+      android:orientation="vertical">
+
+      <View
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/tz_divider"
+        android:background="@color/tz_divider" />
+
+      <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="horizontal">
+
+        <include
+          android:id="@+id/tz_ride_cell_distance"
+          layout="@layout/tz_ride_cell" />
+
+        <include
+          android:id="@+id/tz_ride_cell_time"
+          layout="@layout/tz_ride_cell" />
+      </LinearLayout>
+
+      <View
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/tz_divider"
+        android:background="@color/tz_divider" />
+
+      <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="horizontal">
+
+        <include
+          android:id="@+id/tz_ride_cell_elevation"
+          layout="@layout/tz_ride_cell" />
+
+        <include
+          android:id="@+id/tz_ride_cell_grade"
+          layout="@layout/tz_ride_cell" />
+      </LinearLayout>
+
+      <View
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/tz_divider"
+        android:background="@color/tz_divider" />
+
+      <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="horizontal">
+
+        <include
+          android:id="@+id/tz_ride_cell_avg"
+          layout="@layout/tz_ride_cell" />
+
+        <include
+          android:id="@+id/tz_ride_cell_max"
+          layout="@layout/tz_ride_cell" />
+      </LinearLayout>
+    </LinearLayout>
+
+    <!-- The column divider runs through all three rows. -->
+    <View
+      android:layout_width="@dimen/tz_divider"
+      android:layout_height="match_parent"
+      android:layout_gravity="center_horizontal"
+      android:background="@color/tz_divider" />
+  </FrameLayout>
+</LinearLayout>

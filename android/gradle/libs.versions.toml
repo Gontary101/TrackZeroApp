@@ -18,6 +18,7 @@ androidx-constraintlayout = { module = "androidx.constraintlayout:constraintlayo
 androidx-fragment = { module = "androidx.fragment:fragment", version = "1.8.9" }
 androidx-preference = { module = "androidx.preference:preference", version = "1.2.1" }
 androidx-recyclerview = { module = "androidx.recyclerview:recyclerview", version = "1.4.0" }
+androidx-viewpager2 = { module = "androidx.viewpager2:viewpager2", version = "1.1.0-beta02" }
 androidx-work-runtime = { module = "androidx.work:work-runtime", version = "2.10.5" }
 androidx-lifecycle-process = { module = "androidx.lifecycle:lifecycle-process", version = "2.9.4" }
 androidx-media = { module = "androidx.media:media", version = "1.7.1" }

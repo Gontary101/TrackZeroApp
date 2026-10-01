@@ -1,0 +1,240 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- R8 · Ride saved. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:app="http://schemas.android.com/apk/res-auto"
+  android:layout_width="match_parent"
+  android:layout_height="match_parent"
+  android:background="@color/tz_bg"
+  android:clickable="true"
+  android:orientation="vertical"
+  android:padding="@dimen/tz_space_16">
+  <LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingStart="@dimen/tz_space_4">
+    <View
+      android:layout_width="@dimen/tz_space_12"
+      android:layout_height="@dimen/tz_space_12"
+      android:background="@drawable/tz_dot"
+      android:backgroundTint="@color/tz_mint"
+      android:importantForAccessibility="no" />
+    <TextView
+      style="@style/TzText.DotXL"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_marginStart="@dimen/tz_space_12"
+      android:text="@string/tz_ride_saved"
+      android:textSize="@dimen/tz_text_36" />
+  </LinearLayout>
+
+  <FrameLayout
+    android:layout_width="match_parent"
+    android:layout_height="@dimen/tz_summary_track_h"
+    android:layout_marginTop="@dimen/tz_segment_pad"
+    android:background="@drawable/tz_bg_well_r28">
+    <app.trackzero.ui.TzSilhouetteView
+      android:id="@+id/tz_summary_track"
+      android:layout_width="match_parent"
+      android:layout_height="match_parent"
+      android:layout_gravity="center"
+      android:layout_margin="@dimen/tz_space_24"
+      android:contentDescription="@string/tz_cd_ride_track" />
+  </FrameLayout>
+
+  <LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="@dimen/tz_segment_pad"
+    android:orientation="vertical"
+    android:paddingStart="@dimen/tz_space_4">
+    <TextView
+      android:id="@+id/tz_summary_title"
+      style="@style/TzText.TitleL"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content" />
+    <TextView
+      android:id="@+id/tz_summary_date"
+      style="@style/TzText.Caption"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_marginTop="@dimen/tz_space_4"
+      android:textSize="@dimen/tz_text_15" />
+  </LinearLayout>
+
+  <LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="@dimen/tz_segment_pad"
+    android:orientation="vertical">
+    <View
+      android:layout_width="match_parent"
+      android:layout_height="@dimen/tz_divider"
+      android:background="@color/tz_surface3" />
+    <LinearLayout
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:orientation="vertical"
+      android:paddingStart="@dimen/tz_space_4"
+      android:paddingTop="@dimen/tz_segment_pad"
+      android:paddingEnd="@dimen/tz_space_4"
+      android:paddingBottom="@dimen/tz_segment_pad">
+      <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+        <LinearLayout
+          android:layout_width="0dp"
+          android:layout_height="wrap_content"
+          android:layout_weight="1"
+          android:orientation="vertical">
+          <TextView
+            style="@style/TzText.Label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/tz_preview_distance" />
+          <app.trackzero.ui.TzMetricView
+            android:id="@+id/tz_summary_distance"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/tz_label_gap"
+            app:tzNumberSize="34"
+            app:tzNumberStyle="@style/TzText.MetricM" />
+        </LinearLayout>
+        <LinearLayout
+          android:layout_width="0dp"
+          android:layout_height="wrap_content"
+          android:layout_marginStart="@dimen/tz_space_12"
+          android:layout_weight="1"
+          android:orientation="vertical">
+          <TextView
+            style="@style/TzText.Label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/tz_stat_moving" />
+          <app.trackzero.ui.TzMetricView
+            android:id="@+id/tz_summary_moving"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/tz_label_gap"
+            app:tzNumberSize="34"
+            app:tzNumberStyle="@style/TzText.MetricM" />
+        </LinearLayout>
+        <LinearLayout
+          android:layout_width="0dp"
+          android:layout_height="wrap_content"
+          android:layout_marginStart="@dimen/tz_space_12"
+          android:layout_weight="1"
+          android:orientation="vertical">
+          <TextView
+            style="@style/TzText.Label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/tz_preview_gain" />
+          <app.trackzero.ui.TzMetricView
+            android:id="@+id/tz_summary_gain"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/tz_label_gap"
+            app:tzNumberSize="34"
+            app:tzNumberStyle="@style/TzText.MetricM" />
+        </LinearLayout>
+      </LinearLayout>
+      <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/tz_space_20"
+        android:orientation="horizontal">
+        <LinearLayout
+          android:layout_width="0dp"
+          android:layout_height="wrap_content"
+          android:layout_weight="1"
+          android:orientation="vertical">
+          <TextView
+            style="@style/TzText.Label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/tz_stat_avg_speed" />
+          <app.trackzero.ui.TzMetricView
+            android:id="@+id/tz_summary_avg_speed"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/tz_label_gap"
+            app:tzNumberSize="34"
+            app:tzNumberStyle="@style/TzText.MetricM" />
+        </LinearLayout>
+        <LinearLayout
+          android:layout_width="0dp"
+          android:layout_height="wrap_content"
+          android:layout_marginStart="@dimen/tz_space_12"
+          android:layout_weight="1"
+          android:orientation="vertical">
+          <TextView
+            style="@style/TzText.Label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/tz_stat_max_speed" />
+          <app.trackzero.ui.TzMetricView
+            android:id="@+id/tz_summary_max_speed"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/tz_label_gap"
+            app:tzNumberSize="34"
+            app:tzNumberStyle="@style/TzText.MetricM" />
+        </LinearLayout>
+        <LinearLayout
+          android:layout_width="0dp"
+          android:layout_height="wrap_content"
+          android:layout_marginStart="@dimen/tz_space_12"
+          android:layout_weight="1"
+          android:orientation="vertical">
+          <TextView
+            style="@style/TzText.Label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/tz_stat_max_grade" />
+          <app.trackzero.ui.TzMetricView
+            android:id="@+id/tz_summary_max_grade"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/tz_label_gap"
+            app:tzNumberSize="34"
+            app:tzNumberStyle="@style/TzText.MetricM" />
+        </LinearLayout>
+      </LinearLayout>
+    </LinearLayout>
+    <View
+      android:layout_width="match_parent"
+      android:layout_height="@dimen/tz_divider"
+      android:background="@color/tz_surface3" />
+  </LinearLayout>
+
+  <Space
+    android:layout_width="match_parent"
+    android:layout_height="0dp"
+    android:layout_weight="1" />
+
+  <LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="@dimen/tz_segment_pad"
+    android:orientation="horizontal">
+    <com.google.android.material.button.MaterialButton
+      android:id="@+id/tz_summary_export"
+      style="@style/TzButton.Secondary"
+      android:layout_width="0dp"
+      android:layout_height="@dimen/tz_button_h"
+      android:layout_weight="1"
+      android:text="@string/tz_export_gpx"
+      app:icon="@drawable/ic_tz_export" />
+    <com.google.android.material.button.MaterialButton
+      android:id="@+id/tz_summary_done"
+      style="@style/TzButton.Primary"
+      android:layout_width="0dp"
+      android:layout_height="@dimen/tz_button_h"
+      android:layout_marginStart="@dimen/tz_space_12"
+      android:layout_weight="1"
+      android:text="@string/tz_done" />
+  </LinearLayout>
+</LinearLayout>

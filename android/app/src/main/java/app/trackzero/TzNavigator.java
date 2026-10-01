@@ -17,10 +17,13 @@ import androidx.fragment.app.FragmentManager;
 import app.organicmaps.R;
 import app.trackzero.base.TzMap;
 import app.trackzero.screens.TzMapScreen;
+import app.trackzero.ride.TzRide;
 import app.trackzero.screens.TzMoreScreen;
 import app.trackzero.screens.TzPreviewScreen;
+import app.trackzero.screens.TzRideScreen;
 import app.trackzero.screens.TzRoutesScreen;
 import app.trackzero.screens.TzScreen;
+import app.trackzero.screens.TzSummaryScreen;
 import app.trackzero.ui.TzBottomIsland;
 
 /**
@@ -99,7 +102,10 @@ public final class TzNavigator
       @Override
       public void onRideClicked()
       {
-        Toast.makeText(activity, "Coming in phase 9", Toast.LENGTH_SHORT).show();
+        if (TzRide.inProgress(activity))
+          show(Screen.RIDE, null);
+        else
+          TzRide.start(activity, null);
       }
     });
     final FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(
@@ -121,12 +127,13 @@ public final class TzNavigator
 
     activity.getOnBackPressedDispatcher().addCallback(activity, sBack);
 
-    // After recreation FragmentManager restores the visible screen by itself; otherwise start on the map.
+    // After recreation FragmentManager restores the visible screen by itself; otherwise start on the map, or on
+    // the ride when one is running.
     final Fragment restored = fm().findFragmentById(R.id.tz_screen_container);
     if (restored != null && restored.getTag() != null)
       onShown(Screen.valueOf(restored.getTag()));
     else
-      show(Screen.MAP, null);
+      show(TzRide.inProgress(activity) ? Screen.RIDE : Screen.MAP, null);
   }
 
   public static void detach(@NonNull FragmentActivity activity)
@@ -185,6 +192,8 @@ public final class TzNavigator
       case ROUTES -> new TzRoutesScreen();
       case PREVIEW -> new TzPreviewScreen();
       case MORE -> new TzMoreScreen();
+      case RIDE -> new TzRideScreen();
+      case SUMMARY -> new TzSummaryScreen();
       default -> null;
     };
   }

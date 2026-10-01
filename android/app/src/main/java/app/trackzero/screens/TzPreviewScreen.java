@@ -27,6 +27,7 @@ import app.trackzero.base.TzMap;
 import app.trackzero.base.TzRouteLayer;
 import app.trackzero.format.TzFormat;
 import app.trackzero.geo.Geo;
+import app.trackzero.ride.TzRide;
 import app.trackzero.routes.Route;
 import app.trackzero.routes.RouteGeometry;
 import app.trackzero.routes.RouteStore;
@@ -91,8 +92,10 @@ public class TzPreviewScreen extends TzScreen implements TzMap.TouchObserver
       RouteStore.get(requireContext()).setFavorite(mRoute.id, mFavorite);
       bindStar(mFavorite);
     });
-    view.findViewById(R.id.tz_preview_start).setOnClickListener(
-        v -> Toast.makeText(requireContext(), "Coming in phase 9", Toast.LENGTH_SHORT).show());
+    view.findViewById(R.id.tz_preview_start).setOnClickListener(v -> {
+      if (mRoute != null)
+        TzRide.start(requireActivity(), mRoute);
+    });
     // Frame once the card has its final height; later size changes (collapse/expand) keep the rider's view.
     mCard.addOnLayoutChangeListener((v, l, t, r, b, ol, ot, or, ob) -> {
       if (!mFramed)

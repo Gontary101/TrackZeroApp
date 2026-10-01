@@ -17,7 +17,13 @@ import app.trackzero.geo.DouglasPeucker;
 public final class TzSilhouetteView extends View
 {
   private final Paint mPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+  private final Paint mStartFill = new Paint(Paint.ANTI_ALIAS_FLAG);
+  private final Paint mStartRing = new Paint(Paint.ANTI_ALIAS_FLAG);
   private final Path mPath = new Path();
+  /** Start ring radius; 0 = no start marker (route cards). */
+  private float mStartRadius;
+  private float mStartX;
+  private float mStartY;
   @Nullable private double[] mX;
   @Nullable private double[] mY;
   private float mBoxSize;
@@ -41,6 +47,9 @@ public final class TzSilhouetteView extends View
     mPaint.setStyle(Paint.Style.STROKE);
     mPaint.setStrokeCap(Paint.Cap.ROUND);
     mPaint.setStrokeJoin(Paint.Join.ROUND);
+    mStartFill.setColor(ContextCompat.getColor(context, R.color.tz_bg));
+    mStartRing.setColor(ContextCompat.getColor(context, R.color.tz_mint));
+    mStartRing.setStyle(Paint.Style.STROKE);
   }
 
   public void setPoints(@Nullable double[] lat, @Nullable double[] lon)
@@ -71,6 +80,14 @@ public final class TzSilhouetteView extends View
   {
     mPaint.setStrokeWidth(width);
     rebuildPath();
+  }
+
+  /** A black disc with a mint ring at the first point (R8 ride thumbnail). */
+  public void setStartMarker(float radiusPx, float strokePx)
+  {
+    mStartRadius = radiusPx;
+    mStartRing.setStrokeWidth(strokePx);
+    invalidate();
   }
 
   public void setBoxSizePx(float size)
@@ -115,6 +132,8 @@ public final class TzSilhouetteView extends View
         if (i == 0)
         {
           mPath.moveTo(x, y);
+          mStartX = x;
+          mStartY = y;
         }
         else
         {
@@ -130,5 +149,10 @@ public final class TzSilhouetteView extends View
   {
     super.onDraw(canvas);
     canvas.drawPath(mPath, mPaint);
+    if (mStartRadius > 0 && !mPath.isEmpty())
+    {
+      canvas.drawCircle(mStartX, mStartY, mStartRadius, mStartFill);
+      canvas.drawCircle(mStartX, mStartY, mStartRadius, mStartRing);
+    }
   }
 }

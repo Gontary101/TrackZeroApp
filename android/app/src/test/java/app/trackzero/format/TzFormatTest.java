@@ -65,6 +65,7 @@ public class TzFormatTest
     assertEquals("8.4 %", TzFormat.grade(8.44, US).toString());
     assertEquals("-3.0 %", TzFormat.grade(-3, US).toString());
     assertEquals(TzFormat.UNKNOWN, TzFormat.grade(Double.NaN, US).toString());
+    assertEquals("0.0 %", TzFormat.grade(-0.04, US).toString());
   }
 
   @Test

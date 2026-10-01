@@ -3,6 +3,9 @@ package app.trackzero.ride;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import app.trackzero.TzConfig;
+import app.trackzero.geo.Geo;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * One ride (plan §8.3): IDLE → RECORDING ⇄ PAUSED / AUTO_PAUSED → SAVED. Pure; driven on one thread by
@@ -12,6 +15,8 @@ import app.trackzero.TzConfig;
  */
 public final class RideSession
 {
+  private static final double TRACE_STEP_M = 10;
+
   public enum State
   {
     IDLE,
@@ -39,6 +44,10 @@ public final class RideSession
   private long mSlowSinceMs = -1;
   @NonNull
   private final StringBuilder mJournal = new StringBuilder();
+  /** Altitude every 10 m ridden, for the elevation page. */
+  private float[] mTraceDist = new float[256];
+  private float[] mTraceAlt = new float[256];
+  private int mTraceSize;
 
   public RideSession(boolean autoPause)
   {
@@ -57,6 +66,17 @@ public final class RideSession
     s.mTrack = c.track;
     s.mTrack.breakSegment();
     s.mStats.restore(c.totals);
+    double dist = 0;
+    for (List<RideTrack.Point> seg : c.track.segments())
+    {
+      for (int i = 0; i < seg.size(); i++)
+      {
+        final RideTrack.Point p = seg.get(i);
+        if (i > 0)
+          dist += Geo.distance(seg.get(i - 1).lat, seg.get(i - 1).lon, p.lat, p.lon);
+        s.trace(dist, p.altM);
+      }
+    }
     return s;
   }
 
@@ -91,6 +111,7 @@ public final class RideSession
       if (mTrack.add(p))
         RideJournal.segment(mJournal);
       RideJournal.point(mJournal, p);
+      trace(mStats.distanceM(), p.altM);
     }
     mStats.advance(f, recording);
   }
@@ -122,6 +143,20 @@ public final class RideSession
     {
       startRecording(f.elapsedMs);
     }
+  }
+
+  private void trace(double distM, double altM)
+  {
+    if (Double.isNaN(altM) || (mTraceSize > 0 && distM - mTraceDist[mTraceSize - 1] < TRACE_STEP_M))
+      return;
+    if (mTraceSize == mTraceDist.length)
+    {
+      mTraceDist = Arrays.copyOf(mTraceDist, mTraceSize * 2);
+      mTraceAlt = Arrays.copyOf(mTraceAlt, mTraceSize * 2);
+    }
+    mTraceDist[mTraceSize] = (float) distM;
+    mTraceAlt[mTraceSize] = (float) altM;
+    mTraceSize++;
   }
 
   /** Manual pause; never resumes by itself. */
@@ -215,6 +250,20 @@ public final class RideSession
   public long startedAt()
   {
     return mStartedAt;
+  }
+
+  /** Ridden distance (m) of each altitude sample, a copy. */
+  @NonNull
+  public float[] traceDistances()
+  {
+    return Arrays.copyOf(mTraceDist, mTraceSize);
+  }
+
+  /** Altitude (m) every 10 m ridden, a copy. */
+  @NonNull
+  public float[] traceAltitudes()
+  {
+    return Arrays.copyOf(mTraceAlt, mTraceSize);
   }
 
   /** The latest position, also while paused. */

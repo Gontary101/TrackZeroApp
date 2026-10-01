@@ -1727,6 +1727,14 @@ JNIEXPORT void JNICALL Java_app_organicmaps_sdk_Framework_nativeZoomToPoint(JNIE
   g_framework->Scale(m2::PointD(mercator::FromLatLon(lat, lon)), zoom, animate);
 }
 
+// TrackZero: a zoom gesture by `factor` (2 = one level in). Unlike nativeZoomToPoint it keeps follow mode: while
+// following, the core scales around the rider.
+JNIEXPORT void JNICALL Java_app_organicmaps_sdk_Framework_nativeScale(JNIEnv *, jclass, jdouble factor,
+                                                                     jboolean animate)
+{
+  frm()->Scale(factor, animate);
+}
+
 JNIEXPORT jobject JNICALL Java_app_organicmaps_sdk_Framework_nativeDeleteBookmarkFromMapObject(JNIEnv * env, jclass)
 {
   if (!frm()->HasPlacePageInfo())

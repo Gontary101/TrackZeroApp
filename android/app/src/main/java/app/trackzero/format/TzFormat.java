@@ -129,6 +129,11 @@ public final class TzFormat
   @NonNull
   private static String decimal(double v, int digits, @NonNull Locale locale)
   {
+    // Round first so values like -0.04 read "0.0", not "-0.0".
+    final double scale = Math.pow(10, digits);
+    v = Math.round(v * scale) / scale;
+    if (v == 0)
+      v = 0;
     final NumberFormat f = NumberFormat.getNumberInstance(locale);
     f.setMinimumFractionDigits(digits);
     f.setMaximumFractionDigits(digits);

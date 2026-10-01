@@ -184,3 +184,30 @@ totals line (distance, moving time, gain, max speed, max grade) appended at ever
 change). A restored ride keeps its numbers instead of recomputing them from points, and a line cut short by the
 crash is ignored. The ride restores PAUSED from `START_STICKY` restarts and, after a reboot, from app start.
 Gain uses one `GainCounter` (3 m hysteresis) shared with `RouteStats`.
+
+## D24 · Ride map camera: zoom as a scale gesture, calls safe before the engine (Phase 9)
+- Auto-zoom (z17 / z16 / z15 by speed band, 5 s stable) uses a new SDK `Framework.nativeScale(factor)` — the same
+  scale event as the zoom buttons. `nativeZoomToPoint` sends a set-centre event, which the core treats as the user
+  moving the map and drops follow mode. A jump of more than 2 levels is applied without animation (follow updates
+  cut long animations short) and the screen re-checks the real zoom on the next tick.
+- The app can open straight on a ride (restore), before the map engine exists: `TzMap` drops camera calls until
+  then and applies a pending follow request (and `TzRouteLayer` a pending line) in `onEngineReady()`.
+- Rider at 67 % of the height: the visible area starts at 34 % of the screen (the engine centres the rider in it).
+- CoMaps' compass widget is not set up (SDK `Map.setCompassEnabled(false)`); TrackZero's map UI has no compass.
+
+## D25 · Ride and summary details (Phase 9)
+- Times (R8 "09:12 – 12:41", ETA) follow the system 12/24 h setting instead of always 24 h (plan §9.8): the
+  board shows a 24 h locale; a US phone set to 12 h should read 8:06 PM.
+- R4 hero is sized in dp (208), not sp: it already fills the width and would overflow with a larger font scale.
+  `TzTextSize.applyLineHeight` reproduces the board's CSS line-height 0.85 (KM/H 10dp under the digits).
+- R7 on the map page: the RESUME button takes the stats island's place and the island moves up above it. The
+  floating RESUME fades out as the sheet opens (the sheet has its own RESUME RIDE).
+- EXPORT GPX shares a copy named after the ride ("Clermont-Ferrand (70.7km).gpx") from the cache, not the internal
+  UUID file name. Rides store a 200-point silhouette in rides.json like routes; R8 draws it with a start ring.
+- R2 until Phase 10: the turn card shows "Continue straight" + route name with remaining = route length − ridden.
+
+## D26 · Testing rides on the emulator (Phase 9)
+DEBUG_REPLAY only feeds the ride recorder; the map's rider keeps the device position. For UI testing,
+`tools/trackzero/emu_gps_play.py route.gpx [km/h]` drives the emulator GPS itself (`adb emu geo fix` with speed —
+this emulator ignores `geo nmea`), so the map and the recorder see the same moving rider through the real GPS path.
+The emulator's constant barometer pins the ride altitude after calibration; altitude/gain checks need replay mode.

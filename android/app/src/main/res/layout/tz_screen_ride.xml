@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- RIDE: carousel of pages (map, speed, elevation) and the controls sheet whose collapsed state is the page handle. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:app="http://schemas.android.com/apk/res-auto"
+  android:layout_width="match_parent"
+  android:layout_height="match_parent">
+
+  <androidx.viewpager2.widget.ViewPager2
+    android:id="@+id/tz_ride_pager"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent" />
+
+  <!-- R7: floats above the handle on every page while manually paused. -->
+  <com.google.android.material.button.MaterialButton
+    android:id="@+id/tz_ride_resume"
+    style="@style/TzButton.Primary.Resume"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_gravity="bottom"
+    android:layout_marginStart="@dimen/tz_gutter"
+    android:layout_marginEnd="@dimen/tz_gutter"
+    android:elevation="@dimen/tz_elev3"
+    android:text="@string/tz_resume_ride"
+    android:visibility="gone"
+    app:icon="@drawable/ic_tz_play" />
+
+  <View
+    android:id="@+id/tz_ride_scrim"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:alpha="0"
+    android:background="@color/tz_scrim"
+    android:visibility="gone" />
+
+  <androidx.coordinatorlayout.widget.CoordinatorLayout
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <FrameLayout
+      android:id="@+id/tz_ride_sheet"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:background="@drawable/tz_bg_surface1_top_r32"
+      app:behavior_hideable="false"
+      app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior">
+
+      <LinearLayout
+        android:id="@+id/tz_ride_controls"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:alpha="0"
+        android:orientation="vertical"
+        android:paddingStart="@dimen/tz_gutter"
+        android:paddingTop="@dimen/tz_sheet_pad_top"
+        android:paddingEnd="@dimen/tz_gutter">
+
+        <View
+          android:layout_width="@dimen/tz_sheet_grabber_w"
+          android:layout_height="@dimen/tz_sheet_grabber_h"
+          android:layout_gravity="center_horizontal"
+          android:background="@drawable/tz_bg_text3_r3" />
+
+        <LinearLayout
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content"
+          android:layout_marginTop="@dimen/tz_space_20"
+          android:gravity="center_vertical"
+          android:orientation="horizontal"
+          android:paddingStart="@dimen/tz_sheet_header_pad"
+          android:paddingEnd="@dimen/tz_sheet_header_pad"
+          android:paddingBottom="@dimen/tz_sheet_header_pad_bottom">
+
+          <TextView
+            style="@style/TzText.DotL"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/tz_ride" />
+
+          <TextView
+            android:id="@+id/tz_ride_sheet_summary"
+            style="@style/TzText.SheetSummary"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+        </LinearLayout>
+
+        <app.trackzero.ui.TzToggleRow
+          android:id="@+id/tz_ride_voice"
+          android:layout_width="match_parent"
+          android:layout_height="@dimen/tz_toggle_row_h"
+          android:layout_marginTop="@dimen/tz_space_12"
+          app:tzIcon="@drawable/ic_tz_voice"
+          app:tzSubtitle="@string/tz_voice_subtitle"
+          app:tzTitle="@string/tz_voice_title" />
+
+        <app.trackzero.ui.TzToggleRow
+          android:id="@+id/tz_ride_awake"
+          android:layout_width="match_parent"
+          android:layout_height="@dimen/tz_toggle_row_h"
+          android:layout_marginTop="@dimen/tz_space_12"
+          app:tzIcon="@drawable/ic_tz_sun"
+          app:tzSubtitle="@string/tz_keep_awake_subtitle"
+          app:tzTitle="@string/tz_keep_awake_title" />
+
+        <com.google.android.material.button.MaterialButton
+          android:id="@+id/tz_ride_pause"
+          style="@style/TzButton.Secondary"
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content"
+          android:layout_marginTop="@dimen/tz_space_20"
+          android:text="@string/tz_pause_ride"
+          app:icon="@drawable/ic_tz_pause" />
+
+        <app.trackzero.ui.TzHoldButton
+          android:id="@+id/tz_ride_end"
+          android:layout_width="match_parent"
+          android:layout_height="@dimen/tz_button_h"
+          android:layout_marginTop="@dimen/tz_space_12" />
+      </LinearLayout>
+
+      <app.trackzero.ui.TzPageHandle
+        android:id="@+id/tz_ride_handle"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/tz_handle_h" />
+    </FrameLayout>
+  </androidx.coordinatorlayout.widget.CoordinatorLayout>
+</FrameLayout>

@@ -110,6 +110,9 @@ public class Framework
 
   public static native int nativeGetDrawScale();
 
+  /// TrackZero: zoom by a factor (2 = one level in) like a gesture; keeps follow mode.
+  public static native void nativeScale(double factor, boolean animate);
+
   public static native void nativePokeSearchInViewport();
 
   @Size(2)

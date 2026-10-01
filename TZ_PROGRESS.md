@@ -136,3 +136,21 @@ Approach changed: TrackZero host activity instead of hiding MwmActivity views (T
   rides.json entry written. `am crash` mid-ride: the service came back within 2 s, PAUSED, with the last
   flushed totals (632 m / 91 s). Found and fixed: replay altitude pinned by the emulator barometer.
 - Unit tests: 77 TrackZero tests pass (RideStats 11, RideSession 7, GpxWriter 6, ReplayPath 9 added).
+
+## Phase 9 — Ride UI
+
+- `screens/TzRideScreen`: ViewPager2 carousel (map R1/R2 · speed R4 · elevation R5 basic), controls sheet R6 as a
+  BottomSheet whose collapsed state is the page handle (background, scrim and controls follow the slide), R7
+  paused / auto-paused states, keep-awake flag, 1 s refresh + every fix, auto-zoom, rider at 67 %, route line for
+  route rides, back opens/closes the sheet. `screens/TzSummaryScreen` (R8, codex worker, reviewed: thumbnail box,
+  start ring, export name). `ride/TzRide` (start with permissions), TzActivity ride permission request (location +
+  notifications on 13+), navigator: RIDE/SUMMARY screens, island RIDE, B5 START RIDE, opens on the ride when one
+  is running or was cut short. viewpager2 declared explicitly (already resolved through Material).
+- Base/SDK: `Framework.nativeScale`, `Map.setCompassEnabled` (D24).
+- Fixed while testing: crash opening straight on a restored ride (follow before engine), zoom stuck at z6
+  (ZoomToPoint dropped follow mode), floating RESUME drawn over the open sheet, "-0.0 %" grade, KM/H too far
+  below the hero, UUID export names.
+- Verified on the emulator with `emu_gps_play.py`: free ride R1 (25 km/h, z16, stats), R4, R6, R7 on all pages,
+  auto-pause (no RESUME button), restore after the app was killed mid-ride (opens on RIDE, paused), route ride from
+  B5 (line, turn card, SPEED · ETA · REMAINING, voice toggle shown), hold to end → R8, EXPORT GPX share sheet
+  ("Clermont-Ferrand (70.7km).gpx"), DONE → map, route listed under Recent.
