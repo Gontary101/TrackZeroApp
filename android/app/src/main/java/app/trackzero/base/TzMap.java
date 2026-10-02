@@ -1,6 +1,7 @@
 package app.trackzero.base;
 
 import android.location.Location;
+import android.os.SystemClock;
 import android.view.MotionEvent;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -29,6 +30,8 @@ public final class TzMap
   }
 
   private static final int NO_REQUEST = -1;
+  /** A switch with no mode change after this long was refused. */
+  private static final long SWITCH_ANSWER_MS = 1000;
 
   @Nullable
   private static TzActivity sHost;
@@ -39,6 +42,7 @@ public final class TzMap
   // driven one step per mode change until the requested mode is reached.
   private static int sRequestedMode = NO_REQUEST;
   private static boolean sSwitchPending;
+  private static long sSwitchAtMs;
   private static boolean sFollowing;
 
   private TzMap() {}
@@ -104,6 +108,19 @@ public final class TzMap
     sSwitchPending = false;
     if (Map.isEngineCreated())
       step(LocationState.getMode());
+  }
+
+  /**
+   * A new heading (compass reading, or a fix with a bearing). The core refuses FOLLOW → FOLLOW_AND_ROTATE without
+   * one and reports nothing, so a heading-up request still waiting asks again, at most once a second.
+   */
+  static void onHeading()
+  {
+    if (sRequestedMode == NO_REQUEST || !Map.isEngineCreated()
+        || SystemClock.elapsedRealtime() - sSwitchAtMs < SWITCH_ANSWER_MS)
+      return;
+    sSwitchPending = false;
+    step(LocationState.getMode());
   }
 
   public static void stopFollowing()
@@ -245,6 +262,7 @@ public final class TzMap
     if (mode == LocationState.PENDING_POSITION)
       return;
     sSwitchPending = true;
+    sSwitchAtMs = SystemClock.elapsedRealtime();
     LocationState.nativeSwitchToNextMode();
   }
 }

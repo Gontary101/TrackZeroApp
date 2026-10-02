@@ -33,6 +33,7 @@ import app.organicmaps.sdk.MapView;
 import app.organicmaps.sdk.PlacePageActivationListener;
 import app.organicmaps.sdk.location.LocationHelper;
 import app.organicmaps.sdk.location.LocationState;
+import app.organicmaps.sdk.location.SensorListener;
 import app.organicmaps.sdk.settings.UnitLocale;
 import app.organicmaps.sdk.util.LocationUtils;
 import app.organicmaps.sdk.widget.placepage.PlacePageData;
@@ -129,6 +130,17 @@ public class TzActivity extends BaseMwmFragmentActivity
     outState.putBoolean(STATE_PERMISSION_ASKED, mPermissionAsked);
   }
 
+  // Heading-up needs a heading: the compass when standing still (CoMaps' location helper already runs the
+  // sensor; only the map was not told), the GPS bearing when moving.
+  private final SensorListener mCompass = north -> {
+    Map.onCompassUpdated(north, false);
+    TzMap.onHeading();
+  };
+  private final TzLocation.Listener mBearing = location -> {
+    if (location.hasBearing())
+      TzMap.onHeading();
+  };
+
   @Override
   protected void onStart()
   {
@@ -136,6 +148,8 @@ public class TzActivity extends BaseMwmFragmentActivity
     mMapController.onStart(this);
     Framework.nativePlacePageActivationListener(this);
     LocationState.nativeSetListener(this);
+    MwmApplication.from(this).getSensorHelper().addListener(mCompass);
+    TzLocation.addListener(this, mBearing);
   }
 
   @Override
@@ -161,6 +175,8 @@ public class TzActivity extends BaseMwmFragmentActivity
     super.onStop();
     Framework.nativeRemovePlacePageActivationListener(this);
     LocationState.nativeRemoveListener();
+    MwmApplication.from(this).getSensorHelper().removeListener(mCompass);
+    TzLocation.removeListener(this, mBearing);
     mMapController.onStop(this);
   }
 

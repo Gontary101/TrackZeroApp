@@ -343,3 +343,15 @@ data the confirmation reads "Download X over mobile data?", and confirming grant
 way, since the consent may have lapsed. No setting: the question is asked when it matters.
 Also, `TzMaps.downloaded()` listed a country whose regions had failed ("France · 94 maps") as a map on the phone.
 Groups are now always opened into their regions.
+
+## D36 · Heading-up really is heading-up (first real phone)
+On the phone the route ride's map stayed north-up. There were two causes:
+- **No compass reached the map.** MwmActivity forwarded CoMaps' compass readings (`Map.onCompassUpdated`) and
+  TzActivity replaced it without doing so. Standing still, the core had no heading. CoMaps' location helper already
+  runs the rotation-vector sensor while location is on, so TzActivity now forwards the readings (onStart to onStop)
+  at no extra battery cost.
+- **A refused request was never retried.** The core silently refuses FOLLOW → FOLLOW_AND_ROTATE until it has a
+  heading. TzMap waited for a mode change that never came, so its request stayed stuck until the page was shown
+  again. Every compass reading or fix with a bearing now retries a waiting request, at most once a second; a switch
+  with no answer after 1 s counts as refused.
+The emulator's fixed compass and replayed bearings hid both.
