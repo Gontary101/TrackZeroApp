@@ -21,5 +21,6 @@
     android:layout_height="wrap_content"
     android:layout_marginTop="@dimen/tz_climb_metric_gap"
     app:tzNumberSize="56"
+    app:tzFitWidth="true"
     app:tzNumberStyle="@style/TzText.MetricL" />
 </LinearLayout>

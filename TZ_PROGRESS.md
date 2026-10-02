@@ -211,5 +211,35 @@ Approach changed: TrackZero host activity instead of hiding MwmActivity views (T
   - B1 rider: the engine's arrow (mint, outlined) instead of the board's dot with halo and heading cone.
   - B5 uses the real route and region; the board's high point and some values are placeholders ([X,XXX]).
   - B6 shows the card full; the board's collapsed peek appears only while the map is being moved (by design, D17).
-  - B4 (empty routes) not shot: the emulator holds the test routes; verified in Phase 6.
+  - B4 shot in the final checklist (route index moved aside, then restored).
   - Debug builds show CoMaps' "V: Zoom | FPS" label top-left; release builds do not.
+
+## Z — Final acceptance checklist
+
+Run on the Pixel 7 emulator (debug build), with airplane mode on from offline search through R8 (D34 has the fixes
+it led to).
+- [x] Fresh install → B1 dark map, no CoMaps UI (release build first run, Phase 14 / D31).
+- [x] Import from the file picker (Phase 6) and from "Share to TrackZero" in the Files app. **Fixed:** TrackZero was
+  missing from the share sheet because Android sends `.gpx` as octet-stream (D34). Now the route lands at the top
+  of B3 with its stats.
+- [x] B3 favorite, rename and delete survive a force-stop and relaunch. B4 shows with an empty index (`shots/B4.png`).
+- [x] B5 frames the route, panning collapses it to B6 and it comes back (Phase 7).
+- [x] START RIDE → R2 with real turns and street names; R3 off route; voice at 200 m / 50 m (Phase 10). **Fixed:** a
+  ride started mid-route briefly showed "Head to start · 0 m" while the engine loaded (D34).
+- [x] RIDE (island) → R1 free ride (Phase 9).
+- [x] Exactly 3 pages: a 4th swipe stays on R5, the dots follow, and dragging the map on page 0 doesn't move it.
+- [x] R4 updates every second; R5 shows the route's climbs (CLIMB 2/5). **Fixed:** "14.9 km" was clipped in the
+  R5 metrics (D34).
+- [x] Swipe up → R6; pause → R7; auto-pause; resume (Phase 9).
+- [x] Releasing the END hold after 0.8 s does nothing; a 2 s hold → R8. Export GPX opens the share sheet and CoMaps
+  imports the file through the share grant. The saved GPX passes `xmllint`, with one segment per stretch between
+  restores.
+- [x] Screen off for 10 min mid-ride: 5.0 → 10.8 km in ≈14 min of moving time at 25 km/h (5.8 km expected), nothing lost.
+- [x] App killed mid-ride (`install -r`, twice) → reopening shows the paused ride (R7) with its distance and time;
+  RESUME carries on, and R2 comes back with turns.
+- [x] B2 offline search in airplane mode ("boulangerie" → nearby bakeries).
+- [x] Airplane mode for the ride run above (route ride, pages, R5, R6, R8, export): all worked.
+- [x] All unit tests pass; no warnings in `app.trackzero`.
+- Emulator artifacts, not bugs: its barometer is fixed at 1013.25 hPa, so altitude, grade and gain stay flat during
+  ride tests. Debug builds show the native "V: Zoom | FPS" label. uiautomator can't get an idle tree on pages that
+  update every second (use screenshots).

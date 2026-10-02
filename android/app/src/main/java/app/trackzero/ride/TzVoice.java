@@ -80,6 +80,8 @@ final class TzVoice
         TzIo.post(TzVoice.this::utteranceEnded);
       }
 
+      // Abstract in UtteranceProgressListener: required, though onError(String, int) supersedes it.
+      @SuppressWarnings("deprecation")
       @Override
       public void onError(String id)
       {
@@ -157,7 +159,7 @@ final class TzVoice
     }
     else
     {
-      mAudio.requestAudioFocus(null, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK);
+      requestFocusLegacy();
     }
   }
 
@@ -171,7 +173,20 @@ final class TzVoice
     }
     else
     {
-      mAudio.abandonAudioFocus(null);
+      abandonFocusLegacy();
     }
+  }
+
+  /** Android 7.1 and older: the only audio focus API there. */
+  @SuppressWarnings("deprecation")
+  private void requestFocusLegacy()
+  {
+    mAudio.requestAudioFocus(null, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK);
+  }
+
+  @SuppressWarnings("deprecation")
+  private void abandonFocusLegacy()
+  {
+    mAudio.abandonAudioFocus(null);
   }
 }

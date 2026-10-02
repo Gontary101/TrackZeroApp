@@ -282,6 +282,12 @@ public final class FollowEngine
     return mPhase;
   }
 
+  /** True once a fix has placed the rider; before that the state says nothing about them. */
+  public boolean placed()
+  {
+    return mHasSnap;
+  }
+
   /** Distance along the route, metres. */
   public double along()
   {

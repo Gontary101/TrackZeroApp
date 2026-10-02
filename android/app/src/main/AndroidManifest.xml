@@ -177,15 +177,16 @@
         <data android:mimeType="application/vnd.google-earth.kmz+xml"/>
       </intent-filter>
 
+      <!-- TrackZero: "Share to" imports one GPX. Android types .gpx files as octet-stream (or XML), so those are
+           claimed too; TzImport turns away anything that is not GPX. -->
       <intent-filter>
         <action android:name="android.intent.action.SEND"/>
-        <action android:name="android.intent.action.SEND_MULTIPLE"/>
         <category android:name="android.intent.category.DEFAULT"/>
-        <data android:mimeType="application/vnd.google-earth.kml+xml"/>
-        <data android:mimeType="application/vnd.google-earth.kmz"/>
         <data android:mimeType="application/gpx"/>
         <data android:mimeType="application/gpx+xml"/>
-        <data android:mimeType="application/vnd.google-earth.kmz+xml"/>
+        <data android:mimeType="application/octet-stream"/>
+        <data android:mimeType="application/xml"/>
+        <data android:mimeType="text/xml"/>
       </intent-filter>
 
       <intent-filter>

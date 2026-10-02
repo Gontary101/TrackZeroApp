@@ -5,6 +5,8 @@
     <attr name="tzNumberStyle" format="reference" />
     <!-- Number size in sp; the unit is half of it. Capped at 1.3x font scale. -->
     <attr name="tzNumberSize" format="float" />
+    <!-- Number and unit shrink together when they do not fit the width; the height stays. -->
+    <attr name="tzFitWidth" format="boolean" />
   </declare-styleable>
   <declare-styleable name="TzToggleRow">
     <attr name="tzIcon" format="reference" />

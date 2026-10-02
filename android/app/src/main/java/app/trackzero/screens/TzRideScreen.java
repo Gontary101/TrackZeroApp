@@ -635,11 +635,13 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
     mPill.setVisibility(route ? View.GONE : View.VISIBLE);
     mLocate.setVisibility(route ? View.GONE : View.VISIBLE);
     final FollowEngine follow = mService == null ? null : mService.follow();
-    mTurn.setVisibility(route && follow != null ? View.VISIBLE : View.GONE);
+    // Until the engine has placed the rider, the island shows the ride so far, as on a free ride.
+    final boolean following = route && follow != null && follow.placed();
+    mTurn.setVisibility(following ? View.VISIBLE : View.GONE);
 
     final TzFormat.Value speed = TzFormat.speed(st.speedKmh(now), units, locale);
     mStats.setCell(0, getString(R.string.tz_stat_speed), speed.number, speed.unit);
-    if (route && follow != null)
+    if (following)
     {
       final boolean off = follow.phase() == FollowEngine.Phase.OFF_ROUTE;
       if (off && !mOffRoute)

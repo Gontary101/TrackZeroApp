@@ -17,6 +17,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
 import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.widget.TextViewCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -233,14 +234,14 @@ public class TzSearchScreen extends TzScreen
 
   private void showKeyboard()
   {
-    if (mInput != null)
-      ViewCompat.getWindowInsetsController(mInput).show(WindowInsetsCompat.Type.ime());
+    if (mInput != null && getActivity() != null)
+      WindowCompat.getInsetsController(requireActivity().getWindow(), mInput).show(WindowInsetsCompat.Type.ime());
   }
 
   private void hideKeyboard()
   {
-    if (mInput != null && ViewCompat.getWindowInsetsController(mInput) != null)
-      ViewCompat.getWindowInsetsController(mInput).hide(WindowInsetsCompat.Type.ime());
+    if (mInput != null && getActivity() != null)
+      WindowCompat.getInsetsController(requireActivity().getWindow(), mInput).hide(WindowInsetsCompat.Type.ime());
   }
 
   // ---- Results ----

@@ -93,6 +93,18 @@ public class FollowEngineTest
   }
 
   @Test
+  public void firstFixMidRoutePlacesRiderOnRoute()
+  {
+    // The engine is built while the rider is already riding: its first fix is 500 m into the route.
+    Ride ride = new Ride(FollowTestRoutes.polyline(new double[] {0, 0}, new double[] {0, 1000}));
+    assertFalse(ride.engine.placed());
+    ride.atOffset(0, 500, 0);
+    assertTrue(ride.engine.placed());
+    assertEquals(FollowEngine.Phase.ON_ROUTE, ride.engine.phase());
+    assertEquals(500, ride.engine.along(), 1);
+  }
+
+  @Test
   public void offRouteRequiresFiveSecondsAndUsesRejoinHysteresis()
   {
     Ride ride = new Ride(FollowTestRoutes.polyline(new double[] {0, 0}, new double[] {0, 1000}));

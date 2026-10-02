@@ -125,7 +125,7 @@ dark-theme elevation overlays (they lighten surfaces), and `ThemeOverlay.TrackZe
 MaterialAlertDialogs surface1, 28dp corners and Barlow type; destructive confirmations use the danger colour.
 Recent with no rides shows "Routes you ride in the next 30 days show up here." (plan only defines Favorites).
 GPX "Open with / Share to" reuses the base manifest's existing GPX filters on SplashActivity (no duplicates);
-the intent reaches TzActivity, which imports it.
+the intent reaches TzActivity, which imports it. (Corrected in D34: the SEND filter needed octet-stream.)
 
 ## D18 · The route line is an engine subroute, not a bookmark import (Phase 7)
 The plan imports the GPX into a hidden bookmark category. That persists data into the base app's bookmark store
@@ -314,3 +314,21 @@ GPS is 1 Hz only during rides (GpsLocationSource); outside rides CoMaps' own loc
   then cell padding; R5's profile gives way above its island; R8's track box shrinks so EXPORT / DONE stay on
   screen, button labels shrink to one line.
 - "Remove animations": TrackZero's own animations check TzMotion; system ones (pager, sheet) follow the setting.
+
+## D34 · Final checklist fixes (after Phase 14)
+- **Share to TrackZero.** Android's MIME map has no `.gpx`: MediaStore and the Files app send GPX files as
+  `application/octet-stream`, so the base SEND filter (GPX/KML types only) never offered TrackZero. The SEND
+  filter is now GPX-only and claims `application/octet-stream`, `application/xml` and `text/xml` too (as the plan
+  asked); TzImport already turns away files that are not GPX. KML/KMZ and SEND_MULTIPLE were dropped from it:
+  TrackZero can't import those, so offering them only led to an error. "Open with" already had an octet-stream
+  VIEW filter.
+- **No "Head to start · 0 m" while the route loads.** The follow engine is built off-thread (seconds on a long
+  route) and was published before it had seen a fix, so R2 showed its blank state. The service now keeps the last
+  usable fix and places the rider with it the moment the engine is published; the turn card waits for
+  `FollowEngine.placed()`, so a cold GPS shows the free-ride island instead of a made-up instruction.
+- **R5 metrics fit their column.** 56sp in a third of the screen can't hold "14.9 km" or "+3,281 ft".
+  `TzMetricView` got an opt-in `tzFitWidth`: number and unit shrink together, measured with the paint (no size
+  flip-flop inside measure), the view keeps its full-size height and baseline so neighbours stay aligned and the
+  profile card below does not jump.
+- The engine's "V: Zoom | FPS" label seen on the emulator is compiled only into native debug builds (`DEBUG`).
+

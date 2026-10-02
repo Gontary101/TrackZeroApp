@@ -104,6 +104,9 @@ public final class TzRideService extends Service
   private ClimbTracker mClimbs;
   @Nullable
   private TzVoice mVoice;
+  /** The last fix good enough to follow with: a new engine starts from it, not from nowhere. */
+  @Nullable
+  private TzFix mFollowFix;
   private long mLastFlushMs;
   private long mLastNotificationMs;
   @Nullable
@@ -346,6 +349,12 @@ public final class TzRideService extends Service
           mFollow = prepared.engine;
           mClimbs = prepared.climbs;
           mVoice = new TzVoice(this);
+          // Built while the rider moved on: place them now, before anything shows the engine's state.
+          if (mFollowFix != null)
+          {
+            follow(mSession, mFollowFix);
+            changed();
+          }
         });
       });
     });
@@ -414,6 +423,7 @@ public final class TzRideService extends Service
   {
     mFollow = null;
     mClimbs = null;
+    mFollowFix = null;
     if (mVoice != null)
       mVoice.shutdown();
     mVoice = null;
@@ -475,17 +485,25 @@ public final class TzRideService extends Service
       return;
     final RideSession.State before = s.state();
     s.onFix(f);
-    if (mFollow != null && f.accuracyM <= TzConfig.IGNORE_FIX_ACCURACY_M)
+    if (f.accuracyM <= TzConfig.IGNORE_FIX_ACCURACY_M)
     {
-      final double speedMps = f.hasSpeed ? f.speedMps : s.stats().speedKmh() / 3.6;
-      mFollow.update(f.lat, f.lon, f.hasBearing ? f.bearingDeg : Double.NaN, speedMps, f.elapsedMs,
-                     s.stats().distanceM(), s.stats().movingMs(f.elapsedMs));
-      if (mClimbs != null)
-        mClimbs.update(mFollow.along(), s.stats().movingMs(f.elapsedMs));
+      mFollowFix = f;
+      follow(s, f);
     }
     if (s.state() != before || f.elapsedMs - mLastFlushMs >= JOURNAL_FLUSH_MS)
       flushJournal();
     changed();
+  }
+
+  private void follow(@NonNull RideSession s, @NonNull TzFix f)
+  {
+    if (mFollow == null)
+      return;
+    final double speedMps = f.hasSpeed ? f.speedMps : s.stats().speedKmh() / 3.6;
+    mFollow.update(f.lat, f.lon, f.hasBearing ? f.bearingDeg : Double.NaN, speedMps, f.elapsedMs,
+                   s.stats().distanceM(), s.stats().movingMs(f.elapsedMs));
+    if (mClimbs != null)
+      mClimbs.update(mFollow.along(), s.stats().movingMs(f.elapsedMs));
   }
 
   private void flushJournal()
