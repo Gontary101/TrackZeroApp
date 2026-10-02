@@ -1,5 +1,6 @@
 package app.trackzero.ui;
 
+import android.content.Context;
 import android.widget.ImageView;
 import androidx.annotation.DrawableRes;
 import androidx.annotation.NonNull;
@@ -25,17 +26,36 @@ public final class TzManeuvers
   {
     return switch (m)
     {
-      case STRAIGHT, HEAD_TO_START -> bold ? R.drawable.ic_tz_straight_bold : R.drawable.ic_tz_straight;
+      case STRAIGHT, HEAD_TO_START, JOIN -> bold ? R.drawable.ic_tz_straight_bold : R.drawable.ic_tz_straight;
       case TURN_RIGHT -> bold ? R.drawable.ic_tz_turn_right_bold : R.drawable.ic_tz_turn_right;
       case TURN_LEFT, UTURN -> bold ? R.drawable.ic_tz_turn_left_bold : R.drawable.ic_tz_turn_left;
       case SLIGHT_RIGHT, SLIGHT_LEFT -> bold ? R.drawable.ic_tz_fork_right_bold : R.drawable.ic_tz_fork_right;
+      case ROUNDABOUT -> bold ? R.drawable.ic_tz_roundabout_bold : R.drawable.ic_tz_roundabout;
       case ARRIVE -> bold ? R.drawable.ic_tz_flag_bold : R.drawable.ic_tz_flag;
       case REROUTE -> bold ? R.drawable.ic_tz_reroute_bold : R.drawable.ic_tz_reroute;
     };
   }
 
+  /** The turn card's instruction: "Turn right", "Take exit 2". */
+  @NonNull
+  public static String instruction(@NonNull Context c, @NonNull Maneuver m, int exit)
+  {
+    if (m == Maneuver.ROUNDABOUT)
+      return exit > 0 ? c.getString(R.string.tz_mnv_roundabout, exit) : c.getString(R.string.tz_mnv_roundabout_any);
+    return c.getString(phrase(m));
+  }
+
+  /** What the voice says: the instruction, with the roundabout named. */
+  @NonNull
+  public static String spoken(@NonNull Context c, @NonNull Maneuver m, int exit)
+  {
+    if (m == Maneuver.ROUNDABOUT && exit > 0)
+      return c.getString(R.string.tz_voice_roundabout, exit);
+    return instruction(c, m, exit);
+  }
+
   @StringRes
-  public static int phrase(@NonNull Maneuver m)
+  private static int phrase(@NonNull Maneuver m)
   {
     return switch (m)
     {
@@ -45,7 +65,9 @@ public final class TzManeuvers
       case SLIGHT_RIGHT -> R.string.tz_mnv_slight_right;
       case SLIGHT_LEFT -> R.string.tz_mnv_slight_left;
       case UTURN -> R.string.tz_mnv_uturn;
+      case ROUNDABOUT -> R.string.tz_mnv_roundabout_any;
       case ARRIVE -> R.string.tz_mnv_arrive;
+      case JOIN -> R.string.tz_mnv_join;
       case REROUTE -> R.string.tz_mnv_reroute;
       case HEAD_TO_START -> R.string.tz_mnv_head_to_start;
     };

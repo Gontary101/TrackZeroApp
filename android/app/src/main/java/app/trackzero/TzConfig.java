@@ -34,6 +34,8 @@ public final class TzConfig
   public static final double CLIMB_DROP_END_M = 10;
 
   public static final long HOLD_TO_END_MS = 1500;
+  /** The map's position updates once a second, as the ride's GPS (CoMaps: twice a second). */
+  public static final long MAP_LOCATION_INTERVAL_MS = 1000;
   public static final long PREVIEW_REEXPAND_MS = 1500;
   public static final int ETA_WINDOW_MIN = 15;
   public static final double ETA_FALLBACK_KMH = 18;

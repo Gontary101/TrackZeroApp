@@ -56,7 +56,7 @@ public class TzStatsIsland extends LinearLayout
 
   public void setCell(int i, @NonNull CharSequence label, @NonNull CharSequence value, @NonNull CharSequence unit)
   {
-    mLabels[i].setText(label);
+    TzViews.setText(mLabels[i], label);
     mValues[i].setValue(value, unit);
   }
 }

@@ -35,7 +35,9 @@ import app.trackzero.base.TzMap;
 import app.trackzero.base.TzRouteLayer;
 import app.trackzero.follow.Climb;
 import app.trackzero.follow.ClimbTracker;
-import app.trackzero.follow.FollowEngine;
+import app.trackzero.follow.FollowRoute;
+import app.trackzero.follow.Guide;
+import app.trackzero.follow.TurnState;
 import app.trackzero.format.TzFormat;
 import app.trackzero.ride.RideSession;
 import app.trackzero.ride.RideStats;
@@ -43,6 +45,7 @@ import app.trackzero.ride.TzRideService;
 import app.trackzero.routes.Route;
 import app.trackzero.routes.RouteStore;
 import app.trackzero.ui.TzChip;
+import app.trackzero.ui.TzDisplay;
 import app.trackzero.ui.TzElevationProfileView;
 import app.trackzero.ui.TzHoldButton;
 import app.trackzero.ui.TzMetricView;
@@ -52,6 +55,7 @@ import app.trackzero.ui.TzStatsIsland;
 import app.trackzero.ui.TzTextSize;
 import app.trackzero.ui.TzToggleRow;
 import app.trackzero.ui.TzTurnCard;
+import app.trackzero.ui.TzViews;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.android.material.button.MaterialButton;
 import java.util.Locale;
@@ -67,6 +71,8 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
   private static final int PAGE_SPEED = 1;
   private static final int PAGE_CLIMB = 2;
   private static final long REFRESH_MS = 1000;
+  /** A fix rendered this close to a tick makes the tick unnecessary. */
+  private static final long TICK_SLACK_MS = 100;
   private static final long ZOOM_STABLE_MS = 5000;
   /** The rider arrow sits at 67 % of the screen height (R1 note). */
   private static final float RIDER_Y = 0.67f;
@@ -92,7 +98,10 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
   private boolean mRouteRequested;
   /** The follow engine said off route at the last render (R3). */
   private boolean mOffRoute;
+  /** {@link Guide#linesVersion()} drawn; -1: none yet. */
+  private int mLinesShown = -1;
   private boolean mEnding;
+  private long mRenderedAtMs;
   private int mZoom = -1;
   private int mZoomCandidate = -1;
   private long mZoomCandidateSince;
@@ -303,6 +312,7 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
     super.onStart();
     mBound = requireContext().bindService(new Intent(requireContext(), TzRideService.class), mConnection, 0);
     applyKeepAwake();
+    TzDisplay.limitRefreshRate(requireActivity(), true);
     setPage(mPager.getCurrentItem());
     mHandler.post(mTick);
   }
@@ -313,6 +323,7 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
     super.onStop();
     mHandler.removeCallbacks(mTick);
     requireActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+    TzDisplay.limitRefreshRate(requireActivity(), false);
     if (mService != null)
       mService.removeListener(this);
     if (mBound)
@@ -325,8 +336,9 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
   public void onDestroyView()
   {
     super.onDestroyView();
-    TzRouteLayer.hide();
-    TzMap.setVisibleArea(0, 0);
+    TzRouteLayer.hide(this);
+    mLinesShown = -1;
+    TzMap.clearVisibleArea(this);
   }
 
   @Override
@@ -499,7 +511,7 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
       return;
     // The engine centres the rider in the visible area: start it low enough to put the centre at 67 %.
     final int h = root.getHeight();
-    TzMap.setVisibleArea(Math.round(h * (2 * RIDER_Y - 1)), 0);
+    TzMap.setVisibleArea(this, Math.round(h * (2 * RIDER_Y - 1)), 0);
   }
 
   private void setPage(int page)
@@ -563,9 +575,11 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
     render();
   }
 
+  /** The clock runs on without fixes (no GPS, paused): render when no fix has for a second. */
   private void tick()
   {
-    render();
+    if (SystemClock.elapsedRealtime() - mRenderedAtMs >= REFRESH_MS - TICK_SLACK_MS)
+      render();
     mHandler.postDelayed(mTick, REFRESH_MS);
   }
 
@@ -579,6 +593,7 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
     loadRoute(s);
 
     final long now = SystemClock.elapsedRealtime();
+    mRenderedAtMs = now;
     final RideStats st = s.stats();
     final TzFormat.Units units = TzPrefs.units(requireContext());
     final Locale locale = Locale.getDefault();
@@ -587,11 +602,12 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
 
     mResume.setVisibility(state == RideSession.State.PAUSED && mSlide < 1 ? View.VISIBLE : View.GONE);
     // Turn announcements only exist on a route.
-    mVoice.setVisibility(s.routeId() != null ? View.VISIBLE : View.GONE);
+    mVoice.setVisibility(guided(s) ? View.VISIBLE : View.GONE);
     renderPauseButton(state == RideSession.State.PAUSED);
     if (mSheetBehavior.getState() != BottomSheetBehavior.STATE_COLLAPSED)
-      mSheetSummary.setText(getString(R.string.tz_ride_sheet_summary, TzFormat.duration(st.movingMs(now) / 1000),
-                                      TzFormat.distance(st.distanceM(), units, locale).toString()));
+      TzViews.setText(mSheetSummary,
+                      getString(R.string.tz_ride_sheet_summary, TzFormat.duration(st.movingMs(now) / 1000),
+                                TzFormat.distance(st.distanceM(), units, locale).toString()));
 
     switch (mPage)
     {
@@ -631,26 +647,29 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
   {
     if (mStats == null)
       return;
-    final boolean route = s.routeId() != null;
+    final boolean route = guided(s);
     mPill.setVisibility(route ? View.GONE : View.VISIBLE);
     mLocate.setVisibility(route ? View.GONE : View.VISIBLE);
-    final FollowEngine follow = mService == null ? null : mService.follow();
-    // Until the engine has placed the rider, the island shows the ride so far, as on a free ride.
-    final boolean following = route && follow != null && follow.placed();
+    final Guide guide = mService == null ? null : mService.guide();
+    if (guide != null)
+      showLines(s, guide);
+    // Until the guide has placed the rider, the island shows the ride so far, as on a free ride.
+    final boolean following = route && guide != null && guide.placed();
     mTurn.setVisibility(following ? View.VISIBLE : View.GONE);
 
     final TzFormat.Value speed = TzFormat.speed(st.speedKmh(now), units, locale);
     mStats.setCell(0, getString(R.string.tz_stat_speed), speed.number, speed.unit);
     if (following)
     {
-      final boolean off = follow.phase() == FollowEngine.Phase.OFF_ROUTE;
+      final TurnState turn = guide.turnState();
+      final boolean off = turn.offRoute;
       if (off && !mOffRoute)
         mTurn.performHapticFeedback(Build.VERSION.SDK_INT >= Build.VERSION_CODES.R ? HapticFeedbackConstants.REJECT
                                                                                    : HapticFeedbackConstants.LONG_PRESS);
       if (off != mOffRoute)
         TzRouteLayer.setDimmed(off);
       mOffRoute = off;
-      final TzFormat.Value rem = TzFormat.distance(follow.remainingM(), units, locale);
+      final TzFormat.Value rem = TzFormat.distance(guide.remainingM(), units, locale);
       if (off)
       {
         mStats.setCell(1, getString(R.string.tz_stat_eta), getString(R.string.tz_eta_unknown), "");
@@ -658,13 +677,13 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
       }
       else
       {
-        final long eta = System.currentTimeMillis() + Math.round(follow.etaSeconds() * 1000);
+        final long eta = System.currentTimeMillis() + Math.round(guide.etaSeconds() * 1000);
         mStats.setCell(1, getString(R.string.tz_stat_eta),
                        TzFormat.clock(eta, TimeZone.getDefault(), DateFormat.is24HourFormat(requireContext())), "");
         mStats.setCell(2, getString(R.string.tz_stat_remaining), rem.number, rem.unit);
       }
       mTurn.setUnits(units);
-      mTurn.bind(follow.turnState());
+      mTurn.bind(turn);
     }
     else
     {
@@ -718,7 +737,7 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
       return;
     renderChip(mSpeedChip, s.state());
     final TzFormat.Value speed = TzFormat.speed(paused ? 0 : st.speedKmh(now), units, locale);
-    mHero.setText(speed.number);
+    TzViews.setText(mHero, speed.number);
     mHero.setAlpha(paused ? PAUSED_HERO_ALPHA : 1f);
     mHeroUnit.setText(units == TzFormat.Units.IMPERIAL ? R.string.tz_unit_mph_dot : R.string.tz_unit_kmh_dot);
     mGrid.setAlpha(paused ? PAUSED_GRID_ALPHA : 1f);
@@ -742,20 +761,21 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
     if (mProfile == null)
       return;
     final ClimbTracker climbs = mService == null ? null : mService.climbs();
-    final FollowEngine follow = mService == null ? null : mService.follow();
-    if (climbs == null || follow == null || climbs.profile().length < 2)
+    final Guide guide = mService == null ? null : mService.guide();
+    final FollowRoute line = guide == null ? null : guide.line();
+    if (climbs == null || line == null || climbs.profile().length < 2)
     {
       renderElevation(s, st, units, locale);
       return;
     }
     final Climb c = climbs.shown();
     final int count = climbs.climbs().size();
-    mClimbTitle.setText(c == null ? getString(R.string.tz_no_climbs_ahead)
+    TzViews.setText(mClimbTitle, c == null ? getString(R.string.tz_no_climbs_ahead)
                                   : c.name != null ? c.name.toUpperCase(locale)
                                                    : getString(R.string.tz_climb_number, c.index));
     mClimbPill.setVisibility(c == null ? View.GONE : View.VISIBLE);
     if (c != null)
-      mClimbPill.setText(getString(R.string.tz_climb_pill, c.index, count));
+      TzViews.setText(mClimbPill, getString(R.string.tz_climb_pill, c.index, count));
     mClimbMetrics.setVisibility(View.VISIBLE);
     mClimbRange.setVisibility(c == null ? View.GONE : View.VISIBLE);
 
@@ -775,7 +795,7 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
 
     // Profile: the route's, zoomed on the climb or the whole route.
     final float[] ele = climbs.profile();
-    final double total = follow.remainingM() + follow.along();
+    final double total = line.totalM();
     if (mProfileSource != climbs)
     {
       mProfileSource = climbs;
@@ -797,7 +817,7 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
     }
     final TzFormat.Value length = TzFormat.distance(to - from, units, locale);
     mProfile.setAxisLabels(("0 " + length.unit).toUpperCase(locale), length.toString().toUpperCase(locale));
-    mProfile.setRiderDistance((float) follow.along());
+    mProfile.setRiderDistance((float) guide.along());
     if (c == null)
       mProfile.setSummit(Float.NaN, Float.NaN, null);
     else
@@ -867,6 +887,31 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
     mClimbStats.setCell(0, getString(R.string.tz_stat_altitude), v.number, v.unit);
   }
 
+  /** A route ride or a ride to a place: turn-by-turn. */
+  private static boolean guided(@NonNull RideSession s)
+  {
+    return s.routeId() != null || s.toPlace();
+  }
+
+  /**
+   * The guide's lines when they change: the leg to the track (to its start, or back onto it), and the path of a ride
+   * to a place (a track ride's own line comes from {@link #loadRoute}).
+   */
+  private void showLines(@NonNull RideSession s, @NonNull Guide guide)
+  {
+    if (guide.linesVersion() == mLinesShown)
+      return;
+    mLinesShown = guide.linesVersion();
+    final FollowRoute leg = guide.legLine();
+    if (leg == null)
+      TzRouteLayer.hideLeg();
+    else
+      TzRouteLayer.showLeg(this, leg.lats(), leg.lons());
+    final FollowRoute line = guide.line();
+    if (s.toPlace() && line != null)
+      TzRouteLayer.showPath(this, line.lats(), line.lons());
+  }
+
   /** A route ride draws its line and shows the route's numbers; loaded once per screen. */
   private void loadRoute(@NonNull RideSession s)
   {
@@ -880,7 +925,7 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
       mRoute = route;
       store.loadGeometry(route, g -> {
         if (getView() != null && g != null)
-          TzRouteLayer.show(g.lineLat, g.lineLon);
+          TzRouteLayer.show(this, g.lineLat, g.lineLon);
       });
       render();
     });

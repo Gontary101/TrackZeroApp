@@ -27,6 +27,14 @@
   <string name="tz_off_route">OFF ROUTE</string>
   <string name="tz_off_route_away">away</string>
   <string name="tz_head_back">Head back to the route</string>
+  <string name="tz_recalculating">Recalculating…</string>
+  <string name="tz_navigate_here">Navigate here</string>
+  <!-- Route preview of a ride to a place (Phase 15). -->
+  <string name="tz_preview_to_place">Route by bike</string>
+  <string name="tz_preview_finding">Finding a route…</string>
+  <string name="tz_preview_no_gps">Waiting for your position…</string>
+  <string name="tz_preview_no_route">No bike route found</string>
+  <string name="tz_preview_no_map">Download the map of the area to get a route</string>
 
   <!-- Maneuvers (turn card + voice) -->
   <string name="tz_mnv_straight">Continue straight</string>
@@ -36,6 +44,9 @@
   <string name="tz_mnv_slight_left">Keep left</string>
   <string name="tz_mnv_uturn">Make a U-turn</string>
   <string name="tz_mnv_arrive">Arrive</string>
+  <string name="tz_mnv_roundabout">Take exit %1$d</string>
+  <string name="tz_mnv_roundabout_any">Go round the roundabout</string>
+  <string name="tz_mnv_join">Join the route</string>
   <string name="tz_mnv_reroute">Head back to the route</string>
   <string name="tz_mnv_head_to_start">Head to start</string>
 
@@ -47,6 +58,7 @@
   <string name="tz_voice_off_route">Off route</string>
   <string name="tz_voice_back_on_route">Back on route</string>
   <string name="tz_voice_arrived">You have arrived</string>
+  <string name="tz_voice_roundabout">At the roundabout, take exit %1$d</string>
 
   <!-- Route card -->
   <string name="tz_cd_add_favorite">Add to favorites</string>

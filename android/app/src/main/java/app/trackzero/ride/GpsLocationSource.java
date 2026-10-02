@@ -23,6 +23,7 @@ final class GpsLocationSource implements TzLocationSource, LocationListenerCompa
   private final LocationManager mManager;
   @Nullable
   private Listener mListener;
+  private long mMaxDelayMs;
 
   GpsLocationSource(@NonNull Context context)
   {
@@ -35,9 +36,16 @@ final class GpsLocationSource implements TzLocationSource, LocationListenerCompa
   public void start(@NonNull Listener listener)
   {
     mListener = listener;
+    request();
+  }
+
+  @SuppressLint("MissingPermission")
+  private void request()
+  {
     final LocationRequestCompat request = new LocationRequestCompat.Builder(INTERVAL_MS)
                                               .setQuality(LocationRequestCompat.QUALITY_HIGH_ACCURACY)
                                               .setMinUpdateDistanceMeters(0)
+                                              .setMaxUpdateDelayMillis(mMaxDelayMs)
                                               .build();
     try
     {
@@ -48,6 +56,29 @@ final class GpsLocationSource implements TzLocationSource, LocationListenerCompa
     {
       Log.e(TAG, "No GPS updates", e);
     }
+  }
+
+  @SuppressLint("MissingPermission")
+  @Override
+  public void setMaxDelay(long maxDelayMs)
+  {
+    if (maxDelayMs == mMaxDelayMs)
+      return;
+    // Going back to fixes at once (the screen came on): the ones batched so far first.
+    if (maxDelayMs < mMaxDelayMs && mListener != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
+    {
+      try
+      {
+        mManager.requestFlush(LocationManager.GPS_PROVIDER, this, 0);
+      }
+      catch (IllegalArgumentException e)
+      {
+        Log.w(TAG, "No flush", e);
+      }
+    }
+    mMaxDelayMs = maxDelayMs;
+    if (mListener != null)
+      request();
   }
 
   @Override

@@ -13,4 +13,10 @@ public interface TzLocationSource
   void start(@NonNull Listener listener);
 
   void stop();
+
+  /**
+   * Fixes may arrive in batches (every {@code maxDelayMs}, recorded once a second all the same) so the phone sleeps
+   * between them; 0 delivers each at once. Sources that can't batch ignore it.
+   */
+  default void setMaxDelay(long maxDelayMs) {}
 }

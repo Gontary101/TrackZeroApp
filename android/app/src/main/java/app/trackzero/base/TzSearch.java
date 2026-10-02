@@ -4,6 +4,7 @@ import android.content.Context;
 import android.location.Location;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import app.organicmaps.sdk.Framework;
 import app.organicmaps.sdk.search.SearchEngine;
 import app.organicmaps.sdk.search.SearchListener;
 import app.organicmaps.sdk.search.SearchResult;
@@ -68,6 +69,11 @@ public final class TzSearch
   private static boolean sListening;
   /** A result is being shown: the map keeps its selection (the "pin") instead of dropping it like a POI tap. */
   private static boolean sShowing;
+  /** The result pinned on the map, until the selection goes; for its card (B1, NAVIGATE HERE). */
+  @Nullable
+  private static Place sShown;
+  @Nullable
+  private static Runnable sShownListener;
   @NonNull
   private static List<Place> sLast = Collections.emptyList();
 
@@ -142,8 +148,44 @@ public final class TzSearch
   /** Centres the map on a place of the last search and marks it (the map's selection). */
   public static void show(@NonNull Place place)
   {
+    // The result, not the rider: following would pull the camera back on the next fix.
+    TzMap.stopFollowing();
     sShowing = true;
+    sShown = place;
     SearchEngine.INSTANCE.showResult(place.index);
+    if (sShownListener != null)
+      sShownListener.run();
+  }
+
+  /** The result pinned on the map, or null. */
+  @Nullable
+  public static Place shown()
+  {
+    return sShown;
+  }
+
+  /** Told when the pinned result changes (one listener: the map screen); null to stop. */
+  public static void setShownListener(@Nullable Runnable listener)
+  {
+    sShownListener = listener;
+  }
+
+  /** The map's selection went (a tap elsewhere): no pinned result any more. */
+  static void selectionCleared()
+  {
+    // Showing a result first drops the selection before: that is not the result going.
+    if (sShown == null || sShowing)
+      return;
+    sShown = null;
+    if (sShownListener != null)
+      sShownListener.run();
+  }
+
+  /** Drops the pinned result and its pin. */
+  public static void clearShown()
+  {
+    sShown = null;
+    Framework.nativeDeactivatePopup();
   }
 
   /** True once after {@link #show}: the place selection that follows is the search result's, keep it. */

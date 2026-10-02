@@ -355,3 +355,50 @@ On the phone the route ride's map stayed north-up. There were two causes:
   again. Every compass reading or fix with a bearing now retries a waiting request, at most once a second; a switch
   with no answer after 1 s counts as refused.
 The emulator's fixed compass and replayed bearings hid both.
+
+## D37 · Routing: CoMaps' bicycle router as a path service (Phase 15)
+The plan suggests `RoutingController`. That session draws its own route, adds route marks, stops location follow,
+zooms out to the whole route and runs its own off-route logic, which would take the ride away from TrackZero's
+engine, card, voice and line. Instead `BicyclePath` (new JNI file) runs CoMaps' `IndexRouter` directly for a bicycle,
+between two points, on a background thread, and returns only the path: its points, altitudes, and turns (CoMaps'
+own announce list: direction, roundabout exit, street). Nothing is drawn and the map is left alone. One router is
+kept for a ride, so its road graphs load once (seconds) rather than per path, and released at the ride's end.
+- `follow/Guide` (pure, unit-tested) owns the route followed and a routed *leg* onto it:
+  - a leg to the start when the track begins more than 200 m away;
+  - after OFF_ROUTE, a leg back to the track's closest point 200 m to 2 km further on ("Recalculating…" meanwhile);
+  - a leg left behind gets a new one; when the rider is back within 20 m of the track the leg goes away.
+  - Requests are at least 10 s apart, and failures back off up to 5 min, so a ride without maps doesn't burn CPU.
+- A **ride to a place** (search → card → NAVIGATE HERE → route preview → START RIDE) follows the routed path itself.
+  Leaving it works the path out again from the rider. The journal keeps the destination, so a restored ride routes
+  again from its first fix. The path's altitudes give its climbs (R5) the same way a GPX's do.
+- CoMaps turns map onto the ManeuverGlyph set: roundabout exits use `ic_tz_roundabout` with the exit number under the
+  glyph ("Take exit 2"; voice "At the roundabout, take exit 2"). The end of a leg is JOIN ("Join the route"). The
+  router's street names are used as they are. CoMaps' TTS stays off.
+- Route lines: the track (ring at its start), a place path (ring at the place), and the leg (no ring) as a second line.
+
+## D38 · Battery pass (Phase 15)
+Measured or read in the code, each without changing what the rider sees:
+- **Map position once a second.** CoMaps polls location twice a second while the app is open, and every fix wakes
+  the CPU and animates the map. It now matches the ride's 1 Hz.
+- **No background GPS without a fix.** CoMaps kept GPS searching in the background while the map waited for a first
+  fix (opening the app indoors and leaving kept GPS on indefinitely). TrackZero rides have their own service.
+- **Compass.** D36 forwarded every reading, about 15 per second. In heading-up the engine turns and redraws the map
+  for any change over 0.06°, so a still rider kept the GPU busy. Now only changes of 3° or more reach the map. The
+  sensor sleeps at 4 m/s and up (the engine takes the heading from the GPS course there) and wakes below 3 m/s.
+- **60 Hz during a ride.** The screen stays on for hours and the map moves at cycling speed; a 120 Hz panel costs
+  noticeably more. The ride screen asks for the display's slowest mode of at least 59 Hz (browsing keeps the
+  system's choice).
+- **Screen off:**
+  - Fixes are batched (15 s) when nothing is announced (free ride, or voice off); recording stays at 1 Hz. The batch
+    is flushed when the screen comes on.
+  - The notification isn't refreshed while nobody can see it; it refreshes when the screen comes on.
+  - A pause the rider ends themselves (a café stop) stops GPS and the barometer altogether.
+- **Ride screen:** one render a second (the tick only covers gaps between fixes), and text set only when it changes,
+  since an unchanged `setText` still costs a layout pass.
+- Routing: the router is kept for the ride, and paths are not retried sooner than 10 s (backoff on failure).
+
+## D39 · Map state belongs to the screen that set it
+`TzNavigator` replaces screens with reordering allowed, so the next screen sets up before the previous one's
+`onDestroyView`. The preview's teardown (`TzRouteLayer.hide()`, `setVisibleArea(0, 0)`) then ran after the ride
+screen had drawn its line and set its 67 % rider point, leaving R2 with no line and the rider centred. Visible area
+and route lines now carry their owner, and a screen going away clears only what it still owns.

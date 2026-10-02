@@ -1970,11 +1970,11 @@ JNIEXPORT void JNICALL Java_app_organicmaps_sdk_Framework_nativeShowRect(JNIEnv 
 }
 
 // TrackZero: draws a lat/lon polyline as a route line (not a bookmark, nothing is persisted): a 16dp glow under a
-// 5.5dp line, and a start ring. Returns the drape subroute ids for nativeRemoveTrackLine, or null when the engine
-// isn't running.
+// 5.5dp line, and a ring at its start (ring 1), its end (ring 2: a destination) or none (0: a leg joining another
+// line). Returns the drape subroute ids for nativeRemoveTrackLine, or null when the engine isn't running.
 JNIEXPORT jintArray JNICALL Java_app_organicmaps_sdk_Framework_nativeShowTrackLine(JNIEnv * env, jclass,
                                                                                    jdoubleArray lats, jdoubleArray lons,
-                                                                                   jboolean dimmed)
+                                                                                   jboolean dimmed, jint ring)
 {
   auto engine = frm()->GetDrapeEngine();
   jsize const n = env->GetArrayLength(lats);
@@ -2013,12 +2013,14 @@ JNIEXPORT jintArray JNICALL Java_app_organicmaps_sdk_Framework_nativeShowTrackLi
                            dimmed ? df::RoutePattern(2.0, 3.0) : df::RoutePattern());
   line->m_maxPixelWidth = kLineWidthDp * static_cast<float>(df::VisualParams::Instance().GetVisualScale());
 
-  // Start ring: 13dp black disc with a 3dp mint ring and a 4.5dp mint dot. Markers stack in list order and are
+  // Ring: 13dp black disc with a 3dp mint ring and a 4.5dp mint dot. Markers stack in list order and are
   // scaled by the line's half width.
-  auto const addCircle = [&line, &polyline](df::ColorConstant const & color, float radiusDp)
+  auto const addCircle = [&line, &polyline, ring](df::ColorConstant const & color, float radiusDp)
   {
+    if (ring == 0)
+      return;
     df::SubrouteMarker m;
-    m.m_position = polyline.Front();
+    m.m_position = ring == 2 ? polyline.Back() : polyline.Front();
     m.m_colors = {color};
     m.m_innerColor = color;
     m.m_scale = radiusDp / (kLineWidthDp / 2);

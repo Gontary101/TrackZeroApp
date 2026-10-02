@@ -35,6 +35,7 @@ import app.organicmaps.sdk.util.ConnectionState;
 import app.organicmaps.sdk.util.log.Logger;
 import app.organicmaps.util.ThemeSwitcher;
 import app.organicmaps.util.Utils;
+import app.trackzero.TzConfig;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 
@@ -226,7 +227,9 @@ public class MwmApplication extends Application implements Application.ActivityL
       Logger.i(LOCATION_TAG, "Android Auto is active, keeping location in the background");
     else if (RoutingController.get().isNavigating())
       Logger.i(LOCATION_TAG, "Navigation is in progress, keeping location in the background");
-    else if (!Map.isEngineCreated() || LocationState.getMode() == LocationState.PENDING_POSITION)
+    // TrackZero: a ride records with its own service; the map waiting for a first fix is no reason to keep GPS
+    // searching while nobody looks at it.
+    else if (!TzConfig.ENABLED && (!Map.isEngineCreated() || LocationState.getMode() == LocationState.PENDING_POSITION))
       Logger.i(LOCATION_TAG, "PENDING_POSITION mode, keeping location in the background");
     else if (TrackRecorder.nativeIsTrackRecordingEnabled())
       Logger.i(LOCATION_TAG, "Track Recordr is active, keeping location in the background");

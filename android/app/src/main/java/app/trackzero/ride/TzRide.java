@@ -7,6 +7,7 @@ import androidx.annotation.Nullable;
 import app.organicmaps.R;
 import app.trackzero.TzNavigator;
 import app.trackzero.base.TzBase;
+import app.trackzero.follow.RoutedPath;
 import app.trackzero.routes.Route;
 import java.text.DateFormat;
 import java.util.Date;
@@ -25,6 +26,16 @@ public final class TzRide
                             : activity.getString(R.string.tz_free_ride_name,
                                                  DateFormat.getDateInstance(DateFormat.MEDIUM).format(new Date()));
       TzRideService.start(activity, route == null ? null : route.id, name);
+      TzNavigator.show(TzNavigator.Screen.RIDE, null);
+    });
+  }
+
+  /** Starts a ride to a place along the path previewed (Phase 15). */
+  public static void startTo(@NonNull Activity activity, @NonNull String name, double lat, double lon,
+                             @NonNull RoutedPath path)
+  {
+    TzBase.requestRidePermissions(activity, () -> {
+      TzRideService.startTo(activity, name, lat, lon, path);
       TzNavigator.show(TzNavigator.Screen.RIDE, null);
     });
   }

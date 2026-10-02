@@ -387,12 +387,27 @@ public class LocationHelper implements BaseLocationProvider.Listener
     mListeners.removeObserver(listener);
   }
 
+  /** TrackZero: how often the map's position updates while the app is open (CoMaps: twice a second). */
+  private long mForegroundIntervalMs = INTERVAL_MS;
+
+  /**
+   * TrackZero: sets how often the map's position updates; each update wakes the CPU and animates the map. Applied
+   * at the next start (or now, if running).
+   */
+  @RequiresPermission(anyOf = {ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION})
+  public void setForegroundIntervalMs(long ms)
+  {
+    mForegroundIntervalMs = ms;
+    if (isActive())
+      restartWithNewMode();
+  }
+
   private long calcLocationUpdatesInterval()
   {
     if (TrackRecorder.nativeIsTrackRecordingEnabled())
       return INTERVAL_TRACK_RECORDING;
 
-    return INTERVAL_MS;
+    return mForegroundIntervalMs;
   }
 
   /**

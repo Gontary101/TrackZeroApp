@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- B1 · Map: transparent overlay; touches outside the controls reach the map. -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:app="http://schemas.android.com/apk/res-auto"
   android:layout_width="match_parent"
   android:layout_height="match_parent">
   <app.trackzero.ui.TzChip
@@ -23,4 +24,42 @@
     android:layout_gravity="bottom|end"
     android:layout_marginEnd="@dimen/tz_map_footer_side"
     android:text="@string/tz_osm_attribution" />
+  <!-- A search result pinned on the map (B2 → B1): where it is, and NAVIGATE HERE (Phase 15). -->
+  <LinearLayout
+    android:id="@+id/tz_map_place"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_gravity="bottom"
+    android:layout_marginStart="@dimen/tz_gutter_ride"
+    android:layout_marginEnd="@dimen/tz_gutter_ride"
+    android:background="@drawable/tz_bg_surface2_r32"
+    android:clickable="true"
+    android:elevation="@dimen/tz_elev2"
+    android:orientation="vertical"
+    android:padding="@dimen/tz_preview_card_pad"
+    android:visibility="gone">
+    <TextView
+      android:id="@+id/tz_map_place_label"
+      style="@style/TzText.Label"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:maxLines="1"
+      android:ellipsize="end" />
+    <TextView
+      android:id="@+id/tz_map_place_title"
+      style="@style/TzText.PreviewTitle"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_marginTop="@dimen/tz_space_4"
+      android:ellipsize="end"
+      android:maxLines="2" />
+    <com.google.android.material.button.MaterialButton
+      android:id="@+id/tz_map_place_go"
+      style="@style/TzButton.Secondary"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_marginTop="@dimen/tz_space_16"
+      android:text="@string/tz_navigate_here"
+      app:icon="@drawable/ic_tz_routes" />
+  </LinearLayout>
 </FrameLayout>

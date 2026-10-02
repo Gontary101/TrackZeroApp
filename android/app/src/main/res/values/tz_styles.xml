@@ -19,6 +19,11 @@
     <item name="android:fontFamily">@font/barlow_bold</item>
     <item name="android:textSize">@dimen/tz_text_18</item>
   </style>
+  <style name="TzText.TurnExit">
+    <item name="android:fontFamily">@font/barlow_condensed_bold</item>
+    <item name="android:textSize">@dimen/tz_text_16</item>
+    <item name="android:textColor">@color/tz_text1</item>
+  </style>
   <style name="TzText.TurnStreet">
     <item name="android:fontFamily">@font/barlow_medium</item>
     <item name="android:textSize">@dimen/tz_text_16</item>
@@ -58,9 +63,9 @@
     <item name="elevation">0dp</item>
   </style>
   <style name="TzButton.Primary">
-    <item name="backgroundTint">@color/tz_mint</item>
-    <item name="android:textColor">@color/tz_on_mint</item>
-    <item name="iconTint">@color/tz_on_mint</item>
+    <item name="backgroundTint">@color/tz_button_primary_bg</item>
+    <item name="android:textColor">@color/tz_button_primary_ink</item>
+    <item name="iconTint">@color/tz_button_primary_ink</item>
   </style>
   <style name="TzButton.Secondary">
     <item name="backgroundTint">@color/tz_surface3</item>

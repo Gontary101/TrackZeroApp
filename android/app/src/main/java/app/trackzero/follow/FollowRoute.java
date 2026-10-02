@@ -60,6 +60,32 @@ public final class FollowRoute
     return lat.length;
   }
 
+  /** The points' latitudes (shared, not a copy: read only). */
+  @NonNull
+  public double[] lats()
+  {
+    return lat;
+  }
+
+  @NonNull
+  public double[] lons()
+  {
+    return lon;
+  }
+
+  /** Distance along the route at each point (shared, read only). */
+  @NonNull
+  public double[] distances()
+  {
+    return cum;
+  }
+
+  /** Distance along the route at point {@code i}, metres. */
+  public double distanceAt(int i)
+  {
+    return cum[i];
+  }
+
   public double totalM()
   {
     return cum[cum.length - 1];

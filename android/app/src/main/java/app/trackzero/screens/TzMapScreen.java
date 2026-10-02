@@ -6,18 +6,25 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
+import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import app.organicmaps.R;
+import app.trackzero.TzNavigator;
 import app.trackzero.TzPrefs;
 import app.trackzero.base.TzLocation;
 import app.trackzero.base.TzMap;
+import app.trackzero.base.TzSearch;
 import app.trackzero.format.TzFormat;
+import app.trackzero.geo.Geo;
 import app.trackzero.ui.TzChip;
 import app.trackzero.ui.TzMapControls;
 import java.util.Locale;
 
-/** B1 · Map: GPS chip, map controls, ruler and attribution over the browsing map. */
+/**
+ * B1 · Map: GPS chip, map controls, ruler and attribution over the browsing map; a search result pinned on it gets
+ * a card with NAVIGATE HERE (Phase 15).
+ */
 public class TzMapScreen extends TzScreen implements TzLocation.Listener, TzMap.FollowListener
 {
   private static final int FIRST_CAMERA_ZOOM = 15;
@@ -29,6 +36,10 @@ public class TzMapScreen extends TzScreen implements TzLocation.Listener, TzMap.
   private TzMapControls mControls;
   @Nullable
   private View mAttribution;
+  @Nullable
+  private View mPlaceCard;
+  /** Bottom inset, from {@link #onInsets}. */
+  private int mBottom;
 
   @Nullable
   @Override
@@ -44,6 +55,13 @@ public class TzMapScreen extends TzScreen implements TzLocation.Listener, TzMap.
     mGps = view.findViewById(R.id.tz_map_gps);
     mControls = view.findViewById(R.id.tz_map_controls);
     mAttribution = view.findViewById(R.id.tz_map_attribution);
+    mPlaceCard = view.findViewById(R.id.tz_map_place);
+    view.findViewById(R.id.tz_map_place_go).setOnClickListener(v -> navigateToPlace());
+    // The ruler and the attribution stay above the card.
+    mPlaceCard.addOnLayoutChangeListener((v, l, t, r, b, ol, ot, or, ob) -> {
+      if (b - t != ob - ot)
+        layoutFooter();
+    });
     mControls.setListener(new TzMapControls.Listener() {
       @Override
       public void onZoomIn()
@@ -72,6 +90,8 @@ public class TzMapScreen extends TzScreen implements TzLocation.Listener, TzMap.
     super.onStart();
     TzMap.addFollowListener(this);
     TzLocation.addListener(requireContext(), this);
+    TzSearch.setShownListener(this::bindPlace);
+    bindPlace();
     final Location last = TzLocation.last(requireContext());
     if (last != null)
       onLocation(last);
@@ -85,6 +105,7 @@ public class TzMapScreen extends TzScreen implements TzLocation.Listener, TzMap.
     super.onStop();
     TzMap.removeFollowListener(this);
     TzLocation.removeListener(requireContext(), this);
+    TzSearch.setShownListener(null);
   }
 
   @Override
@@ -94,17 +115,73 @@ public class TzMapScreen extends TzScreen implements TzLocation.Listener, TzMap.
     setTopMargin(mGps, top + extraTop);
     setTopMargin(mControls, top + extraTop);
 
-    // Ruler (bottom-left) and attribution (bottom-right) sit 16dp above the island.
-    final int footer = bottom + getResources().getDimensionPixelSize(R.dimen.tz_map_footer_bottom);
-    final FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams) mAttribution.getLayoutParams();
-    lp.bottomMargin = footer;
-    mAttribution.setLayoutParams(lp);
-    TzMap.setRulerPosition(getResources().getDimensionPixelSize(R.dimen.tz_map_footer_side), footer);
+    mBottom = bottom;
+    // The place card sits where the footer does, 16dp above the island.
+    final FrameLayout.LayoutParams cp = (FrameLayout.LayoutParams) mPlaceCard.getLayoutParams();
+    cp.bottomMargin = bottom + getResources().getDimensionPixelSize(R.dimen.tz_map_footer_bottom);
+    mPlaceCard.setLayoutParams(cp);
+    layoutFooter();
 
     // Centre the rider between the status bar and the island.
     final int islandTop = bottom + getResources().getDimensionPixelSize(R.dimen.tz_bottom_inset_extra)
                         + getResources().getDimensionPixelSize(R.dimen.tz_island_h);
-    TzMap.setVisibleArea(top, islandTop);
+    TzMap.setVisibleArea(this, top, islandTop);
+  }
+
+  /** Ruler (bottom-left) and attribution (bottom-right): 16dp above the island, or above the place card. */
+  private void layoutFooter()
+  {
+    if (mAttribution == null || mPlaceCard == null)
+      return;
+    int footer = mBottom + getResources().getDimensionPixelSize(R.dimen.tz_map_footer_bottom);
+    if (mPlaceCard.getVisibility() == View.VISIBLE)
+      footer += mPlaceCard.getHeight() + getResources().getDimensionPixelSize(R.dimen.tz_space_16);
+    final FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams) mAttribution.getLayoutParams();
+    if (lp.bottomMargin != footer)
+    {
+      lp.bottomMargin = footer;
+      mAttribution.setLayoutParams(lp);
+    }
+    TzMap.setRulerPosition(getResources().getDimensionPixelSize(R.dimen.tz_map_footer_side), footer);
+  }
+
+  /** The card of the search result pinned on the map: what and how far, NAVIGATE HERE. */
+  private void bindPlace()
+  {
+    final View v = getView();
+    if (v == null || mPlaceCard == null)
+      return;
+    final TzSearch.Place p = TzSearch.shown();
+    final boolean show = p != null;
+    if ((mPlaceCard.getVisibility() == View.VISIBLE) != show)
+    {
+      mPlaceCard.setVisibility(show ? View.VISIBLE : View.GONE);
+      layoutFooter();
+    }
+    if (p == null)
+      return;
+    String label = p.subtitle;
+    final Location here = TzLocation.last(requireContext());
+    if (here != null)
+    {
+      final String d = TzFormat.distance(Geo.distance(here.getLatitude(), here.getLongitude(), p.lat, p.lon),
+                                         TzPrefs.units(requireContext()), Locale.getDefault()).toString();
+      label = label.isEmpty() ? d : label + " · " + d;
+    }
+    ((TextView) v.findViewById(R.id.tz_map_place_label)).setText(label);
+    ((TextView) v.findViewById(R.id.tz_map_place_title)).setText(p.name);
+  }
+
+  private void navigateToPlace()
+  {
+    final TzSearch.Place p = TzSearch.shown();
+    if (p == null)
+      return;
+    final Bundle args = new Bundle();
+    args.putString(TzPreviewScreen.ARG_PLACE_NAME, p.name);
+    args.putDouble(TzPreviewScreen.ARG_PLACE_LAT, p.lat);
+    args.putDouble(TzPreviewScreen.ARG_PLACE_LON, p.lon);
+    TzNavigator.show(TzNavigator.Screen.PREVIEW, args);
   }
 
   private static void setTopMargin(@NonNull View v, int px)

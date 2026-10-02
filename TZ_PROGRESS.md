@@ -245,3 +245,28 @@ it led to).
 - Emulator artifacts, not bugs: its barometer is fixed at 1013.25 hPa, so altitude, grade and gain stay flat during
   ride tests. Debug builds show the native "V: Zoom | FPS" label. uiautomator can't get an idle tree on pages that
   update every second (use screenshots).
+
+## Phase 15 — Base routing + battery pass
+
+- Bicycle paths from CoMaps' router without a routing session (D37):
+  - a leg to a far start;
+  - R3 "Recalculating…" then a leg back onto the track;
+  - Navigate here from search → place card → preview → ride to the place, rerouted when left;
+  - roundabout exits; JOIN at the end of a leg.
+  `GuideTest` (7) covers the decisions.
+- Verified on the emulator (Puy-de-Dôme map):
+  - start 900 m away → 1.2 km leg with street names, remaining = leg + track;
+  - off route 80 m → 119 m leg back, then the track's turns again;
+  - Jardin Lecoq: card, preview (930 m, gain 25 m, high point 396 m, profile), ride with turns, saved under its name.
+- Battery (D38), checked with `dumpsys location` / `dumpsys sensorservice`:
+  - map location requests at 1 s;
+  - fused location stopped in the background;
+  - screen-off ride request `maxUpdateDelay=15s`, back to immediate on screen-on;
+  - manual pause + screen off: no GPS request;
+  - compass sensor unregistered while riding at 25 km/h.
+- Fixed on the way:
+  - map screens wiped each other's line and rider point on transitions (D39);
+  - a search result was pulled back to the rider by follow mode;
+  - the B1 ruler sits above the place card;
+  - START RIDE is neutral until there is a path.
+

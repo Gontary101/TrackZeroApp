@@ -2,8 +2,10 @@ package app.trackzero.ui;
 
 import android.content.Context;
 import android.util.AttributeSet;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -31,6 +33,8 @@ public class TzTurnCard extends LinearLayout
   @NonNull
   private final ImageView mGlyph;
   @NonNull
+  private final TextView mExit;
+  @NonNull
   private final TextView mOffTitle;
   @NonNull
   private final TzMetricView mDistance;
@@ -50,6 +54,8 @@ public class TzTurnCard extends LinearLayout
   private TzFormat.Units mUnits = TzFormat.Units.METRIC;
   @Nullable
   private Boolean mOffRoute;
+  private boolean mRecalculating;
+  private int mShownExit = -1;
 
   public TzTurnCard(@NonNull Context context, @Nullable AttributeSet attrs)
   {
@@ -61,6 +67,7 @@ public class TzTurnCard extends LinearLayout
     LayoutInflater.from(context).inflate(R.layout.tz_c_turn_card, this, true);
     mWell = findViewById(R.id.tz_turn_well);
     mGlyph = findViewById(R.id.tz_turn_glyph);
+    mExit = findViewById(R.id.tz_turn_exit);
     mOffTitle = findViewById(R.id.tz_turn_off_title);
     mDistance = findViewById(R.id.tz_turn_distance);
     mInstruction = findViewById(R.id.tz_turn_instruction);
@@ -86,15 +93,23 @@ public class TzTurnCard extends LinearLayout
     if (s.offRoute)
     {
       mDistance.setValue(distance.number, distance.unit + " " + getResources().getString(R.string.tz_off_route_away));
+      if (s.recalculating != mRecalculating)
+      {
+        mRecalculating = s.recalculating;
+        mInstruction.setText(s.recalculating ? R.string.tz_recalculating : R.string.tz_head_back);
+      }
       return;
     }
 
     mDistance.setValue(distance);
     TzManeuvers.applyGlyph(mGlyph, s.maneuver, s.glyphRotationDeg, true);
+    showExit(s.maneuver == Maneuver.ROUNDABOUT ? s.exit : 0);
     mWell.setBackgroundResource(s.imminent ? R.drawable.tz_bg_mint_r22 : R.drawable.tz_bg_surface3_r22);
-    tintGlyph(s.imminent ? R.color.tz_on_mint : R.color.tz_text1);
-    mInstruction.setText(TzManeuvers.phrase(s.maneuver));
-    mStreet.setText(s.street);
+    final int ink = s.imminent ? R.color.tz_on_mint : R.color.tz_text1;
+    tintGlyph(ink);
+    mExit.setTextColor(ContextCompat.getColor(getContext(), ink));
+    TzViews.setText(mInstruction, TzManeuvers.instruction(getContext(), s.maneuver, s.exit));
+    TzViews.setText(mStreet, s.street);
     mStreet.setVisibility(s.street.isEmpty() ? GONE : VISIBLE);
 
     final boolean then = s.thenManeuver != null;
@@ -104,8 +119,22 @@ public class TzTurnCard extends LinearLayout
     {
       TzManeuvers.applyGlyph(mThenGlyph, s.thenManeuver, 0f, false);
       final String d = TzFormat.distance(s.thenDistanceM, mUnits, locale).toString();
-      mThenText.setText(s.thenStreet.isEmpty() ? d : d + " · " + s.thenStreet);
+      TzViews.setText(mThenText, s.thenStreet.isEmpty() ? d : d + " · " + s.thenStreet);
     }
+  }
+
+  /** A roundabout's exit under its glyph, the glyph moved up to make room; 0 hides it. */
+  private void showExit(int exit)
+  {
+    if (exit == mShownExit)
+      return;
+    mShownExit = exit;
+    final FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams) mGlyph.getLayoutParams();
+    lp.gravity = exit > 0 ? Gravity.TOP | Gravity.CENTER_HORIZONTAL : Gravity.CENTER;
+    lp.topMargin = exit > 0 ? getResources().getDimensionPixelSize(R.dimen.tz_space_8) : 0;
+    mGlyph.setLayoutParams(lp);
+    mExit.setVisibility(exit > 0 ? VISIBLE : GONE);
+    mExit.setText(exit > 0 ? String.valueOf(exit) : "");
   }
 
   /** Restyles only on a state change; bind() runs on every fix. */
@@ -124,7 +153,9 @@ public class TzTurnCard extends LinearLayout
       return;
     mWell.setBackgroundResource(R.drawable.tz_bg_amber_well_r22);
     TzManeuvers.applyGlyph(mGlyph, Maneuver.REROUTE, 0f, true);
+    showExit(0);
     tintGlyph(R.color.tz_amber);
+    mRecalculating = false;
     mInstruction.setText(R.string.tz_head_back);
     mStreet.setVisibility(GONE);
     mDivider.setVisibility(GONE);

@@ -53,7 +53,7 @@ public class TzChip extends LinearLayout
   /** Dot and text colours. */
   public void setState(@NonNull CharSequence text, @ColorRes int dotColor, @ColorRes int textColor)
   {
-    mText.setText(text);
+    TzViews.setText(mText, text);
     mText.setTextColor(ContextCompat.getColor(getContext(), textColor));
     mDot.setBackgroundTintList(ContextCompat.getColorStateList(getContext(), dotColor));
   }

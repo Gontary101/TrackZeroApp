@@ -18,6 +18,17 @@
         android:layout_height="@dimen/tz_maneuver_glyph"
         android:layout_gravity="center"
         android:importantForAccessibility="no" />
+      <!-- Roundabout exit, under the glyph (the glyph moves up). -->
+      <TextView
+        android:id="@+id/tz_turn_exit"
+        style="@style/TzText.TurnExit"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|center_horizontal"
+        android:layout_marginBottom="@dimen/tz_space_4"
+        android:importantForAccessibility="no"
+        android:includeFontPadding="false"
+        android:visibility="gone" />
     </FrameLayout>
     <LinearLayout
       android:layout_width="0dp"

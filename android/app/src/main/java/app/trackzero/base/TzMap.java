@@ -152,14 +152,32 @@ public final class TzMap
     sFollowListeners.remove(l);
   }
 
+  /** The screen whose visible area is set, for {@link #clearVisibleArea}. */
+  @Nullable
+  private static Object sAreaOwner;
+
   /**
    * Declares which part of the map is not covered by TrackZero UI (pixels from the top and bottom of the map).
-   * The rider arrow and {@link #showRect} are centred inside this area.
+   * The rider arrow and {@link #showRect} are centred inside this area. {@code owner} is the screen setting it.
    */
-  public static void setVisibleArea(int topPx, int bottomPx)
+  public static void setVisibleArea(@NonNull Object owner, int topPx, int bottomPx)
   {
+    sAreaOwner = owner;
     if (sHost != null)
       sHost.setVisibleMapArea(topPx, bottomPx);
+  }
+
+  /**
+   * The whole map again, unless another screen has set its area since: a screen going away comes after the next
+   * one has set up (fragment transactions reorder).
+   */
+  public static void clearVisibleArea(@NonNull Object owner)
+  {
+    if (sAreaOwner != owner)
+      return;
+    sAreaOwner = null;
+    if (sHost != null)
+      sHost.setVisibleMapArea(0, 0);
   }
 
   /** Frames the rect inside the area set by {@link #setVisibleArea}, keeping {@code paddingPx} clear on every side. */

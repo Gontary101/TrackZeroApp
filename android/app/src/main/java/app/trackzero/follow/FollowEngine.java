@@ -311,6 +311,42 @@ public final class FollowEngine
   }
 
   @NonNull
+  public FollowRoute route()
+  {
+    return mRoute;
+  }
+
+  public double totalM()
+  {
+    return mRoute.totalM();
+  }
+
+  /** Straight-line distance to the route's first point, metres. */
+  public double toStartM()
+  {
+    return mToStartM;
+  }
+
+  /** The recent moving speed the ETA uses, m/s. */
+  public double speedMps()
+  {
+    return mSpeedMps;
+  }
+
+  /**
+   * Starts the ETA from another engine's recent speed (a route replaced by a new one mid-ride), instead of 2
+   * minutes of the default speed.
+   */
+  public void inheritSpeed(@NonNull FollowEngine from)
+  {
+    System.arraycopy(from.mEtaTime, 0, mEtaTime, 0, mEtaTime.length);
+    System.arraycopy(from.mEtaDist, 0, mEtaDist, 0, mEtaDist.length);
+    mEtaStart = from.mEtaStart;
+    mEtaCount = from.mEtaCount;
+    mSpeedMps = from.mSpeedMps;
+  }
+
+  @NonNull
   public List<RouteManeuver> maneuvers()
   {
     return mManeuvers;
@@ -332,10 +368,11 @@ public final class FollowEngine
     final RouteManeuver m = mManeuvers.get(mNext);
     final double dist = Math.max(0, m.at - mAlong);
     final RouteManeuver then = mNext + 1 < mManeuvers.size() ? mManeuvers.get(mNext + 1) : null;
+    final boolean imminent = dist <= TzConfig.IMMINENT_M;
     if (then == null || then.at - m.at > THEN_MAX_M)
-      return new TurnState(m.type, dist, street(m), 0, null, 0, "", dist <= TzConfig.IMMINENT_M, false);
-    return new TurnState(m.type, dist, street(m), 0, then.type, then.at - m.at, street(then),
-                         dist <= TzConfig.IMMINENT_M, false);
+      return new TurnState(m.type, dist, street(m), 0, null, 0, "", imminent, false, false, m.exit, 0);
+    return new TurnState(m.type, dist, street(m), 0, then.type, then.at - m.at, street(then), imminent, false, false,
+                         m.exit, then.exit);
   }
 
   @NonNull

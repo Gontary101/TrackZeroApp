@@ -33,6 +33,7 @@ import app.organicmaps.sdk.MapView;
 import app.organicmaps.sdk.PlacePageActivationListener;
 import app.organicmaps.sdk.location.LocationHelper;
 import app.organicmaps.sdk.location.LocationState;
+import app.organicmaps.sdk.location.SensorHelper;
 import app.organicmaps.sdk.location.SensorListener;
 import app.organicmaps.sdk.settings.UnitLocale;
 import app.organicmaps.sdk.util.LocationUtils;
@@ -88,6 +89,8 @@ public class TzActivity extends BaseMwmFragmentActivity
     super.onSafeCreate(savedInstanceState);
     if (savedInstanceState != null)
       mPermissionAsked = savedInstanceState.getBoolean(STATE_PERMISSION_ASKED);
+    // Each map position wakes the CPU and animates the map: half as many, the rider can't tell.
+    locationHelper().setForegroundIntervalMs(TzConfig.MAP_LOCATION_INTERVAL_MS);
 
     setUpEdgeToEdge();
     setContentView(R.layout.tz_activity);
@@ -130,15 +133,40 @@ public class TzActivity extends BaseMwmFragmentActivity
     outState.putBoolean(STATE_PERMISSION_ASKED, mPermissionAsked);
   }
 
-  // Heading-up needs a heading: the compass when standing still (CoMaps' location helper already runs the
-  // sensor; only the map was not told), the GPS bearing when moving.
+  // Heading-up needs a heading: the compass when standing still (CoMaps' location helper runs the sensor while
+  // the app is open; only the map was not told), the GPS course when moving.
+  /** Smaller compass changes are noise: the map would turn, and redraw, on every reading. */
+  private static final double COMPASS_STEP_RAD = Math.toRadians(3);
+  /** At this speed the map takes the heading from the GPS course and ignores the compass: the sensor sleeps... */
+  private static final float COMPASS_OFF_MPS = 4f;
+  /** ...until the rider is slower than this. */
+  private static final float COMPASS_ON_MPS = 3f;
+  private double mLastNorth = Double.NaN;
+  private boolean mCompassAsleep;
   private final SensorListener mCompass = north -> {
+    if (!Double.isNaN(mLastNorth)
+        && Math.abs(Math.IEEEremainder(north - mLastNorth, 2 * Math.PI)) < COMPASS_STEP_RAD)
+      return;
+    mLastNorth = north;
     Map.onCompassUpdated(north, false);
     TzMap.onHeading();
   };
   private final TzLocation.Listener mBearing = location -> {
     if (location.hasBearing())
       TzMap.onHeading();
+    // A fix without a speed says nothing about it.
+    if (!location.hasSpeed())
+      return;
+    final float speed = location.getSpeed();
+    final boolean asleep = mCompassAsleep ? speed >= COMPASS_ON_MPS : speed >= COMPASS_OFF_MPS;
+    if (asleep == mCompassAsleep)
+      return;
+    mCompassAsleep = asleep;
+    final SensorHelper sensor = MwmApplication.from(this).getSensorHelper();
+    if (asleep)
+      sensor.stop();
+    else
+      sensor.start();
   };
 
   @Override
@@ -149,6 +177,9 @@ public class TzActivity extends BaseMwmFragmentActivity
     Framework.nativePlacePageActivationListener(this);
     LocationState.nativeSetListener(this);
     MwmApplication.from(this).getSensorHelper().addListener(mCompass);
+    // Location starts with the app (and the sensor with it): awake until a fast fix says otherwise.
+    mCompassAsleep = false;
+    mLastNorth = Double.NaN;
     TzLocation.addListener(this, mBearing);
   }
 
@@ -412,7 +443,7 @@ public class TzActivity extends BaseMwmFragmentActivity
   }
 
   // PlacePageActivationListener: TrackZero has no place page, tapping a POI does nothing. A search result shown on
-  // the map keeps its selection as its pin until the next tap.
+  // the map keeps its selection as its pin (and its card, B1) until the next tap.
 
   @Override
   public void onPlacePageActivated(@NonNull PlacePageData data)
@@ -422,7 +453,10 @@ public class TzActivity extends BaseMwmFragmentActivity
   }
 
   @Override
-  public void onPlacePageDeactivated() {}
+  public void onPlacePageDeactivated()
+  {
+    TzSearch.selectionCleared();
+  }
 
   @Override
   public void onSwitchFullScreenMode() {}

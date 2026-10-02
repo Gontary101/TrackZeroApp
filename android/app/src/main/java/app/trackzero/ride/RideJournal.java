@@ -9,6 +9,7 @@ import java.util.Locale;
  * one record per line.
  * <pre>
  * H,1,{startedAt},{routeId or -},{name}     header, first line
+ * D,{lat},{lon}                             a ride to a place: where to (after the header)
  * S                                         the next point starts a new segment
  * P,{time},{lat},{lon},{alt or NaN}         a recorded point
  * T,{distanceM},{movingMs},{gainM},{maxKmh},{maxGrade}   totals so far (the last one wins)
@@ -31,15 +32,20 @@ public final class RideJournal
     public final RideTrack track;
     @NonNull
     public final RideStats.Snapshot totals;
+    /** A ride to a place: where to; NaN otherwise. */
+    public final double placeLat;
+    public final double placeLon;
 
     Content(long startedAt, @Nullable String routeId, @NonNull String name, @NonNull RideTrack track,
-            @NonNull RideStats.Snapshot totals)
+            @NonNull RideStats.Snapshot totals, double placeLat, double placeLon)
     {
       this.startedAt = startedAt;
       this.routeId = routeId;
       this.name = name;
       this.track = track;
       this.totals = totals;
+      this.placeLat = placeLat;
+      this.placeLon = placeLon;
     }
   }
 
@@ -50,6 +56,11 @@ public final class RideJournal
     out.append("H,").append(VERSION).append(',').append(startedAt).append(',')
         .append(routeId == null ? "-" : routeId).append(',')
         .append(name.replace('\n', ' ').replace('\r', ' ')).append('\n');
+  }
+
+  static void place(@NonNull StringBuilder out, double lat, double lon)
+  {
+    out.append("D,").append(lat).append(',').append(lon).append('\n');
   }
 
   static void segment(@NonNull StringBuilder out)
@@ -92,6 +103,8 @@ public final class RideJournal
     final String routeId = "-".equals(h[3]) ? null : h[3];
     final RideTrack track = new RideTrack();
     RideStats.Snapshot totals = new RideStats.Snapshot(0, 0, 0, 0, 0);
+    double placeLat = Double.NaN;
+    double placeLon = Double.NaN;
     for (int i = 1; i < lines.length; i++)
     {
       final String[] f = lines[i].split(",");
@@ -100,6 +113,14 @@ public final class RideJournal
         switch (f[0])
         {
         case "S" -> track.breakSegment();
+        case "D" ->
+        {
+          if (f.length == 3)
+          {
+            placeLat = Double.parseDouble(f[1]);
+            placeLon = Double.parseDouble(f[2]);
+          }
+        }
         case "P" ->
         {
           if (f.length == 5)
@@ -120,6 +141,6 @@ public final class RideJournal
         // A record cut short by a crash: the rest of the journal is still good.
       }
     }
-    return new Content(startedAt, routeId, h[4], track, totals);
+    return new Content(startedAt, routeId, h[4], track, totals, placeLat, placeLon);
   }
 }

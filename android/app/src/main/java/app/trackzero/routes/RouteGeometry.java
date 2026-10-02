@@ -138,6 +138,17 @@ public final class RouteGeometry
     return along;
   }
 
+  /**
+   * The climbs' elevation profile of any line (a routed path): smoothed, every {@link #ELE_STEP_M} from the start;
+   * null without enough elevation.
+   */
+  @Nullable
+  public static float[] elevationProfile(@NonNull double[] along, @NonNull double[] ele)
+  {
+    final double[] smoothed = RouteStats.smoothedElevation(ele);
+    return smoothed == null ? null : resample(along, smoothed, ELE_STEP_M);
+  }
+
   /** {@code y(x)} sampled every {@code step} from 0 to the last x (included), by linear interpolation. */
   @NonNull
   static float[] resample(@NonNull double[] x, @NonNull double[] y, double step)

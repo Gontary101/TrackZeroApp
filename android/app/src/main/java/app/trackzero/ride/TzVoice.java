@@ -94,12 +94,12 @@ final class TzVoice
   void turnSoon(@NonNull RouteManeuver m, double distanceM)
   {
     final String distance = spokenDistance(distanceM);
-    speak(mContext.getString(R.string.tz_voice_in, distance, mContext.getString(TzManeuvers.phrase(m.type))));
+    speak(mContext.getString(R.string.tz_voice_in, distance, TzManeuvers.spoken(mContext, m.type, m.exit)));
   }
 
   void turnNow(@NonNull RouteManeuver m)
   {
-    speak(mContext.getString(TzManeuvers.phrase(m.type)));
+    speak(TzManeuvers.spoken(mContext, m.type, m.exit));
   }
 
   void say(int stringRes)

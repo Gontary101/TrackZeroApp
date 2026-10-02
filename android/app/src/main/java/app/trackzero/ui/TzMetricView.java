@@ -94,8 +94,8 @@ public class TzMetricView extends LinearLayout
 
   public void setValue(@NonNull CharSequence number, @NonNull CharSequence unit)
   {
-    mNumber.setText(number);
-    mUnit.setText(unit);
+    TzViews.setText(mNumber, number);
+    TzViews.setText(mUnit, unit);
     mUnit.setVisibility(unit.length() == 0 ? GONE : VISIBLE);
   }
 

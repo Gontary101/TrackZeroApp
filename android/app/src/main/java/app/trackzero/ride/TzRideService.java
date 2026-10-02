@@ -4,13 +4,16 @@ import android.Manifest;
 import android.app.Notification;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.content.pm.ServiceInfo;
 import android.os.Binder;
 import android.os.Build;
 import android.os.IBinder;
+import android.os.PowerManager;
 import android.os.SystemClock;
 import android.util.Log;
 import androidx.annotation.NonNull;
@@ -26,14 +29,17 @@ import app.trackzero.TzIo;
 import app.trackzero.TzPrefs;
 import app.trackzero.base.TzActivity;
 import app.trackzero.base.TzRoads;
+import app.trackzero.base.TzRouter;
 import app.trackzero.follow.Climb;
 import app.trackzero.follow.ClimbDetector;
 import app.trackzero.follow.ClimbNames;
 import app.trackzero.follow.ClimbTracker;
 import app.trackzero.follow.FollowEngine;
 import app.trackzero.follow.FollowRoute;
+import app.trackzero.follow.Guide;
 import app.trackzero.follow.ManeuverBuilder;
 import app.trackzero.follow.RouteManeuver;
+import app.trackzero.follow.RoutedPath;
 import app.trackzero.format.TzFormat;
 import app.trackzero.geo.Geo;
 import app.trackzero.routes.GpxTrack;
@@ -59,8 +65,12 @@ public final class TzRideService extends Service
   private static final String ACTION_RESTORE = "app.trackzero.ride.RESTORE";
   private static final String EXTRA_ROUTE_ID = "routeId";
   private static final String EXTRA_NAME = "name";
+  private static final String EXTRA_PLACE_LAT = "placeLat";
+  private static final String EXTRA_PLACE_LON = "placeLon";
   private static final long JOURNAL_FLUSH_MS = 30_000;
   private static final long NOTIFICATION_UPDATE_MS = 10_000;
+  /** Screen off and nothing to say: fixes come in batches this far apart, so the phone sleeps between them. */
+  private static final long SCREEN_OFF_BATCH_MS = 15_000;
   /** A GPX waypoint names a climb when it is this close to its summit (plan §11.1). */
   private static final double SUMMIT_WAYPOINT_M = 300;
 
@@ -87,6 +97,9 @@ public final class TzRideService extends Service
 
   /** A ride is in progress (recording, paused or being saved) in this process. */
   private static boolean sRiding;
+  /** The path previewed for a ride to a place, handed to the ride it starts (paths don't fit in an Intent). */
+  @Nullable
+  private static RoutedPath sPreviewedPath;
 
   private final LocalBinder mBinder = new LocalBinder();
   private final List<Listener> mListeners = new CopyOnWriteArrayList<>();
@@ -96,9 +109,11 @@ public final class TzRideService extends Service
   private TzLocationSource mLocation;
   @Nullable
   private BarometerSource mBarometer;
-  /** Turn-by-turn on a route ride, once the route is loaded. */
+  /** Turn-by-turn on a route ride (once the route is loaded) or a ride to a place; null on a free ride. */
   @Nullable
-  private FollowEngine mFollow;
+  private Guide mGuide;
+  /** {@link Guide#linesVersion()} the climbs of a ride to a place were made for. */
+  private int mClimbsLines = -1;
   /** The route's climbs (R5); null on a free ride or a route without elevation. */
   @Nullable
   private ClimbTracker mClimbs;
@@ -111,6 +126,20 @@ public final class TzRideService extends Service
   private long mLastNotificationMs;
   @Nullable
   private RideSession.State mNotifiedState;
+  /** The screen is on (someone may look at the notification or the app). */
+  private boolean mInteractive = true;
+
+  private final BroadcastReceiver mScreen = new BroadcastReceiver() {
+    @Override
+    public void onReceive(Context context, Intent intent)
+    {
+      mInteractive = Intent.ACTION_SCREEN_ON.equals(intent.getAction());
+      updateSources();
+      // Shown again: up to date at once (it wasn't refreshed while the screen was off).
+      if (mInteractive)
+        updateNotification();
+    }
+  };
 
   public static boolean isRiding()
   {
@@ -123,6 +152,18 @@ public final class TzRideService extends Service
     final Intent i = new Intent(context, TzRideService.class).setAction(ACTION_START)
                          .putExtra(EXTRA_ROUTE_ID, routeId)
                          .putExtra(EXTRA_NAME, name);
+    ContextCompat.startForegroundService(context, i);
+  }
+
+  /** Starts a ride to a place along {@code path} (the one previewed), worked out again if the rider leaves it. */
+  public static void startTo(@NonNull Context context, @NonNull String name, double lat, double lon,
+                             @NonNull RoutedPath path)
+  {
+    sPreviewedPath = path;
+    final Intent i = new Intent(context, TzRideService.class).setAction(ACTION_START)
+                         .putExtra(EXTRA_NAME, name)
+                         .putExtra(EXTRA_PLACE_LAT, lat)
+                         .putExtra(EXTRA_PLACE_LON, lon);
     ContextCompat.startForegroundService(context, i);
   }
 
@@ -143,6 +184,11 @@ public final class TzRideService extends Service
             .setName(getString(R.string.tz_ride_channel))
             .setShowBadge(false)
             .build());
+    final PowerManager power = (PowerManager) getSystemService(Context.POWER_SERVICE);
+    mInteractive = power == null || power.isInteractive();
+    final IntentFilter screen = new IntentFilter(Intent.ACTION_SCREEN_ON);
+    screen.addAction(Intent.ACTION_SCREEN_OFF);
+    ContextCompat.registerReceiver(this, mScreen, screen, ContextCompat.RECEIVER_NOT_EXPORTED);
   }
 
   @Override
@@ -161,7 +207,9 @@ public final class TzRideService extends Service
     if (ACTION_START.equals(action))
     {
       if (mSession == null)
-        startSession(intent.getStringExtra(EXTRA_ROUTE_ID), intent.getStringExtra(EXTRA_NAME));
+        startSession(intent.getStringExtra(EXTRA_ROUTE_ID), intent.getStringExtra(EXTRA_NAME),
+                     intent.getDoubleExtra(EXTRA_PLACE_LAT, Double.NaN),
+                     intent.getDoubleExtra(EXTRA_PLACE_LON, Double.NaN));
     }
     else if (ACTION_TOGGLE.equals(action))
     {
@@ -186,7 +234,7 @@ public final class TzRideService extends Service
         }
         mSession = RideSession.restore(content, TzPrefs.autoPause(this));
         sRiding = true;
-        startSources();
+        updateSources();
         startFollowing();
         changed();
       });
@@ -204,6 +252,7 @@ public final class TzRideService extends Service
   @Override
   public void onDestroy()
   {
+    unregisterReceiver(mScreen);
     stopSources();
     stopFollowing();
     super.onDestroy();
@@ -218,11 +267,11 @@ public final class TzRideService extends Service
     return mSession;
   }
 
-  /** Turn-by-turn state of a route ride; null on a free ride or while the route loads. */
+  /** Turn-by-turn of a route ride or a ride to a place; null on a free ride or while the route loads. */
   @Nullable
-  public FollowEngine follow()
+  public Guide guide()
   {
-    return mFollow;
+    return mGuide;
   }
 
   /** Climbs of a route ride with elevation; null otherwise or while the route loads. */
@@ -248,6 +297,7 @@ public final class TzRideService extends Service
       return;
     mSession.pause(SystemClock.elapsedRealtime());
     flushJournal();
+    updateSources();
     changed();
   }
 
@@ -256,6 +306,7 @@ public final class TzRideService extends Service
     if (mSession == null)
       return;
     mSession.resume(SystemClock.elapsedRealtime());
+    updateSources();
     changed();
   }
 
@@ -291,17 +342,43 @@ public final class TzRideService extends Service
 
   // ---- Internals ----
 
-  private void startSession(@Nullable String routeId, @Nullable String name)
+  private void startSession(@Nullable String routeId, @Nullable String name, double placeLat, double placeLon)
   {
     final long now = SystemClock.elapsedRealtime();
     mSession = new RideSession(TzPrefs.autoPause(this));
     sRiding = true;
-    mSession.start(System.currentTimeMillis(), now, routeId, name == null ? "" : name);
+    if (Double.isNaN(placeLat))
+      mSession.start(System.currentTimeMillis(), now, routeId, name == null ? "" : name);
+    else
+      mSession.startTo(System.currentTimeMillis(), now, name == null ? "" : name, placeLat, placeLon);
     RideStore.get(this).startJournal(mSession.drainJournal(now));
     mLastFlushMs = now;
-    startSources();
+    updateSources();
     startFollowing();
     changed();
+  }
+
+  /**
+   * GPS and barometer while they serve: not during a pause the rider ends themselves with the screen off (a café
+   * stop: nothing to record, nobody looking). Screen off with nothing to announce, fixes come in batches.
+   */
+  private void updateSources()
+  {
+    final RideSession s = mSession;
+    final boolean needed = s != null && s.state() != RideSession.State.SAVED
+                           && (s.state() != RideSession.State.PAUSED || mInteractive);
+    if (needed && mLocation == null)
+      startSources();
+    else if (!needed && mLocation != null)
+      stopSources();
+    if (mLocation != null)
+      mLocation.setMaxDelay(mInteractive || speaks() ? 0 : SCREEN_OFF_BATCH_MS);
+  }
+
+  /** Turns are announced: fixes must come as they happen. */
+  private boolean speaks()
+  {
+    return mGuide != null && TzPrefs.voice(this);
   }
 
   private void startSources()
@@ -328,10 +405,24 @@ public final class TzRideService extends Service
     mBarometer = null;
   }
 
-  /** Loads the route of a route ride and starts turn-by-turn on it. */
+  /** Loads the route of a route ride and starts turn-by-turn on it; a ride to a place starts on its path. */
   private void startFollowing()
   {
-    final String routeId = mSession == null ? null : mSession.routeId();
+    final RideSession s = mSession;
+    if (s != null && s.toPlace())
+    {
+      // After a restore there is no previewed path: one is worked out from the first fix.
+      final RoutedPath path = sPreviewedPath;
+      sPreviewedPath = null;
+      mGuide = Guide.forPlace(s.placeLat(), s.placeLon(), path, mPaths, mFollowEvents);
+      mVoice = new TzVoice(this);
+      updateSources();
+      placeClimbs();
+      if (mFollowFix != null)
+        follow(s, mFollowFix);
+      return;
+    }
+    final String routeId = s == null ? null : s.routeId();
     if (routeId == null)
       return;
     final RouteStore routes = RouteStore.get(this);
@@ -344,12 +435,13 @@ public final class TzRideService extends Service
         // Junctions and summit names are read from the maps: off the main thread.
         final boolean maps = TzRoads.ready(this);
         TzIo.submit(() -> prepare(g, maps), prepared -> {
-          if (mSession == null || mFollow != null)
+          if (mSession == null || mGuide != null)
             return;
-          mFollow = prepared.engine;
+          mGuide = Guide.forTrack(prepared.engine, mPaths, mFollowEvents);
           mClimbs = prepared.climbs;
           mVoice = new TzVoice(this);
-          // Built while the rider moved on: place them now, before anything shows the engine's state.
+          updateSources();
+          // Built while the rider moved on: place them now, before anything shows the guide's state.
           if (mFollowFix != null)
           {
             follow(mSession, mFollowFix);
@@ -419,9 +511,75 @@ public final class TzRideService extends Service
     return best;
   }
 
+  /** The climbs of a ride to a place: those of its path, worked out again whenever the path is. */
+  private void placeClimbs()
+  {
+    final Guide g = mGuide;
+    if (g == null || !g.toPlace() || g.linesVersion() == mClimbsLines)
+      return;
+    final int lines = g.linesVersion();
+    mClimbsLines = lines;
+    final RoutedPath path = g.placePath();
+    if (path == null || path.ele == null)
+    {
+      mClimbs = null;
+      return;
+    }
+    final boolean maps = TzRoads.ready(this);
+    TzIo.submit(() -> climbsOf(path, maps), climbs -> {
+      if (mGuide == g && g.linesVersion() == lines)
+        mClimbs = climbs;
+    });
+  }
+
+  /** Climbs along a routed path, named from the map (blocking). */
+  @Nullable
+  private static ClimbTracker climbsOf(@NonNull RoutedPath path, boolean maps)
+  {
+    final FollowRoute line = path.line;
+    final float[] ele = RouteGeometry.elevationProfile(line.distances(), path.ele);
+    if (ele == null)
+      return null;
+    final List<Climb> found = ClimbDetector.detect(ele, RouteGeometry.ELE_STEP_M, line.totalM());
+    for (Climb c : found)
+      c.name = maps ? emptyToNull(TzRoads.summitName(line.latAt(c.summitAt), line.lonAt(c.summitAt))) : null;
+    return new ClimbTracker(found, ele, RouteGeometry.ELE_STEP_M);
+  }
+
+  @Nullable
+  private static String emptyToNull(@NonNull String s)
+  {
+    return s.isEmpty() ? null : s;
+  }
+
+  /** Paths for the guide, from CoMaps' bicycle router; answers for a guide since replaced are dropped. */
+  private final Guide.Paths mPaths = new Guide.Paths() {
+    @Override
+    public void request(double fromLat, double fromLon, double toLat, double toLon, double bearingDeg)
+    {
+      final Guide g = mGuide;
+      TzRouter.route(fromLat, fromLon, toLat, toLon, bearingDeg, (path, mapMissing) -> {
+        if (g == null || mGuide != g)
+          return;
+        g.onPath(path);
+        placeClimbs();
+        changed();
+      });
+    }
+
+    @Override
+    public void cancel()
+    {
+      TzRouter.cancel();
+    }
+  };
+
   private void stopFollowing()
   {
-    mFollow = null;
+    if (mGuide != null)
+      TzRouter.release();
+    mGuide = null;
+    mClimbsLines = -1;
     mClimbs = null;
     mFollowFix = null;
     if (mVoice != null)
@@ -497,13 +655,15 @@ public final class TzRideService extends Service
 
   private void follow(@NonNull RideSession s, @NonNull TzFix f)
   {
-    if (mFollow == null)
+    final Guide g = mGuide;
+    if (g == null)
       return;
     final double speedMps = f.hasSpeed ? f.speedMps : s.stats().speedKmh() / 3.6;
-    mFollow.update(f.lat, f.lon, f.hasBearing ? f.bearingDeg : Double.NaN, speedMps, f.elapsedMs,
-                   s.stats().distanceM(), s.stats().movingMs(f.elapsedMs));
+    g.update(f.lat, f.lon, f.hasBearing ? f.bearingDeg : Double.NaN, speedMps, f.elapsedMs, s.stats().distanceM(),
+             s.stats().movingMs(f.elapsedMs));
+    placeClimbs();
     if (mClimbs != null)
-      mClimbs.update(mFollow.along(), s.stats().movingMs(f.elapsedMs));
+      mClimbs.update(g.along(), s.stats().movingMs(f.elapsedMs));
   }
 
   private void flushJournal()
@@ -522,7 +682,8 @@ public final class TzRideService extends Service
       return;
     final long now = SystemClock.elapsedRealtime();
     final boolean stateChanged = mNotifiedState != s.state();
-    if (stateChanged || now - mLastNotificationMs >= NOTIFICATION_UPDATE_MS)
+    // Nobody sees it with the screen off: refreshed when the screen comes on (state changes still go out at once).
+    if (stateChanged || (mInteractive && now - mLastNotificationMs >= NOTIFICATION_UPDATE_MS))
       updateNotification();
     for (Listener l : mListeners)
       l.onRideChanged(s);

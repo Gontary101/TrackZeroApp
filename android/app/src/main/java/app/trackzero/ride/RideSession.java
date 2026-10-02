@@ -37,6 +37,9 @@ public final class RideSession
   private String mRouteId;
   @NonNull
   private String mName = "";
+  /** A ride to a place: where to; NaN otherwise. */
+  private double mPlaceLat = Double.NaN;
+  private double mPlaceLon = Double.NaN;
   private long mStartedAt;
   @Nullable
   private TzFix mLastFix;
@@ -63,6 +66,8 @@ public final class RideSession
     s.mStartedAt = c.startedAt;
     s.mRouteId = c.routeId;
     s.mName = c.name;
+    s.mPlaceLat = c.placeLat;
+    s.mPlaceLon = c.placeLon;
     s.mTrack = c.track;
     s.mTrack.breakSegment();
     s.mStats.restore(c.totals);
@@ -90,6 +95,15 @@ public final class RideSession
     mState = State.RECORDING;
     mStats.startRecording(elapsedMs);
     RideJournal.header(mJournal, startedAtUtc, routeId, name);
+  }
+
+  /** Starts a ride to a place (no route of the library: a path is worked out to it). */
+  public void startTo(long startedAtUtc, long elapsedMs, @NonNull String name, double lat, double lon)
+  {
+    start(startedAtUtc, elapsedMs, null, name);
+    mPlaceLat = lat;
+    mPlaceLon = lon;
+    RideJournal.place(mJournal, lat, lon);
   }
 
   public void onFix(@NonNull TzFix f)
@@ -245,6 +259,22 @@ public final class RideSession
   public String name()
   {
     return mName;
+  }
+
+  /** A ride to a place ({@link #placeLat()}, {@link #placeLon()}). */
+  public boolean toPlace()
+  {
+    return !Double.isNaN(mPlaceLat);
+  }
+
+  public double placeLat()
+  {
+    return mPlaceLat;
+  }
+
+  public double placeLon()
+  {
+    return mPlaceLon;
   }
 
   public long startedAt()
