@@ -15,6 +15,8 @@
   <color name="tz_text3">#3A3D42</color>
   <!-- Signal: mint is ONLY for live data + the two start CTAs -->
   <color name="tz_mint">#A9F7B9</color>
+  <!-- The logo's road ahead: mint dimmed on black (as a route not yet ridden). -->
+  <color name="tz_logo_ahead">#5E8F68</color>
   <color name="tz_mint_16">#29A9F7B9</color>
   <color name="tz_mint_38">#61A9F7B9</color>
   <color name="tz_on_mint">#000000</color>

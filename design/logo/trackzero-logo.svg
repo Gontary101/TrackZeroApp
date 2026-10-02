@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="18 18 72 72" width="512" height="512">
+  <title>TrackZero</title>
+  <rect x="18" y="18" width="72" height="72" rx="16" fill="#000000"/>
+  <path d="M54.00,66.00 L52.64,66.00 A7.48,7.48 0 0,1 45.16,58.52 L45.16,46.28 A7.48,7.48 0 0,1 47.04,41.33" fill="none" stroke="#A9F7B9" stroke-width="3.67" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="50.55" cy="39.10" r="1.84" fill="#5E8F68"/>
+  <circle cx="54.79" cy="38.80" r="1.84" fill="#5E8F68"/>
+  <circle cx="58.90" cy="39.70" r="1.84" fill="#5E8F68"/>
+  <circle cx="61.90" cy="42.65" r="1.84" fill="#5E8F68"/>
+  <circle cx="62.84" cy="46.75" r="1.84" fill="#5E8F68"/>
+  <circle cx="62.84" cy="51.02" r="1.84" fill="#5E8F68"/>
+  <circle cx="62.84" cy="55.28" r="1.84" fill="#5E8F68"/>
+  <circle cx="62.77" cy="59.54" r="1.84" fill="#5E8F68"/>
+  <circle cx="61.05" cy="63.38" r="1.84" fill="#5E8F68"/>
+  <circle cx="54.00" cy="66.00" r="5.03" fill="#000"/>
+  <circle cx="54.00" cy="66.00" r="4.08" fill="none" stroke="#A9F7B9" stroke-width="1.70"/>
+  <circle cx="54.00" cy="66.00" r="1.50" fill="#A9F7B9"/>
+</svg>
