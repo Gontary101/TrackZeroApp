@@ -42,7 +42,9 @@ public class TzStatsIsland extends LinearLayout
       cell.setOrientation(VERTICAL);
       cell.setGravity(Gravity.CENTER_HORIZONTAL);
       mLabels[i] = new TextView(context, null, 0, R.style.TzText_Label);
+      // A third of the card each: the labels keep to one line like the numbers (capped font scale).
       mLabels[i].setMaxLines(1);
+      TzTextSize.capCurrent(mLabels[i]);
       cell.addView(mLabels[i], new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
       mValues[i] = new TzMetricView(context, R.style.TzText_MetricM, 32f);
       final LayoutParams vlp = new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);

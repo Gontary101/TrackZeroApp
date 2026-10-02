@@ -4,14 +4,15 @@ import android.content.Context;
 import android.location.Location;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import app.organicmaps.sdk.downloader.CountryItem;
-import app.organicmaps.sdk.downloader.MapManager;
 import app.organicmaps.sdk.search.SearchEngine;
 import app.organicmaps.sdk.search.SearchListener;
 import app.organicmaps.sdk.search.SearchResult;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Offline place search with CoMaps' search engine (B2). One search at a time; results arrive on the main thread,
@@ -153,22 +154,6 @@ public final class TzSearch
     return showing;
   }
 
-  /** The downloaded map the rider is in ("Puy-de-Dôme"), for "Searching offline map data · …"; null if none. */
-  @Nullable
-  public static String regionName(@NonNull Context context)
-  {
-    final Location here = TzLocation.last(context);
-    if (here == null)
-      return null;
-    final String id = MapManager.nativeFindCountry(here.getLatitude(), here.getLongitude());
-    if (id == null)
-      return null;
-    final int status = MapManager.nativeGetStatus(id);
-    if (status != CountryItem.STATUS_DONE && status != CountryItem.STATUS_UPDATABLE)
-      return null;
-    return MapManager.nativeGetName(id);
-  }
-
   /**
    * "Volcano · 940 m", "Square · Clermont-Ferrand". CoMaps' description repeats the type and joins details with
    * " • " ("Volcano • ▲ 940 m"): keep the details that are not the type, else say where the place is.
@@ -186,7 +171,7 @@ public final class TzSearch
     {
       for (String part : description.split("•"))
       {
-        final String p = part.replace("▲", "").trim();
+        final String p = grouped(part.replace("▲", "").trim());
         if (p.isEmpty() || p.equalsIgnoreCase(kind) || p.equals(name))
           continue;
         parts.add(p);
@@ -198,6 +183,20 @@ public final class TzSearch
     if (!detail && !town.isEmpty())
       parts.add(town);
     return String.join(" · ", parts);
+  }
+
+  private static final Pattern BIG_NUMBER = Pattern.compile("\\b\\d{4,}\\b");
+
+  /** "1691 m" → "1,691 m" (the locale's grouping, as elsewhere in the app). */
+  @NonNull
+  static String grouped(@NonNull String text)
+  {
+    final Matcher m = BIG_NUMBER.matcher(text);
+    final StringBuilder out = new StringBuilder();
+    while (m.find())
+      m.appendReplacement(out, String.format(Locale.getDefault(), "%,d", Long.parseLong(m.group())));
+    m.appendTail(out);
+    return out.toString();
   }
 
   @NonNull

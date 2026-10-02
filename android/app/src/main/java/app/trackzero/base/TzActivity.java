@@ -101,6 +101,8 @@ public class TzActivity extends BaseMwmFragmentActivity
     mMapView = findViewById(R.id.tz_map);
     // No compass in TrackZero's map UI; the ride map is heading-up and says so with the arrow.
     Map.setCompassEnabled(false);
+    // The map screen shows the OSM attribution itself (B1): no second, larger one from the engine at start.
+    Map.setCopyrightEnabled(false);
     mMapController = new MapController(mMapView, locationHelper(), this, null, launchByDeepLink);
     mMapView.addOnLayoutChangeListener((v, l, t, r, b, ol, ot, or, ob) -> applyVisibleArea());
 
@@ -206,9 +208,26 @@ public class TzActivity extends BaseMwmFragmentActivity
       return;
     mMapResumed = run;
     if (run)
+    {
+      Map.setAccessibilityFreezeFrame(false);
       mMapController.onResume(this);
+    }
     else
+    {
       mMapController.onPause(this);
+      freezeHiddenMap();
+    }
+  }
+
+  /**
+   * Pausing the map only stops presenting its frames; the engine would keep drawing them behind R4, R5 and the opaque
+   * screens (~80 % of a core measured on the emulator). Freezing stops its render loop. Attaching the surface again
+   * (back from the background, a resize) starts the loop, so it is applied again then.
+   */
+  private void freezeHiddenMap()
+  {
+    if (!mMapResumed)
+      Map.setAccessibilityFreezeFrame(true);
   }
 
   void setVisibleMapArea(int topPx, int bottomPx)
@@ -277,6 +296,13 @@ public class TzActivity extends BaseMwmFragmentActivity
   {
     UnitLocale.initializeCurrentUnits();
     TzBase.syncUnits(this);
+    freezeHiddenMap();
+  }
+
+  @Override
+  public void onRenderingRestored()
+  {
+    freezeHiddenMap();
   }
 
   @Override

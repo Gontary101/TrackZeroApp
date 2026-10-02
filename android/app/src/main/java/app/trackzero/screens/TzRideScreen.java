@@ -19,6 +19,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
@@ -72,6 +73,11 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
   private static final float PAUSED_HERO_ALPHA = 0.35f;
   private static final float PAUSED_GRID_ALPHA = 0.55f;
   private static final float HERO_DP = 208;
+  /** Smallest hero on short screens (plan Phase 14). */
+  private static final float HERO_MIN_DP = 160;
+  private static final int GRID_ROWS = 3;
+  /** R4 cell numbers (board: 50px). */
+  private static final float CELL_NUMBER_SP = 50;
   /** R4: line-height 0.85 keeps KM/H 10dp under the digits. */
   private static final float HERO_LINE_HEIGHT = 0.85f;
 
@@ -371,6 +377,7 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
       setTopMargin(mSpeedHeader, top);
       final View page = (View) mSpeedHeader.getParent();
       page.setPadding(0, 0, 0, mBottomInset + handle);
+      page.post(this::fitGrid);
     }
     if (mClimbContent != null)
     {
@@ -378,6 +385,103 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
       final FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams) mClimbStats.getLayoutParams();
       lp.bottomMargin = mBottomInset + handle + getResources().getDimensionPixelSize(R.dimen.tz_ride_above_handle);
       mClimbStats.setLayoutParams(lp);
+    }
+  }
+
+  /**
+   * R4 on any screen (plan Phase 14: the grid shrinks, the hero may go down to 160, nothing is clipped):
+   * 1. the grid's numbers scale with the cell width (the board's cells hold 166dp of text),
+   * 2. the grid is 408dp when there is room (board: 3 rows of 136dp), else what is left down to its rows' natural
+   *    height, and below that the hero gives way down to 160dp numerals,
+   * 3. on the shortest screens the cells' vertical padding gives the rest.
+   */
+  private void fitGrid()
+  {
+    if (mGrid == null || mHero == null || mHeroUnit == null || mCells == null)
+      return;
+    final View page = (View) mGrid.getParent();
+    final View heroBox = (View) mHero.getParent();
+    final View cell = mGrid.findViewById(R.id.tz_ride_cell_distance);
+    if (page.getHeight() == 0 || cell.getWidth() == 0)
+      return;
+    final float density = getResources().getDisplayMetrics().density;
+
+    // 1. Numbers that fit the cell's width.
+    final int padH = getResources().getDimensionPixelSize(R.dimen.tz_ride_cell_pad_h);
+    final float widthScale = Math.min(1f, (cell.getWidth() - 2f * padH)
+                                              / getResources().getDimension(R.dimen.tz_ride_cell_content_w));
+    for (TzMetricView value : mCells)
+      value.setNumberSize(CELL_NUMBER_SP * widthScale);
+    final int padV = getResources().getDimensionPixelSize(R.dimen.tz_ride_cell_pad_v);
+    setCellPadding(padH, padV);
+    cell.measure(View.MeasureSpec.makeMeasureSpec(cell.getWidth(), View.MeasureSpec.EXACTLY),
+                 View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
+    final int divider = getResources().getDimensionPixelSize(R.dimen.tz_divider);
+    final int minGrid = GRID_ROWS * (cell.getMeasuredHeight() + divider);
+
+    // 2. Grid first, then the hero.
+    final int heroArea = getResources().getDimensionPixelSize(R.dimen.tz_ride_hero_area_h);
+    final ViewGroup.MarginLayoutParams ulp = (ViewGroup.MarginLayoutParams) mHeroUnit.getLayoutParams();
+    final int unitBlock = mHeroUnit.getHeight() + ulp.topMargin;
+    final int heroMin = Math.round(HERO_MIN_DP * HERO_LINE_HEIGHT * density) + unitBlock;
+    final int space = page.getHeight() - page.getPaddingBottom() - heroBox.getTop();
+    final int boardGrid = getResources().getDimensionPixelSize(R.dimen.tz_ride_grid_h);
+    final int hero = Math.max(heroMin, Math.min(heroArea, space - Math.min(boardGrid, Math.max(minGrid,
+                                                                                             space - heroArea))));
+    final int grid = Math.min(boardGrid, space - hero);
+    final float heroDp = Math.max(HERO_MIN_DP, Math.min(HERO_DP, HERO_DP * (hero - unitBlock)
+                                                                  / (heroArea - unitBlock)));
+
+    // 3. Rows shorter than their content: less padding.
+    if (grid < minGrid)
+    {
+      final int perCell = (int) Math.ceil((minGrid - grid) / (2.0 * GRID_ROWS));
+      setCellPadding(padH, Math.max(getResources().getDimensionPixelSize(R.dimen.tz_space_4), padV - perCell));
+    }
+
+    final LinearLayout.LayoutParams hlp = (LinearLayout.LayoutParams) heroBox.getLayoutParams();
+    final LinearLayout.LayoutParams glp = (LinearLayout.LayoutParams) mGrid.getLayoutParams();
+    if (hlp.height != hero)
+    {
+      hlp.height = hero;
+      heroBox.setLayoutParams(hlp);
+    }
+    if (glp.height != grid || glp.weight != 0)
+    {
+      glp.height = grid;
+      glp.weight = 0;
+      mGrid.setLayoutParams(glp);
+    }
+    if (Math.abs(mHero.getTextSize() - heroDp * density) > 1)
+    {
+      mHero.setTextSize(TypedValue.COMPLEX_UNIT_DIP, heroDp);
+      TzTextSize.applyLineHeight(mHero, HERO_LINE_HEIGHT);
+    }
+  }
+
+  /** R5: the profile is 230dp (board) unless that would run under the island on a short screen. */
+  private void fitProfile()
+  {
+    if (mProfile == null || mClimbContent == null || mClimbStats == null || mClimbStats.getTop() == 0)
+      return;
+    final int board = getResources().getDimensionPixelSize(R.dimen.tz_climb_profile_h);
+    final int overlap = mClimbContent.getBottom() + getResources().getDimensionPixelSize(R.dimen.tz_space_16)
+                      - mClimbStats.getTop();
+    final ViewGroup.LayoutParams lp = mProfile.getLayoutParams();
+    final int height = Math.max(getResources().getDimensionPixelSize(R.dimen.tz_climb_profile_min_h),
+                                Math.min(board, lp.height - overlap));
+    if (height == lp.height)
+      return;
+    lp.height = height;
+    mProfile.setLayoutParams(lp);
+  }
+
+  private void setCellPadding(int horizontal, int vertical)
+  {
+    for (TzMetricView value : mCells)
+    {
+      final View cell = (View) value.getParent();
+      cell.setPadding(horizontal, vertical, horizontal, vertical);
     }
   }
 
@@ -408,6 +512,9 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
     if (page == PAGE_MAP)
       TzMap.followRider(true);
     mTraceSize = -1;
+    // The REC dot pulses only where it is seen (the speed page stays attached beside the others).
+    if (page != PAGE_SPEED && mSpeedChip != null)
+      mSpeedChip.setPulsing(false);
     render();
   }
 
@@ -708,7 +815,7 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
     final double summitIn = climbs.summitInSeconds();
     mClimbStats.setCell(1, getString(R.string.tz_stat_summit_in),
                         Double.isNaN(summitIn) ? TzFormat.OFF_ROUTE : String.valueOf(Math.round(summitIn / 60)),
-                        getString(R.string.tz_unit_min));
+                        Double.isNaN(summitIn) ? "" : getString(R.string.tz_unit_min));
     final TzFormat.Value avg = TzFormat.grade(c.avgGradePct, locale);
     mClimbStats.setCell(2, getString(R.string.tz_stat_avg_grade), avg.number, avg.unit);
   }
@@ -868,6 +975,11 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
       mClimbRange.setListener(i -> render());
       mProfile = v.findViewById(R.id.tz_ride_profile);
       mClimbStats = v.findViewById(R.id.tz_ride_climb_stats);
+      // The content grows and shrinks with the mode (climb / elevation): the profile fits after each layout.
+      mClimbContent.addOnLayoutChangeListener((x, l, t, r, b, ol, ot, or, ob) -> {
+        if (b != ob)
+          x.post(this::fitProfile);
+      });
       mProfileSource = null;
       mRangeFrom = mRangeTo = Double.NaN;
     }

@@ -18,6 +18,14 @@ public final class TzTextSize
     tv.setTextSize(TypedValue.COMPLEX_UNIT_SP, cappedSp(tv.getResources().getConfiguration().fontScale, sp));
   }
 
+  /** Caps the size the view has from its style (in sp) at 1.3× font scale. */
+  public static void capCurrent(@NonNull TextView tv)
+  {
+    final float scaledDensity = tv.getResources().getDisplayMetrics().density
+                              * tv.getResources().getConfiguration().fontScale;
+    applyCapped(tv, tv.getTextSize() / scaledDensity);
+  }
+
   /** Size in sp that renders as {@code sp * min(fontScale, 1.3)}. */
   static float cappedSp(float fontScale, float sp)
   {

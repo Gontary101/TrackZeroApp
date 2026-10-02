@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Offline maps (from More): maps on the phone, the one for the rider's area, and the world's maps by country. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:app="http://schemas.android.com/apk/res-auto"
+  android:id="@+id/tz_maps_content"
+  android:layout_width="match_parent"
+  android:layout_height="match_parent"
+  android:background="@color/tz_bg"
+  android:clickable="true"
+  android:orientation="vertical">
+
+  <LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="@dimen/tz_maps_header_h"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingStart="@dimen/tz_space_8"
+    android:paddingEnd="@dimen/tz_gutter">
+
+    <ImageButton
+      android:id="@+id/tz_maps_back"
+      android:layout_width="@dimen/tz_touch_min_browse"
+      android:layout_height="@dimen/tz_touch_min_browse"
+      android:background="?attr/selectableItemBackgroundBorderless"
+      android:contentDescription="@string/tz_cd_back"
+      android:src="@drawable/ic_tz_back"
+      app:tint="@color/tz_text1" />
+
+    <TextView
+      android:id="@+id/tz_maps_title"
+      style="@style/TzText.DotXL"
+      android:layout_width="0dp"
+      android:layout_height="match_parent"
+      android:layout_marginStart="@dimen/tz_space_4"
+      android:layout_weight="1"
+      android:gravity="center_vertical"
+      android:maxLines="1"
+      app:autoSizeMaxTextSize="@dimen/tz_text_44"
+      app:autoSizeMinTextSize="@dimen/tz_text_20"
+      app:autoSizeTextType="uniform" />
+  </LinearLayout>
+
+  <androidx.recyclerview.widget.RecyclerView
+    android:id="@+id/tz_maps_list"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:clipToPadding="false"
+    android:scrollbars="none" />
+</LinearLayout>

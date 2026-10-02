@@ -282,3 +282,35 @@ The emulator's constant barometer pins the ride altitude after calibration; alti
 - History reuses the B3 card with the date in place of the route kind and no star; a ride opens R8, whose DONE and
   Back return to History. About shows the version without build flavor/type, credits, and the font licences from
   the bundled OFL texts.
+
+## D31 · No CoMaps UI left (D14 done, Phase 14)
+- Start: SplashActivity and the first-run download (DownloadResourcesLegacyActivity) keep their logic (permissions,
+  core init, world map download, "Download Puy-de-Dôme?") and get TrackZero layouts and themes under
+  `TzConfig.ENABLED` (layout ids unchanged). The system splash is black, not CoMaps' green. The custom map server
+  button of the first run is hidden.
+- Offline maps: `screens/TzMapsScreen` on `base/TzMaps` (SDK MapManager) replaces CoMaps' DownloaderActivity: maps on
+  the phone, the map where the rider is, all countries → regions, download (with free-space check) / progress /
+  stop / retry / update / delete. Nothing in TrackZero opens a CoMaps screen any more.
+- The engine's 10 s "Map data © OpenStreetMap" label at start is off (SDK `Map.setCopyrightEnabled`): B1 and the ride
+  map show the attribution themselves, and the engine hid the scale bar until its label had faded.
+- The rider arrow keeps its black outline on every map (engine: only while CoMaps routing), as on the boards; it
+  is what separates it from the mint route line.
+
+## D32 · Battery: a hidden map really stops (Phase 14)
+Measured on the emulator during a ride: R4 still used ~95 % of a core. CoMaps' pause (`Map.onPause`) only stops
+presenting frames; the engine keeps rendering. TzActivity now also freezes the render loop
+(`Map.setAccessibilityFreezeFrame`, the SDK's existing drape-engine disable) whenever the map is not shown, and
+applies it again after surface re-creation. R4: 95 % → 30 %; the rest was the REC dot animating at 60 fps, now a
+10-step pulse, stopped when its page is not shown: R4 ~10 %, R5 ~15 %. Map page ~120 % (emulator software GL).
+GPS is 1 Hz only during rides (GpsLocationSource); outside rides CoMaps' own location behaviour.
+
+## D33 · Accessibility, font size, small screens (Phase 14)
+- Every icon-only control has a description; decorative icons are hidden from TalkBack.
+- Touch targets ≥ 48dp in browse screens, ≥ 56dp on the ride: chips and segmented options draw their 44/40dp pill
+  inset in a 48dp target.
+- Largest font (200 %): numbers and the fixed-size labels (island tabs, stats island) are capped at 1.3×; list rows
+  give the title its width and ellipsize the detail. Nothing overlaps.
+- 360 × 640 dp: R4 numbers scale with the cell width, the grid shrinks to its rows, then the hero (down to 160dp),
+  then cell padding; R5's profile gives way above its island; R8's track box shrinks so EXPORT / DONE stay on
+  screen, button labels shrink to one line.
+- "Remove animations": TrackZero's own animations check TzMotion; system ones (pager, sheet) follow the setting.

@@ -25,6 +25,7 @@ import app.organicmaps.R;
 import app.trackzero.TzNavigator;
 import app.trackzero.TzPrefs;
 import app.trackzero.base.TzLocation;
+import app.trackzero.base.TzMaps;
 import app.trackzero.base.TzSearch;
 import app.trackzero.format.TzFormat;
 import app.trackzero.geo.Geo;
@@ -218,7 +219,7 @@ public class TzSearchScreen extends TzScreen
   {
     if (done && empty)
       return getString(R.string.tz_search_nothing);
-    final String region = TzSearch.regionName(requireContext());
+    final String region = TzMaps.hereName(requireContext());
     return region == null ? getString(R.string.tz_search_caption)
                           : getString(R.string.tz_search_caption_region, region);
   }

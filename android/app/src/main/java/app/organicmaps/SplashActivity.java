@@ -28,6 +28,7 @@ import app.organicmaps.sdk.util.concurrency.UiThread;
 import app.organicmaps.sdk.util.log.Logger;
 import app.organicmaps.util.SharingUtils;
 import app.organicmaps.util.Utils;
+import app.trackzero.TzConfig;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import java.io.IOException;
 import java.util.Objects;
@@ -57,7 +58,7 @@ public class SplashActivity extends AppCompatActivity
   {
     super.onCreate(savedInstanceState);
     UiThread.cancelDelayedTasks(mInitCoreDelayedTask);
-    setContentView(R.layout.activity_splash);
+    setContentView(TzConfig.ENABLED ? R.layout.tz_splash : R.layout.activity_splash);
 
     ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.root_view), new OnApplyWindowInsetsListener() {
       @NonNull

@@ -40,6 +40,7 @@ import app.organicmaps.sdk.util.StringUtils;
 import app.organicmaps.util.UiUtils;
 import app.organicmaps.util.Utils;
 import app.organicmaps.util.WindowInsetUtils.PaddingInsetsListener;
+import app.trackzero.TzConfig;
 import app.trackzero.base.TzActivity;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.checkbox.MaterialCheckBox;
@@ -183,8 +184,8 @@ public class DownloadResourcesLegacyActivity extends BaseMwmFragmentActivity
   protected void onSafeCreate(@Nullable Bundle savedInstanceState)
   {
     super.onSafeCreate(savedInstanceState);
-    UiUtils.setLightStatusBar(this, true);
-    setContentView(R.layout.activity_download_resources);
+    UiUtils.setLightStatusBar(this, !TzConfig.ENABLED);
+    setContentView(TzConfig.ENABLED ? R.layout.tz_first_run : R.layout.activity_download_resources);
     final View view = getWindow().getDecorView().findViewById(android.R.id.content);
     ViewCompat.setOnApplyWindowInsetsListener(view, PaddingInsetsListener.allSides());
     initViewsAndListeners();

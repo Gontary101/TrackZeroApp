@@ -31,6 +31,7 @@
 
   <FrameLayout
     android:layout_width="match_parent"
+    android:id="@+id/tz_summary_track_box"
     android:layout_height="@dimen/tz_summary_track_h"
     android:layout_marginTop="@dimen/tz_segment_pad"
     android:background="@drawable/tz_bg_well_r28">
@@ -211,6 +212,7 @@
   </LinearLayout>
 
   <Space
+    android:id="@+id/tz_summary_space"
     android:layout_width="match_parent"
     android:layout_height="0dp"
     android:layout_weight="1" />
@@ -219,6 +221,7 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginTop="@dimen/tz_segment_pad"
+    android:baselineAligned="false"
     android:orientation="horizontal">
     <com.google.android.material.button.MaterialButton
       android:id="@+id/tz_summary_export"
@@ -226,7 +229,11 @@
       android:layout_width="0dp"
       android:layout_height="@dimen/tz_button_h"
       android:layout_weight="1"
+      android:maxLines="1"
       android:text="@string/tz_export_gpx"
+      app:autoSizeMaxTextSize="@dimen/tz_text_22"
+      app:autoSizeMinTextSize="@dimen/tz_text_14"
+      app:autoSizeTextType="uniform"
       app:icon="@drawable/ic_tz_export" />
     <com.google.android.material.button.MaterialButton
       android:id="@+id/tz_summary_done"
@@ -235,6 +242,10 @@
       android:layout_height="@dimen/tz_button_h"
       android:layout_marginStart="@dimen/tz_space_12"
       android:layout_weight="1"
-      android:text="@string/tz_done" />
+      android:maxLines="1"
+      android:text="@string/tz_done"
+      app:autoSizeMaxTextSize="@dimen/tz_text_22"
+      app:autoSizeMinTextSize="@dimen/tz_text_14"
+      app:autoSizeTextType="uniform" />
   </LinearLayout>
 </LinearLayout>

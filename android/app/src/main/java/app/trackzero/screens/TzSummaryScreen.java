@@ -53,6 +53,8 @@ public class TzSummaryScreen extends TzScreen
     track.setBoxSizePx(getResources().getDimension(R.dimen.tz_summary_track_box));
     track.setStartMarker(getResources().getDimension(R.dimen.tz_silhouette_start_r),
                          getResources().getDimension(R.dimen.tz_silhouette_start_stroke));
+    // Any layout (insets, the ride's numbers arriving, font size) may change the room left for the track box.
+    view.addOnLayoutChangeListener((v, l, t, r, b, ol, ot, or, ob) -> v.post(this::fitTrack));
     super.onViewCreated(view, savedInstanceState);
 
     final String id = requireArguments().getString(ARG_RIDE_ID);
@@ -90,6 +92,30 @@ public class TzSummaryScreen extends TzScreen
       return;
     final int space = getResources().getDimensionPixelSize(R.dimen.tz_space_16);
     view.setPadding(space, top + space, space, bottom + space);
+  }
+
+  /**
+   * The track box is 220dp (board); on a short screen it gives way (down to a third of that) so the buttons stay
+   * on screen instead of being pushed off it.
+   */
+  private void fitTrack()
+  {
+    final View view = getView();
+    if (view == null || view.getHeight() == 0)
+      return;
+    final View box = view.findViewById(R.id.tz_summary_track_box);
+    final View buttons = (View) view.findViewById(R.id.tz_summary_done).getParent();
+    // Free room (the spacer above the buttons) or, when the content does not fit, minus what overflows.
+    final int overflow = buttons.getBottom() - (view.getHeight() - view.getPaddingBottom());
+    final int slack = overflow > 0 ? -overflow : view.findViewById(R.id.tz_summary_space).getHeight();
+    final ViewGroup.LayoutParams lp = box.getLayoutParams();
+    final int board = getResources().getDimensionPixelSize(R.dimen.tz_summary_track_h);
+    final int height = Math.max(board / 3, Math.min(board, lp.height + slack));
+    if (height != lp.height)
+    {
+      lp.height = height;
+      box.setLayoutParams(lp);
+    }
   }
 
   private void bindRide(@NonNull Ride ride)

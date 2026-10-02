@@ -2,6 +2,7 @@ package app.trackzero.ui;
 
 import android.content.Context;
 import android.content.res.TypedArray;
+import android.text.TextUtils;
 import android.util.AttributeSet;
 import android.view.Gravity;
 import android.widget.ImageView;
@@ -16,6 +17,11 @@ import app.organicmaps.R;
 /** 64dp settings row (B7): icon, title, detail text, chevron. Grouped on a surface1 card with inset dividers. */
 public class TzListRow extends LinearLayout
 {
+  /** The detail keeps at least this share of the row next to a long title. */
+  private static final float MIN_DETAIL_SHARE = 0.35f;
+
+  @NonNull
+  private final TextView mTitle;
   @NonNull
   private final TextView mDetail;
 
@@ -40,8 +46,11 @@ public class TzListRow extends LinearLayout
     addView(icon, new LayoutParams(iconSize, iconSize));
 
     final TextView title = new TextView(context, null, 0, R.style.TzText_RowTitle);
+    mTitle = title;
     title.setText(a.getString(R.styleable.TzListRow_tzTitle));
-    title.setMaxLines(1);
+    // The title comes first: at large font sizes it wraps rather than being cut by the detail.
+    title.setMaxLines(2);
+    title.setEllipsize(TextUtils.TruncateAt.END);
     a.recycle();
     final LayoutParams tlp = new LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f);
     tlp.setMarginStart(gap);
@@ -49,6 +58,7 @@ public class TzListRow extends LinearLayout
 
     mDetail = new TextView(context, null, 0, R.style.TzText_RowDetail);
     mDetail.setMaxLines(1);
+    mDetail.setEllipsize(TextUtils.TruncateAt.END);
     final LayoutParams dlp = new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
     dlp.setMarginStart(gap);
     addView(mDetail, dlp);
@@ -61,6 +71,23 @@ public class TzListRow extends LinearLayout
     final LayoutParams clp = new LayoutParams(chev, chev);
     clp.setMarginStart(gap);
     addView(chevron, clp);
+  }
+
+  @Override
+  protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec)
+  {
+    // The title keeps its natural width (wrapping only between words at large font sizes); the detail gets the
+    // rest, at least a third of the row, and ellipsizes ("Puy-de-Dôme · 73 MB").
+    final int gap = getResources().getDimensionPixelSize(R.dimen.tz_row_gap);
+    final int width = MeasureSpec.getSize(widthMeasureSpec) - getPaddingStart() - getPaddingEnd()
+                    - getResources().getDimensionPixelSize(R.dimen.tz_icon)
+                    - getResources().getDimensionPixelSize(R.dimen.tz_chevron) - 3 * gap;
+    if (width > 0)
+    {
+      final int title = (int) Math.ceil(mTitle.getPaint().measureText(mTitle.getText().toString()));
+      mDetail.setMaxWidth(Math.max(width - title, (int) (width * MIN_DETAIL_SHARE)));
+    }
+    super.onMeasure(widthMeasureSpec, heightMeasureSpec);
   }
 
   public void setDetail(@Nullable CharSequence detail)

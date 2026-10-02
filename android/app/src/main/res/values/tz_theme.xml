@@ -17,6 +17,16 @@
     <item name="android:fontFamily">@font/barlow_medium</item>
   </style>
 
+  <!-- Start screens: black from the very first frame (the system splash uses the window background). -->
+  <style name="TzTheme.Splash">
+    <item name="android:statusBarColor">@color/tz_bg</item>
+    <item name="android:navigationBarColor">@color/tz_bg</item>
+  </style>
+  <style name="TzTheme.FirstRun">
+    <item name="android:statusBarColor">@color/tz_bg</item>
+    <item name="android:navigationBarColor">@color/tz_bg</item>
+  </style>
+
   <style name="ThemeOverlay.TrackZero.Dialog" parent="ThemeOverlay.MaterialComponents.MaterialAlertDialog">
     <item name="colorSurface">@color/tz_surface1</item>
     <item name="colorPrimary">@color/tz_text1</item>

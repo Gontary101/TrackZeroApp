@@ -46,7 +46,7 @@
   <dimen name="tz_segment_pad">18dp</dimen>
   <dimen name="tz_silhouette_box">60dp</dimen>
   <dimen name="tz_silhouette_stroke">2.8dp</dimen>
-  <dimen name="tz_silhouette_stroke_large">5dp</dimen>
+  <dimen name="tz_silhouette_stroke_large">2.6dp</dimen>
   <dimen name="tz_turn_card_gap">14dp</dimen>
   <dimen name="tz_turn_glyph_gap">16dp</dimen>
   <dimen name="tz_turn_line_gap">2dp</dimen>
@@ -91,6 +91,9 @@
   <dimen name="tz_ride_header_h">40dp</dimen>
   <dimen name="tz_ride_header_pad">20dp</dimen>
   <dimen name="tz_ride_hero_area_h">300dp</dimen>
+  <dimen name="tz_ride_grid_h">408dp</dimen>
+  <!-- A board cell's text width: 412 / 2 − 2 × 20 -->
+  <dimen name="tz_ride_cell_content_w">166dp</dimen>
   <dimen name="tz_ride_hero_unit_gap">10dp</dimen>
   <dimen name="tz_ride_cell_pad_v">18dp</dimen>
   <dimen name="tz_ride_cell_pad_h">20dp</dimen>
@@ -103,6 +106,7 @@
   <dimen name="tz_climb_metric_gap">6dp</dimen>
   <dimen name="tz_climb_card_gap">14dp</dimen>
   <dimen name="tz_climb_profile_h">230dp</dimen>
+  <dimen name="tz_climb_profile_min_h">120dp</dimen>
   <dimen name="tz_sheet_grabber_w">44dp</dimen>
   <dimen name="tz_sheet_grabber_h">5dp</dimen>
   <dimen name="tz_sheet_grabber_r">3dp</dimen>
@@ -112,10 +116,9 @@
   <dimen name="tz_text_20">20sp</dimen>
   <dimen name="tz_summary_track_box">176dp</dimen>
   <dimen name="tz_silhouette_start_r">5dp</dimen>
-  <dimen name="tz_silhouette_start_stroke">2dp</dimen>
+  <dimen name="tz_silhouette_start_stroke">1.6dp</dimen>
 
   <!-- B2 Search -->
-  <dimen name="tz_touch_48">48dp</dimen>
   <dimen name="tz_search_field_h">60dp</dimen>
   <dimen name="tz_search_field_pad">6dp</dimen>
   <dimen name="tz_search_gap">14dp</dimen>
@@ -123,4 +126,8 @@
   <dimen name="tz_search_tile_pad">11dp</dimen>
   <dimen name="tz_search_row_gap">14dp</dimen>
   <dimen name="tz_search_row_text_gap">3dp</dimen>
+
+  <!-- Offline maps -->
+  <dimen name="tz_maps_header_h">64dp</dimen>
+  <dimen name="tz_text_44">44sp</dimen>
 </resources>

@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- One map or country: icon tile, name and state, and what a tap does (or a chevron into a country). -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:app="http://schemas.android.com/apk/res-auto"
+  android:layout_width="match_parent"
+  android:layout_height="@dimen/tz_search_row_h"
+  android:background="@drawable/tz_bg_row_divider"
+  android:foreground="?attr/selectableItemBackground"
+  android:gravity="center_vertical"
+  android:orientation="horizontal"
+  android:paddingStart="@dimen/tz_gutter"
+  android:paddingEnd="@dimen/tz_gutter">
+
+  <ImageView
+    android:id="@+id/tz_maps_row_icon"
+    android:layout_width="@dimen/tz_search_tile"
+    android:layout_height="@dimen/tz_search_tile"
+    android:background="@drawable/tz_bg_surface3_r14"
+    android:importantForAccessibility="no"
+    android:padding="@dimen/tz_search_tile_pad"
+    app:tint="@color/tz_text2" />
+
+  <LinearLayout
+    android:layout_width="0dp"
+    android:layout_height="wrap_content"
+    android:layout_marginStart="@dimen/tz_search_row_gap"
+    android:layout_marginEnd="@dimen/tz_space_12"
+    android:layout_weight="1"
+    android:orientation="vertical">
+
+    <TextView
+      android:id="@+id/tz_maps_row_name"
+      style="@style/TzText.ResultName"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:ellipsize="end"
+      android:maxLines="1" />
+
+    <TextView
+      android:id="@+id/tz_maps_row_state"
+      style="@style/TzText.ResultSubtitle"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_marginTop="@dimen/tz_search_row_text_gap"
+      android:ellipsize="end"
+      android:maxLines="1" />
+  </LinearLayout>
+
+  <TextView
+    android:id="@+id/tz_maps_row_action"
+    style="@style/TzText.RowDetail"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content" />
+
+  <ImageView
+    android:id="@+id/tz_maps_row_chevron"
+    android:layout_width="@dimen/tz_chevron"
+    android:layout_height="@dimen/tz_chevron"
+    android:importantForAccessibility="no"
+    android:src="@drawable/ic_tz_chev"
+    app:tint="@color/tz_text3" />
+</LinearLayout>

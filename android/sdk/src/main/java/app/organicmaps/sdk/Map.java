@@ -78,6 +78,19 @@ public final class Map
     sCompassEnabled = enabled;
   }
 
+  /**
+   * TrackZero: apps that show the OSM attribution themselves skip the engine's 10 s "Map data" label. The engine
+   * hides the ruler while that label is on, so it is marked done instead of just not drawn.
+   */
+  private static boolean sCopyrightEnabled = true;
+
+  public static void setCopyrightEnabled(boolean enabled)
+  {
+    sCopyrightEnabled = enabled;
+    if (!enabled)
+      nativeDeactivateCopyright();
+  }
+
   private int mCurrentCompassOffsetX;
   private int mCurrentCompassOffsetY;
   private int mBottomWidgetOffsetX;
@@ -419,6 +432,8 @@ public final class Map
 
   private void updateAttributionOffset(final Context context, int offsetX, int offsetY)
   {
+    if (!sCopyrightEnabled)
+      return;
     nativeSetupWidget(WIDGET_COPYRIGHT, Utils.dimen(context, R.dimen.margin_ruler) + offsetX,
                       mHeight - Utils.dimen(context, R.dimen.margin_ruler) - offsetY, ANCHOR_LEFT_BOTTOM);
     if (mSurfaceCreated)
@@ -463,6 +478,8 @@ public final class Map
   private static native void nativeUpdateMyPositionRoutingOffset(int offsetY);
 
   private static native void nativeSetupWidget(int widget, float x, float y, int anchor);
+
+  private static native void nativeDeactivateCopyright();
 
   private static native void nativeCompassUpdated(double north, boolean forceRedraw);
 

@@ -1,8 +1,7 @@
 package app.trackzero.ui;
 
-import android.animation.ObjectAnimator;
-import android.animation.ValueAnimator;
 import android.content.Context;
+import android.os.SystemClock;
 import android.util.AttributeSet;
 import android.view.Gravity;
 import android.view.View;
@@ -21,10 +20,14 @@ public class TzChip extends LinearLayout
   private final View mDot;
   @NonNull
   private final TextView mText;
-  @Nullable
-  private ObjectAnimator mPulse;
+  /** Pulse frames per second: a small dot fading at 1 Hz looks the same at 10 frames as at the display's 60. */
+  private static final int PULSE_FPS = 10;
+  private static final long PULSE_PERIOD_MS = 1000;
+
   private boolean mPulsing;
   private boolean mAttached;
+  private boolean mPulseRunning;
+  private final Runnable mPulseFrame = this::pulseFrame;
 
   public TzChip(@NonNull Context context, @Nullable AttributeSet attrs)
   {
@@ -55,7 +58,10 @@ public class TzChip extends LinearLayout
     mDot.setBackgroundTintList(ContextCompat.getColorStateList(getContext(), dotColor));
   }
 
-  /** REC dot: alpha 1 → 0.4 at 1 Hz. Off when the system disables animations. */
+  /**
+   * REC dot: alpha 1 → 0.4 → 1 every second. Off when the system disables animations. The caller stops it while the
+   * chip is not on screen (a ride page beside the shown one is still attached).
+   */
   public void setPulsing(boolean pulsing)
   {
     mPulsing = pulsing;
@@ -65,20 +71,21 @@ public class TzChip extends LinearLayout
   private void updatePulse()
   {
     final boolean run = mPulsing && mAttached && TzMotion.enabled(getContext());
-    if (run == (mPulse != null))
+    if (run == mPulseRunning)
       return;
-    if (!run)
-    {
-      mPulse.cancel();
-      mPulse = null;
+    mPulseRunning = run;
+    removeCallbacks(mPulseFrame);
+    if (run)
+      pulseFrame();
+    else
       mDot.setAlpha(1f);
-      return;
-    }
-    mPulse = ObjectAnimator.ofFloat(mDot, View.ALPHA, 1f, 0.4f);
-    mPulse.setDuration(500);
-    mPulse.setRepeatMode(ValueAnimator.REVERSE);
-    mPulse.setRepeatCount(ValueAnimator.INFINITE);
-    mPulse.start();
+  }
+
+  private void pulseFrame()
+  {
+    final double phase = (SystemClock.uptimeMillis() % PULSE_PERIOD_MS) / (double) PULSE_PERIOD_MS;
+    mDot.setAlpha((float) (0.7 + 0.3 * Math.cos(2 * Math.PI * phase)));
+    postDelayed(mPulseFrame, 1000 / PULSE_FPS);
   }
 
   @Override

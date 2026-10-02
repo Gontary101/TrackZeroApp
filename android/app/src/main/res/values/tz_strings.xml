@@ -124,6 +124,7 @@
   <!-- About -->
   <string name="tz_about_title">ABOUT</string>
   <string name="tz_about_app">TrackZero</string>
+  <string name="tz_wordmark" translatable="false">TRACKZERO</string>
   <string name="tz_about_tagline">A fast, offline cycling computer and GPX navigator.</string>
   <string name="tz_about_base">Built on CoMaps, a fork of Organic Maps (Apache-2.0).</string>
   <string name="tz_about_osm">Map data © OpenStreetMap contributors (ODbL).</string>
@@ -214,4 +215,29 @@
   <string name="tz_search_caption">Searching offline map data</string>
   <string name="tz_search_caption_region">Searching offline map data · %1$s</string>
   <string name="tz_search_nothing">Nothing found in the downloaded maps</string>
+
+  <!-- Offline maps -->
+  <string name="tz_maps_title">MAPS</string>
+  <string name="tz_cd_back">Back</string>
+  <string name="tz_maps_on_phone">On this phone</string>
+  <string name="tz_maps_here">Where you are</string>
+  <string name="tz_maps_all">All maps</string>
+  <string name="tz_maps_none">No maps on this phone yet. Download the map of the area you ride in: search and street names work offline once it is here.</string>
+  <plurals name="tz_maps_count">
+    <item quantity="one">%d map</item>
+    <item quantity="other">%d maps</item>
+  </plurals>
+  <string name="tz_maps_partly">Some on this phone</string>
+  <string name="tz_maps_downloading">Downloading · %1$d %%</string>
+  <string name="tz_maps_waiting">Waiting to download</string>
+  <string name="tz_maps_update">Update available · %1$s</string>
+  <string name="tz_maps_failed">Download failed · tap to retry</string>
+  <string name="tz_maps_on_phone_state">On this phone · %1$s</string>
+  <string name="tz_maps_action_download">Download</string>
+  <string name="tz_maps_download_ask">Download %1$s? (%2$s)</string>
+  <string name="tz_maps_stop_ask">Stop downloading %1$s?</string>
+  <string name="tz_maps_stop">Stop</string>
+  <string name="tz_maps_delete">Delete</string>
+  <string name="tz_maps_update_action">Update</string>
+  <string name="tz_maps_no_space">Not enough free space on this phone for this map.</string>
 </resources>

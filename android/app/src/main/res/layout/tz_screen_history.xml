@@ -19,8 +19,8 @@
 
     <ImageButton
       android:id="@+id/tz_history_back"
-      android:layout_width="@dimen/tz_touch_48"
-      android:layout_height="@dimen/tz_touch_48"
+      android:layout_width="@dimen/tz_touch_min_browse"
+      android:layout_height="@dimen/tz_touch_min_browse"
       android:background="?attr/selectableItemBackgroundBorderless"
       android:contentDescription="@string/tz_cd_back_to_more"
       android:src="@drawable/ic_tz_back"

@@ -2,6 +2,7 @@ package app.trackzero.ui;
 
 import android.content.Context;
 import android.content.res.TypedArray;
+import android.graphics.drawable.InsetDrawable;
 import android.util.AttributeSet;
 import android.view.Gravity;
 import android.widget.LinearLayout;
@@ -32,8 +33,9 @@ public class TzSegmented extends LinearLayout
     a.recycle();
     setOrientation(HORIZONTAL);
     setBackgroundResource(R.drawable.tz_bg_well_r26);
+    // Options reach the top and bottom edges (their pill is inset): the whole control is tappable, ≥ 48dp.
     final int pad = getResources().getDimensionPixelSize(R.dimen.tz_space_4);
-    setPadding(pad, pad, pad, pad);
+    setPadding(pad, 0, pad, 0);
   }
 
   public void setOptions(@NonNull CharSequence... options)
@@ -55,13 +57,19 @@ public class TzSegmented extends LinearLayout
         if (mListener != null)
           mListener.onSelected(index);
       });
-      final LayoutParams lp = new LayoutParams(LayoutParams.WRAP_CONTENT, h);
+      final LayoutParams lp = new LayoutParams(LayoutParams.WRAP_CONTENT, h + 2 * inset());
       if (i > 0)
         lp.setMarginStart(getResources().getDimensionPixelSize(R.dimen.tz_space_4));
       addView(option, lp);
     }
     mSelected = -1;
     select(0);
+  }
+
+  /** The well's 4dp rim around the selected pill. */
+  private int inset()
+  {
+    return getResources().getDimensionPixelSize(R.dimen.tz_space_4);
   }
 
   public void setListener(@Nullable Listener listener)
@@ -83,7 +91,14 @@ public class TzSegmented extends LinearLayout
       final TextView option = (TextView) getChildAt(i);
       final boolean on = i == index;
       option.setSelected(on);
-      option.setBackgroundResource(on ? (mCompact ? R.drawable.tz_bg_surface3_r20 : R.drawable.tz_bg_surface3_r22) : 0);
+      // setBackground() takes the drawable's padding (the inset): keep the option's own.
+      final int start = option.getPaddingStart(), end = option.getPaddingEnd();
+      option.setBackground(on ? new InsetDrawable(ContextCompat.getDrawable(getContext(), mCompact
+                                                                                        ? R.drawable.tz_bg_surface3_r20
+                                                                                        : R.drawable.tz_bg_surface3_r22),
+                                                  0, inset(), 0, inset())
+                              : null);
+      option.setPaddingRelative(start, 0, end, 0);
       option.setTextColor(ContextCompat.getColor(getContext(), on ? R.color.tz_text1 : R.color.tz_text2));
     }
   }

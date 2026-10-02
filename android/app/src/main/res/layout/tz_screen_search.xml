@@ -22,8 +22,8 @@
 
     <ImageButton
       android:id="@+id/tz_search_back"
-      android:layout_width="@dimen/tz_touch_48"
-      android:layout_height="@dimen/tz_touch_48"
+      android:layout_width="@dimen/tz_touch_min_browse"
+      android:layout_height="@dimen/tz_touch_min_browse"
       android:background="?attr/selectableItemBackgroundBorderless"
       android:contentDescription="@string/tz_cd_back_to_map"
       android:src="@drawable/ic_tz_back"
@@ -33,7 +33,7 @@
       android:id="@+id/tz_search_input"
       style="@style/TzText.SearchInput"
       android:layout_width="0dp"
-      android:layout_height="@dimen/tz_touch_48"
+      android:layout_height="@dimen/tz_touch_min_browse"
       android:layout_marginStart="@dimen/tz_space_4"
       android:layout_weight="1"
       android:background="@null"
@@ -45,8 +45,8 @@
 
     <ImageButton
       android:id="@+id/tz_search_clear"
-      android:layout_width="@dimen/tz_touch_48"
-      android:layout_height="@dimen/tz_touch_48"
+      android:layout_width="@dimen/tz_touch_min_browse"
+      android:layout_height="@dimen/tz_touch_min_browse"
       android:background="?attr/selectableItemBackgroundBorderless"
       android:contentDescription="@string/tz_cd_clear_search"
       android:padding="@dimen/tz_space_12"

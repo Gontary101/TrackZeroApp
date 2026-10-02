@@ -198,3 +198,18 @@ Approach changed: TrackZero host activity instead of hiding MwmActivity views (T
   R8 from history returns to it. `TzBase.downloadedMaps / syncUnits / versionName`, `TzFormat.speedWhole`.
 - Verified on the emulator: "Puy-de-Dôme · 73 MB", 8 rides, history → R8 → DONE → history, units → Imperial shows
   "GPS ±16 FT" on the map, About with the licence texts.
+
+## Phase 14 — Polish, battery, accessibility
+
+- Start screens and offline maps in TrackZero's UI (D31), hidden map really stops rendering + REC pulse (D32),
+  accessibility / largest font / 360 × 640 fixes (D33), search heights grouped ("1,691 m"), R4 grid at the board's
+  408dp, R8 track 2.6dp like the board, "— min" without unit.
+- Screenshots in `shots/` (Pixel 7 emulator, 412 × 915 dp): B1 B2 B3 B5 B6 B7 R1 R2 R3 R4 R5 R6 R7 R8. Compared with
+  the boards side by side. Remaining differences:
+  - Map content: the boards' map is a stylised mock-up; the real style shows more detail (POI icons, building
+    footprints) — the style pass of the plan is done (D4), POI density left as CoMaps' cycling style.
+  - B1 rider: the engine's arrow (mint, outlined) instead of the board's dot with halo and heading cone.
+  - B5 uses the real route and region; the board's high point and some values are placeholders ([X,XXX]).
+  - B6 shows the card full; the board's collapsed peek appears only while the map is being moved (by design, D17).
+  - B4 (empty routes) not shot: the emulator holds the test routes; verified in Phase 6.
+  - Debug builds show CoMaps' "V: Zoom | FPS" label top-left; release builds do not.

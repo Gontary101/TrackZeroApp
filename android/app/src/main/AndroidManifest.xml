@@ -96,7 +96,7 @@
     <!-- Allows for config and orientation change without killing/restarting main activity -->
     <activity
       android:name="app.organicmaps.SplashActivity"
-      android:theme="@style/MwmTheme.Splash"
+      android:theme="@style/TzTheme.Splash"
       android:configChanges="orientation|screenSize|smallestScreenSize|density|screenLayout|uiMode|keyboard|keyboardHidden|navigation"
       android:screenOrientation="fullUser"
       android:exported="true">
@@ -358,7 +358,7 @@
 
     <activity
         android:name="app.organicmaps.DownloadResourcesLegacyActivity"
-        android:theme="@style/MwmTheme.DownloadResourcesLegacy"
+        android:theme="@style/TzTheme.FirstRun"
         android:configChanges="orientation|screenLayout|screenSize"
         android:screenOrientation="fullUser"/>
 

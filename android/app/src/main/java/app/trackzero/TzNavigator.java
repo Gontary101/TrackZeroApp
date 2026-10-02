@@ -19,6 +19,7 @@ import app.trackzero.base.TzMap;
 import app.trackzero.screens.TzAboutScreen;
 import app.trackzero.screens.TzHistoryScreen;
 import app.trackzero.screens.TzMapScreen;
+import app.trackzero.screens.TzMapsScreen;
 import app.trackzero.ride.TzRide;
 import app.trackzero.screens.TzMoreScreen;
 import app.trackzero.screens.TzPreviewScreen;
@@ -44,6 +45,7 @@ public final class TzNavigator
     MORE(true, TzBottomIsland.Tab.MORE),
     HISTORY(true, TzBottomIsland.Tab.MORE),
     ABOUT(true, TzBottomIsland.Tab.MORE),
+    MAPS(true, TzBottomIsland.Tab.MORE),
     RIDE(false, null),
     SUMMARY(true, null);
 
@@ -201,6 +203,7 @@ public final class TzNavigator
       case SUMMARY -> new TzSummaryScreen();
       case HISTORY -> new TzHistoryScreen();
       case ABOUT -> new TzAboutScreen();
+      case MAPS -> new TzMapsScreen();
       default -> null;
     };
   }
@@ -242,7 +245,7 @@ public final class TzNavigator
     {
     case SEARCH, ROUTES, MORE, SUMMARY -> show(Screen.MAP, null);
     case PREVIEW -> show(Screen.ROUTES, null);
-    case HISTORY, ABOUT -> show(Screen.MORE, null);
+    case HISTORY, ABOUT, MAPS -> show(Screen.MORE, null);
     // Back never ends a ride: the ride screen opens its controls sheet in onBackPressed().
     case RIDE, MAP -> {}
     }

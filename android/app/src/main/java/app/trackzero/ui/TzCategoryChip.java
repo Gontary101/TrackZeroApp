@@ -2,6 +2,7 @@ package app.trackzero.ui;
 
 import android.content.Context;
 import android.graphics.drawable.Drawable;
+import android.graphics.drawable.InsetDrawable;
 import android.util.AttributeSet;
 import android.view.Gravity;
 import androidx.annotation.DrawableRes;
@@ -22,7 +23,8 @@ public class TzCategoryChip extends AppCompatTextView
     super(context, attrs);
     TextViewCompat.setTextAppearance(this, R.style.TzText_Option);
     setGravity(Gravity.CENTER_VERTICAL);
-    setMinHeight(getResources().getDimensionPixelSize(R.dimen.tz_chip_h));
+    // 44dp pill (B2), 48dp touch target: the pill is drawn inset.
+    setMinHeight(getResources().getDimensionPixelSize(R.dimen.tz_touch_min_browse));
     setPaddingRelative(getResources().getDimensionPixelSize(R.dimen.tz_space_12), 0,
                        getResources().getDimensionPixelSize(R.dimen.tz_space_16), 0);
     setCompoundDrawablePadding(getResources().getDimensionPixelSize(R.dimen.tz_space_8));
@@ -49,7 +51,14 @@ public class TzCategoryChip extends AppCompatTextView
   {
     mChecked = checked;
     setSelected(checked);
-    setBackgroundResource(checked ? R.drawable.tz_bg_surface3_r22 : R.drawable.tz_bg_surface2_r22);
+    final int inset = (getResources().getDimensionPixelSize(R.dimen.tz_touch_min_browse)
+                       - getResources().getDimensionPixelSize(R.dimen.tz_chip_h)) / 2;
+    // setBackground() takes the drawable's padding (the inset): keep the chip's own.
+    final int start = getPaddingStart(), end = getPaddingEnd();
+    setBackground(new InsetDrawable(ContextCompat.getDrawable(getContext(), checked ? R.drawable.tz_bg_surface3_r22
+                                                                                    : R.drawable.tz_bg_surface2_r22),
+                                    0, inset, 0, inset));
+    setPaddingRelative(start, 0, end, 0);
     TextViewCompat.setCompoundDrawableTintList(
         this, ContextCompat.getColorStateList(getContext(), checked ? R.color.tz_mint : R.color.tz_text2));
   }

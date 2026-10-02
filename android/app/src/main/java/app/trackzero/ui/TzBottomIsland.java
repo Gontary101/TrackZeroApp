@@ -59,7 +59,19 @@ public class TzBottomIsland extends LinearLayout
       if (mListener != null)
         mListener.onRideClicked();
     });
+    // The labels live in fixed slots: past 1.3× font scale "ROUTES" would wrap and clip.
+    for (ViewGroup slot : mSlots)
+      capLabel(slot);
+    capLabel(findViewById(R.id.tz_island_ride));
     setActive(Tab.MAP);
+  }
+
+  /** Icon over label: the label is the second child. */
+  private static void capLabel(@NonNull ViewGroup slot)
+  {
+    final TextView label = (TextView) slot.getChildAt(1);
+    label.setMaxLines(1);
+    TzTextSize.capCurrent(label);
   }
 
   public void setListener(@Nullable Listener listener)

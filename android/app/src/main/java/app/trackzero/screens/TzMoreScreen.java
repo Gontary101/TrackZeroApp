@@ -16,9 +16,13 @@ import app.trackzero.TzConfig;
 import app.trackzero.TzNavigator;
 import app.trackzero.TzPrefs;
 import app.trackzero.base.TzBase;
+import app.trackzero.base.TzMaps;
+import app.trackzero.base.TzRoads;
 import app.trackzero.format.TzFormat;
 import app.trackzero.ride.RideStore;
 import app.trackzero.ui.TzListRow;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 
 /** B7 · More: offline maps, ride history, settings, about. */
@@ -55,7 +59,7 @@ public class TzMoreScreen extends TzScreen
     mAutoPause = view.findViewById(R.id.tz_more_auto_pause);
     final TzListRow about = view.findViewById(R.id.tz_more_about);
 
-    mOffline.setOnClickListener(v -> TzBase.openDownloader(requireActivity()));
+    mOffline.setOnClickListener(v -> TzNavigator.show(TzNavigator.Screen.MAPS, null));
     mHistory.setOnClickListener(v -> TzNavigator.show(TzNavigator.Screen.HISTORY, null));
     mUnits.setOnClickListener(v -> {
       final Context c = requireContext();
@@ -91,17 +95,20 @@ public class TzMoreScreen extends TzScreen
   {
     final Context c = requireContext();
     final Locale locale = Locale.getDefault();
-    final TzBase.Maps maps = TzBase.downloadedMaps(c);
-    if (maps.names.isEmpty())
+    final List<TzMaps.Item> maps = TzRoads.ready(c) ? TzMaps.downloaded() : new ArrayList<>();
+    if (maps.isEmpty())
     {
       mOffline.setDetail(getString(R.string.tz_more_manage));
     }
     else
     {
-      final String size = Formatter.formatShortFileSize(c, maps.bytes);
-      mOffline.setDetail(maps.names.size() == 1
-                             ? getString(R.string.tz_more_maps_one, maps.names.get(0), size)
-                             : getString(R.string.tz_more_maps_many, maps.names.get(0), maps.names.size() - 1, size));
+      long bytes = 0;
+      for (TzMaps.Item m : maps)
+        bytes += m.bytes;
+      final String size = Formatter.formatShortFileSize(c, bytes);
+      mOffline.setDetail(maps.size() == 1 ? getString(R.string.tz_more_maps_one, maps.get(0).name, size)
+                                          : getString(R.string.tz_more_maps_many, maps.get(0).name, maps.size() - 1,
+                                                      size));
     }
     RideStore.get(c).list(rides -> {
       if (getView() != null)

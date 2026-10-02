@@ -418,8 +418,8 @@ void Arrow3d::Render(ref_ptr<dp::GraphicsContext> context, ref_ptr<gpu::ProgramM
                 routingMode ? kOutlineScale : 1.0f /* scaleFactor */);
   }
 
-  // Render outline.
-  if (m_shadowMesh && m_enableOutline && routingMode)
+  // Render outline. TrackZero: the rider arrow is outlined on every map (its boards), not only while routing.
+  if (m_shadowMesh && m_enableOutline)
   {
     dp::Color const outlineColor = df::GetColorConstant(df::kArrow3DOutlineColor);
     RenderArrow(context, mng, *m_shadowMesh, screen, gpu::Program::Arrow3dOutline, outlineColor, 0.0f /* dz */,

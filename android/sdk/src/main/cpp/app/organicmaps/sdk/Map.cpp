@@ -4,6 +4,8 @@
 
 #include "app/organicmaps/sdk/platform/AndroidPlatform.hpp"
 
+#include "drape_frontend/gui/drape_gui.hpp"
+
 #include "storage/storage_defines.hpp"
 
 #include "base/logging.hpp"
@@ -49,6 +51,12 @@ JNIEXPORT jboolean JNICALL Java_app_organicmaps_sdk_Map_nativeCreateEngine(JNIEn
 {
   return g_framework->CreateDrapeEngine(env, surface, density, firstLaunch, isLaunchByDeepLink,
                                         base::asserted_cast<uint32_t>(appVersionCode), isCustomROM);
+}
+
+// TrackZero: the app shows the attribution itself; the ruler must not wait for the engine's label.
+JNIEXPORT void JNICALL Java_app_organicmaps_sdk_Map_nativeDeactivateCopyright(JNIEnv *, jclass)
+{
+  gui::DrapeGui::Instance().DeactivateCopyright();
 }
 
 JNIEXPORT jboolean JNICALL Java_app_organicmaps_sdk_Map_nativeIsEngineCreated(JNIEnv *, jclass)

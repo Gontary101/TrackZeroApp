@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Checkboxes: mint when on (§X1), text2 when off. -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+  <item android:color="@color/tz_mint" android:state_checked="true" />
+  <item android:color="@color/tz_text2" />
+</selector>

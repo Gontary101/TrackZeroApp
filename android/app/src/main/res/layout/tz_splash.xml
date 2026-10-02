@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- TrackZero start screen while the map engine loads (SplashActivity). -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+  android:id="@+id/root_view"
+  android:layout_width="match_parent"
+  android:layout_height="match_parent"
+  android:background="@color/tz_bg"
+  android:gravity="center"
+  android:orientation="vertical">
+
+  <TextView
+    style="@style/TzText.DotXL"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text="@string/tz_wordmark" />
+
+  <TextView
+    style="@style/TzText.Caption"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="@dimen/tz_space_12"
+    android:text="@string/tz_about_tagline" />
+</LinearLayout>
