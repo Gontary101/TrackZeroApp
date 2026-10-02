@@ -240,6 +240,8 @@ it led to).
 - [x] B2 offline search in airplane mode ("boulangerie" → nearby bakeries).
 - [x] Airplane mode for the ride run above (route ride, pages, R5, R6, R8, export): all worked.
 - [x] All unit tests pass; no warnings in `app.trackzero`.
+- First real phone (Honor REA-NX9, release build): map downloads failed on mobile data, and a failed country
+  was listed as on the phone. Both fixed (D35); Puy-de-Dôme downloaded over LTE.
 - Emulator artifacts, not bugs: its barometer is fixed at 1013.25 hPa, so altitude, grade and gain stay flat during
   ride tests. Debug builds show the native "V: Zoom | FPS" label. uiautomator can't get an idle tree on pages that
   update every second (use screenshots).

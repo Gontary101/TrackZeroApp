@@ -332,3 +332,14 @@ GPS is 1 Hz only during rides (GpsLocationSource); outside rides CoMaps' own loc
   profile card below does not jump.
 - The engine's "V: Zoom | FPS" label seen on the emulator is compiled only into native debug builds (`DEBUG`).
 
+
+## D35 · Map downloads on mobile data (first real phone)
+On the Honor (LTE, no Wi-Fi) every map download showed "Download failed" at once. CoMaps' downloading policy
+refuses cellular downloads (`IsDownloadingAllowed()` → immediate Failed, nothing logged in release) until the app
+calls `nativeEnableDownloadOn3g()`. That consent lasts an hour and is CoMaps' own "Download over a cellular
+network?" dialog, which TrackZero's maps screen (D14) had replaced without the consent step. The emulator counts as
+Wi-Fi, so the checklist never saw it. Now `TzMaps.needsMobileDataConsent()` and `allowMobileData()` exist: on mobile
+data the confirmation reads "Download X over mobile data?", and confirming grants it. Retry and update ask the same
+way, since the consent may have lapsed. No setting: the question is asked when it matters.
+Also, `TzMaps.downloaded()` listed a country whose regions had failed ("France · 94 maps") as a map on the phone.
+Groups are now always opened into their regions.

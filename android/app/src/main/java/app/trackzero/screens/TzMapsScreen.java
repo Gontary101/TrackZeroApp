@@ -175,6 +175,8 @@ public class TzMapsScreen extends TzScreen
       return;
     }
     final String size = Formatter.formatShortFileSize(c, item.bytes);
+    // Asked once per tap: confirming is the consent to use mobile data (CoMaps fails the download without it).
+    final boolean mobile = TzMaps.needsMobileDataConsent();
     switch (item.state)
     {
     case AVAILABLE ->
@@ -185,9 +187,11 @@ public class TzMapsScreen extends TzScreen
         return;
       }
       new MaterialAlertDialogBuilder(c)
-          .setMessage(getString(R.string.tz_maps_download_ask, item.name, size))
+          .setMessage(getString(mobile ? R.string.tz_maps_download_ask_mobile : R.string.tz_maps_download_ask,
+                                item.name, size))
           .setNegativeButton(R.string.tz_cancel, null)
-          .setPositiveButton(R.string.tz_maps_action_download, (d, w) -> TzMaps.download(item.id))
+          .setPositiveButton(R.string.tz_maps_action_download,
+                             (d, w) -> start(mobile, () -> TzMaps.download(item.id)))
           .show();
     }
     case DOWNLOADING -> new MaterialAlertDialogBuilder(c)
@@ -195,7 +199,20 @@ public class TzMapsScreen extends TzScreen
                             .setNegativeButton(R.string.tz_cancel, null)
                             .setPositiveButton(R.string.tz_maps_stop, (d, w) -> TzMaps.cancel(item.id))
                             .show();
-    case FAILED -> TzMaps.retry(item.id);
+    case FAILED ->
+    {
+      if (!mobile)
+      {
+        TzMaps.retry(item.id);
+        return;
+      }
+      new MaterialAlertDialogBuilder(c)
+          .setMessage(getString(R.string.tz_maps_download_ask_mobile, item.name, size))
+          .setNegativeButton(R.string.tz_cancel, null)
+          .setPositiveButton(R.string.tz_maps_action_download,
+                             (d, w) -> start(true, () -> TzMaps.retry(item.id)))
+          .show();
+    }
     case DOWNLOADED, UPDATABLE ->
     {
       final MaterialAlertDialogBuilder dialog =
@@ -204,11 +221,23 @@ public class TzMapsScreen extends TzScreen
               .setNegativeButton(R.string.tz_maps_delete, (d, w) -> TzMaps.delete(item.id))
               .setNeutralButton(R.string.tz_cancel, null);
       if (item.state == TzMaps.State.UPDATABLE)
-        dialog.setPositiveButton(R.string.tz_maps_update_action, (d, w) -> TzMaps.update(item.id));
+      {
+        if (mobile)
+          dialog.setMessage(R.string.tz_maps_update_mobile);
+        dialog.setPositiveButton(R.string.tz_maps_update_action,
+                                 (d, w) -> start(mobile, () -> TzMaps.update(item.id)));
+      }
       dialog.show();
     }
     case PARTLY -> {}
     }
+  }
+
+  private static void start(boolean overMobileData, @NonNull Runnable download)
+  {
+    if (overMobileData)
+      TzMaps.allowMobileData();
+    download.run();
   }
 
   @NonNull

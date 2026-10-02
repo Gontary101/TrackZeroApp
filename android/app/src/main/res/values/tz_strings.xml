@@ -235,6 +235,8 @@
   <string name="tz_maps_on_phone_state">On this phone · %1$s</string>
   <string name="tz_maps_action_download">Download</string>
   <string name="tz_maps_download_ask">Download %1$s? (%2$s)</string>
+  <string name="tz_maps_download_ask_mobile">Download %1$s over mobile data? (%2$s)</string>
+  <string name="tz_maps_update_mobile">The update downloads over mobile data.</string>
   <string name="tz_maps_stop_ask">Stop downloading %1$s?</string>
   <string name="tz_maps_stop">Stop</string>
   <string name="tz_maps_delete">Delete</string>

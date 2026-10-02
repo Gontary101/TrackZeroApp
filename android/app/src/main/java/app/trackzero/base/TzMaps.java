@@ -6,6 +6,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import app.organicmaps.sdk.downloader.CountryItem;
 import app.organicmaps.sdk.downloader.MapManager;
+import app.organicmaps.sdk.util.ConnectionState;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -93,12 +94,13 @@ public final class TzMaps
       if (c.id.startsWith(WORLD_MAPS) || c.id.equals(root))
         continue;
       final Item item = item(c);
-      // My-maps lists countries partly downloaded ("France"); their regions are the maps.
-      if (item.state == State.DOWNLOADED || item.state == State.UPDATABLE || item.state == State.DOWNLOADING
-          || item.state == State.FAILED)
-        out.add(item);
-      else if (c.childCount > 0)
+      // My-maps lists the countries holding the maps ("France", in whatever state its regions are): the regions are
+      // the maps.
+      if (item.isGroup())
         collectDownloaded(c.id, out);
+      else if (item.state == State.DOWNLOADED || item.state == State.UPDATABLE || item.state == State.DOWNLOADING
+               || item.state == State.FAILED)
+        out.add(item);
     }
   }
 
@@ -166,6 +168,21 @@ public final class TzMaps
   public static void delete(@NonNull String id)
   {
     MapManager.nativeDelete(id);
+  }
+
+  /**
+   * On mobile data CoMaps refuses map downloads (they fail at once) until the rider agrees to use it; the consent
+   * lasts an hour. Ask before {@link #download}, {@link #update} or {@link #retry} when this is true.
+   */
+  public static boolean needsMobileDataConsent()
+  {
+    return ConnectionState.INSTANCE.isMobileConnected() && !MapManager.nativeIsDownloadOn3gEnabled();
+  }
+
+  /** The rider agreed to download over mobile data. */
+  public static void allowMobileData()
+  {
+    MapManager.nativeEnableDownloadOn3g();
   }
 
   public static boolean hasSpaceFor(@NonNull String id)
