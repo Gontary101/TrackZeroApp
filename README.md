@@ -1,172 +1,220 @@
-<!-- Navigation Bar -->
-<p align="center">
-  <a href="https://codeberg.org/comaps#comaps">Project Intro</a> |
-  <a href="https://codeberg.org/comaps/Governance#comaps-project-governance-docs">Governance</a> |
-  <a href="https://codeberg.org/comaps/Governance/src/branch/main/FAQ.md">FAQ</a> |
-  <a href="#contributing">Contribute</a> |
-  <a href="https://www.comaps.app/donate">Donate</a> |
-  <a href="https://codeberg.org/comaps#keep-connected">Keep Connected</a>
-</p>
-
-<div align="center" >
-<img src="docs/badges/logo.svg" width="150">
-</div>
-
-
 <div align="center">
-<h1><a href="https://comaps.app/">CoMaps</a></h1>
-<h2>Hike, Bike, Drive Offline - Easy Map Navigation with Privacy</h2>
-</div>
-<div align="center">
-  <p align="center">
-    <a href="https://codeberg.org/comaps/comaps/src/branch/main/LICENSE">
-      <img src="https://img.shields.io/github/license/comaps/comaps?style=for-the-badge&logo=opensourceinitiative&logoColor=white&color=588157" alt="License"/>
-    </a>
-    <a href="https://opencollective.com/comaps">
-      <img src="https://img.shields.io/opencollective/all/comaps?label=Open%20Collective%20Donors&logo=opencollective&logoColor=white&style=for-the-badge&color=588157" alt="Open Collective Donors"/>
-    </a>
-    <a href="https://liberapay.com/CoMaps">
-      <img src="https://img.shields.io/liberapay/patrons/CoMaps?label=Liberapay%20Patrons&logo=liberapay&logoColor=white&style=for-the-badge&color=588157" alt="Liberapay Patrons"/>
-    </a>
+  <img src="design/logo/trackzero-logo-512.png" width="128" alt="TrackZero logo">
+  <h1>TrackZero</h1>
+  <p><b>A fast, offline cycling computer and GPX navigator.</b></p>
+  <p>
+    <img src="https://img.shields.io/badge/platform-Android-A9F7B9?style=for-the-badge&labelColor=000000" alt="Android">
+    <img src="https://img.shields.io/badge/maps-offline-A9F7B9?style=for-the-badge&labelColor=000000" alt="Offline maps">
+    <img src="https://img.shields.io/badge/license-Apache%202.0-A9F7B9?style=for-the-badge&labelColor=000000" alt="Apache 2.0">
   </p>
 </div>
 
----
-
-A community-led free & open source maps app based on [OpenStreetMap](https://www.openstreetmap.org), built for transparency, privacy, and not-for-profit values. A fork of Organic Maps, originally based on Maps.ME.
+TrackZero is a cycling-first Android app built on the [CoMaps](https://codeberg.org/comaps/comaps) offline map engine.
+Import a GPX route, ride it with turn-by-turn guidance on a dark, glanceable display, and record your ride, all
+without an account or a network connection. It is designed to last a whole day on one charge.
 
 <p align="center">
-  <a href="https://apps.apple.com/app/comaps/id6747180809">
-    <img src="docs/badges/apple-appstore.png" alt="App Store" width="160"/>
-  </a>
-  <a href="https://play.google.com/store/apps/details?id=app.comaps.google">
-    <img src="docs/badges/google-play.png" alt="Google Play" width="160"/>
-  </a>
-  <a href="https://f-droid.org/en/packages/app.comaps.fdroid/">
-    <img src="docs/badges/fdroid.png" alt="F-Droid" width="160"/>
-  </a>
-  <a href="https://flathub.org/apps/app.comaps.comaps">
-    <img src="docs/badges/flathub.png" alt="Flathub" width="160"/>
-  </a>
-  <a href="https://apt.izzysoft.de/fdroid/index/apk/app.comaps">
-    <img src="docs/badges/izzyondroid.png" alt="Obtainium" width="160"/>
-  </a>
-  <a href="https://apps.obtainium.imranr.dev/redirect?r=obtainium://add/https://codeberg.org/comaps/comaps">
-    <img src="docs/badges/obtainium.png" alt="Obtainium" width="160"/>
-  </a>
-  <a href="https://codeberg.org/comaps/comaps/releases">
-    <img src="docs/badges/codeberg.png" alt="Codeberg" width="160"/>
-  </a>
+  <img src="shots/B1.png" width="19%" alt="Map">
+  <img src="shots/B3.png" width="19%" alt="Routes">
+  <img src="shots/B5.png" width="19%" alt="Route preview">
+  <img src="shots/R2.png" width="19%" alt="Turn-by-turn">
+  <img src="shots/R4.png" width="19%" alt="Speed page">
 </p>
-
-
-<!-- Screenshots -->
 <p align="center">
-  <img src="android/app/src/fdroid/play/listings/en-US/graphics/phone-screenshots/1.png" width="180" />
-  <img src="android/app/src/fdroid/play/listings/en-US/graphics/phone-screenshots/2.png" width="180" />
-  <img src="android/app/src/fdroid/play/listings/en-US/graphics/phone-screenshots/3.png" width="180" />
-  <img src="android/app/src/fdroid/play/listings/en-US/graphics/phone-screenshots/4.png" width="180" />
-  <img src="android/app/src/fdroid/play/listings/en-US/graphics/phone-screenshots/5.png" width="180" />
-  <img src="android/app/src/fdroid/play/listings/en-US/graphics/phone-screenshots/6.png" width="180" />
+  <img src="shots/R5.png" width="19%" alt="Climbs">
+  <img src="shots/R3.png" width="19%" alt="Off route">
+  <img src="shots/R6.png" width="19%" alt="Ride controls">
+  <img src="shots/R8.png" width="19%" alt="Ride summary">
+  <img src="shots/B7.png" width="19%" alt="More">
 </p>
 
----
+## Features
 
-## ⚡️ Highlights
+- **Your routes, offline.** Import GPX files from the file picker, or share them to TrackZero from any app. The
+  library shows distance, climbing and loop / out-and-back / point-to-point at a glance; favorite, rename, delete.
+- **Turn-by-turn on any GPX.** Turns are worked out from the track itself and checked against the map's junctions,
+  with street names and spoken announcements at 200 m and 50 m.
+- **Routing when you need it.** CoMaps' bicycle router gets you to the start of a route, back onto it when you leave
+  it ("Recalculating…"), or to any place you search for (Navigate here). Roundabouts are announced by exit.
+- **Three ride pages.** Map with turn card; a big speed page with distance, time, elevation, grade and averages; a
+  climb page that finds the route's climbs, names them from the map, and shows grade, distance to the summit and the
+  profile.
+- **Ride recording.** Auto-pause, a crash-safe journal (a killed app reopens on the paused ride), ride history, and
+  GPX export.
+- **Offline search.** Places, summits, water, bike repair and cafés from the maps on the phone.
+- **Offline maps.** Download the regions you ride in, over Wi-Fi or (when you agree) mobile data.
+- **Private.** No account, no tracking, no analytics. TrackZero makes no network calls of its own; only map downloads
+  you start reach the network.
 
-- **Offline-first**: Navigate without a connection
-- **Privacy-respecting**: No tracking, ads or data collection
-- **Lightweight**: Battery- and space-efficient
-- **Simple**: Polished, user-focused interface
-- **Cross-platform**: Available for Android, iOS, MacOS, and Linux.
-- **Community-built**: Free, open source, and collaborative
-- **Transparent**: Open finances and governance
+### Built for battery
 
----
+A ride can keep the screen on for hours, so the app works hard to do as little as possible:
 
-## 🚀 Main Features
+- the map draws only while it is on screen, and the ride screen asks the display for 60 Hz instead of 120 Hz;
+- one location fix a second, and with the screen off and nothing to announce, fixes arrive in batches so the phone
+  can sleep;
+- a café stop paused by hand turns GPS off until you come back;
+- the compass sleeps while you ride (the GPS course gives the heading);
+- the router keeps its road data for the ride and backs off when there is no route.
 
-- Downloadable detailed maps with places which are not available with Google Maps
+The reasoning behind these and every other design decision is in [TZ_DECISIONS.md](TZ_DECISIONS.md).
 
-- Outdoor mode with highlighted hiking trails, campsites, water sources, peaks, contour lines, etc
+## Building
 
-- Walking paths and cycleways
+TrackZero is an **Android** app. The TrackZero interface lives in `android/app/src/main/java/app/trackzero`; the
+repository still contains CoMaps' iOS and desktop apps, which build from the same core (see [iOS](#ios) below).
 
-- Points of interest like restaurants, gas stations, hotels, shops, sightseeings and many more
+You'll need about 30 GB of free disk space and 8 GB of RAM. The first build compiles the whole C++ map engine and
+takes a while (10 to 30 minutes); later builds are much faster.
 
-- Search by name or an address or by point of interest category
+### 1. Get the sources
 
-- Navigation with voice announcements for walking, cycling, or driving
-
-- Bookmark your favorite places with a single tap
-
-- Offline Wikipedia articles
-
-- Subway transit layer and directions
-
-- Track recording
-
-- Export and import bookmarks and tracks in KML, KMZ, GPX formats
-
-- A dark mode to use during the night
-
-- Improve map data for everyone using a basic built-in editor
-
-- Android Auto and CarPlay support
-
- ***Freedom Is Here – Navigate the world with privacy and community at the forefront.***
-
----
-
-## 🤝 Contributing
-
-You can help by donating, contributing code, translating, or by telling others about it. To build the best maps app there is a need for software development, design, product, community development, and other areas. Reach out to us and let us know how you want to help.
-
-- Build instructions: [docs/INSTALL.md](docs/INSTALL.md)  
-- Contribution guide: [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md)
-
-There is a dedicated [Zulip](https://codeberg.org/comaps/Governance/src/branch/main/contribute.md#3-team-messaging) chat for active contributors.
-
----
-
-## 💬 Feedback
-
-- Rate us on [App Store](https://apps.apple.com/app/comaps/id6747180809) and [Google Play](https://play.google.com/store/apps/details?id=app.comaps.google)
-- Star our repos on Codeberg 
-- Report bugs or request features on the [issue tracker](https://codeberg.org/comaps/comaps/issues)
-
----
-
-## 💸 Funding
-
-CoMaps is free. To fund development, we rely on your voluntary support ♥️
-Donate via [OpenCollective](https://opencollective.com/comaps/donate) or [Liberapay](https://liberapay.com/CoMaps).  
-The project's financial information is completely open and transparent at [our Open Collective](https://opencollective.com/comaps).
-
----
-
-## 🔒 Privacy
-
-The Android app has been reviewed by [Exodus Privacy](https://reports.exodus-privacy.eu.org/en/reports/app.comaps.google/latest/).
-
-To [verify](https://developer.android.com/studio/command-line/apksigner#usage-verify) the APK, use the following signing certificate fingerprints:
-```
-SHA-256: 4894e8e6963627ef660031d8593fe77297f835acb4e23810003e926135023b4c
-SHA-1: 8b7b5739f917e9f7c681671ced0c9c8562123ade
-MD5: 9cce0ffea281dc2f0e0a154d6d2e281e
+```bash
+git clone --recurse-submodules --shallow-submodules --branch trackzero \
+    https://github.com/Gontary101/TrackZeroApp.git trackzero
+cd trackzero
 ```
 
-To verify CoMaps via [AppVerifier](https://github.com/soupslurpr/AppVerifier), use the following signing certificate fingerprint:
+On a slow connection add `--filter=blob:limit=128k` to the clone (large files are then fetched on demand). If you
+cloned without submodules: `git submodule update --init --recursive --depth 1`.
+
+### 2. Install the build tools
+
+<details open>
+<summary><b>Linux (Ubuntu / Debian)</b></summary>
+
+```bash
+sudo apt install build-essential cmake ninja-build python3-venv jq optipng \
+    qt6-base-dev qt6-svg-dev qt6-positioning-dev \
+    libicu-dev libfreetype-dev libharfbuzz-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev
 ```
-app.comaps
-48:94:E8:E6:96:36:27:EF:66:00:31:D8:59:3F:E7:72:97:F8:35:AC:B4:E2:38:10:00:3E:92:61:35:02:3B:4C
+
+Arch and Fedora package lists are in [docs/INSTALL.md](docs/INSTALL.md#install-required-packages-for-your-specific-linux-distro).
+</details>
+
+<details>
+<summary><b>macOS</b></summary>
+
+```bash
+xcode-select --install
+brew install wget optipng cmake ninja qt jq
 ```
----
+</details>
 
-## ⚖️ License
+<details>
+<summary><b>Windows</b></summary>
 
-Licensed under the Apache License 2.0.  
-See [LICENSE](LICENSE), [NOTICE](NOTICE), and [data/copyright.html](data/copyright.html). 
+Build inside WSL 2 with Ubuntu and follow the Linux steps (see
+[docs/INSTALL.md](docs/INSTALL.md#wsl-builds) for the details).
+</details>
 
-Our project is completely free and open source software. It had been reviewed by "[is it really FOSS?](https://isitreallyfoss.com/projects/comaps/)" and is listed as 100% FOSS, [see what that means](https://isitreallyfoss.com/about/categorisation/)
+### 3. Prepare the repository
 
+```bash
+./configure.sh
+```
+
+This sets up a Python environment for the data tools and generates the map styles (TrackZero's dark cycling style
+included) and their symbols. Run it again whenever you change anything under `data/styles/`.
+
+### 4. Android
+
+**Tools.** Install [Android Studio](https://developer.android.com/studio), or just the
+[command line tools](https://developer.android.com/studio#command-line-tools-only), then these SDK packages:
+
+```bash
+sdkmanager "platform-tools" "platforms;android-36" "build-tools;36.0.0" \
+           "ndk;28.2.13676358" "cmake;3.22.1"
+```
+
+The build needs **JDK 21** (`java -version`; Android Studio ships one: point `JAVA_HOME` at it if your system Java is
+older) and the SDK location in `ANDROID_HOME`:
+
+```bash
+export ANDROID_HOME=$HOME/Android/Sdk           # macOS: $HOME/Library/Android/sdk
+```
+
+**Build and install a debug build** on a phone (USB debugging on) or an emulator:
+
+```bash
+cd android
+./gradlew :app:assembleFdroidDebug -Parm64      # a phone; use -Px64 for an x86_64 emulator
+adb install -r app/build/outputs/apk/fdroid/debug/TrackZero-*-fdroid-debug.apk
+```
+
+The debug build installs as `app.trackzero.debug`, beside a release build.
+
+**Build a release.**
+
+```bash
+./gradlew :app:assembleFdroidRelease -Parm64
+adb install -r app/build/outputs/apk/fdroid/release/TrackZero-*-fdroid-release.apk
+```
+
+Without your own key the release is signed with the repository's debug key (fine for your own phone). To sign it
+with yours, create `android/app/secure.properties.release` (it is git-ignored):
+
+```groovy
+ext.secretReleaseStoreFile = '/path/to/your-release.keystore'
+ext.secretReleaseStorePassword = 'store password'
+ext.secretReleaseKeyAlias = 'key alias'
+ext.secretReleaseKeyPassword = 'key password'
+```
+
+**Run the tests.**
+
+```bash
+./gradlew :app:testFdroidDebugUnitTest -Px64
+```
+
+**Useful options** for any Gradle command: `-Parm64`, `-Parm32`, `-Px64` or `-Px86` build one architecture instead of
+all (much faster); `-PsplitAPK` makes one APK per architecture; `-Pnjobs=4` limits parallel compile jobs on a machine
+with little RAM; `-Ppch` (precompiled headers) speeds the C++ build up by about 15 %.
+
+On first launch TrackZero downloads the small world overview map; then open **More → Offline maps** and download
+the regions you ride in.
+
+### iOS
+
+> TrackZero's own interface is Android only for now. The iOS project in this repository builds **CoMaps' iPhone
+> app** from the same map engine (with TrackZero's engine changes), not TrackZero. It is useful for working on the
+> shared core.
+
+You need a Mac with Xcode (and an [Apple Developer](https://developer.apple.com/programs/) account to run on a real
+device; the Simulator works without one).
+
+1. Follow steps 1 to 3 above on the Mac (macOS tools, `./configure.sh`).
+2. Open `xcode/CoMaps.xcworkspace` in Xcode.
+3. In Xcode → Settings → Accounts, add your Apple ID and an "Apple Development" certificate.
+4. Select the **Maps** project, then for each of the **CoMaps**, **CoMapsTests** and **CoMapsWidgetExtension**
+   targets open *Signing & Capabilities*, choose your team, tick *Automatically manage signing* and set a unique
+   bundle identifier (for example `com.yourname.comaps.debug`, `….tests`, `….debug.widgetextension`).
+5. For a real device, remove the `com.apple.developer.carplay-maps` entry from
+   `iphone/Maps/CoMaps-Debug.entitlements` (CarPlay needs an entitlement from Apple).
+6. Pick the **CoMaps** scheme and a destination (a Simulator, your iPhone, or "My Mac (Designed for iPad)"), then
+   *Product → Run*.
+
+To feed a GPX track to the Simulator: `python3 tools/python/ios_simulator_load_gpx.py route.gpx`.
+
+## Project layout
+
+| Path | What's there |
+| --- | --- |
+| `android/app/src/main/java/app/trackzero/` | The TrackZero app: screens, ride service, follow engine, climbs, routing glue |
+| `android/app/src/test/java/app/trackzero/` | Unit tests (follow engine, guide, climbs, formatting, GPX…) |
+| `android/sdk/src/main/cpp/.../routing/BicyclePath.cpp` | The bicycle router bridge (paths without a routing session) |
+| `data/styles/trackzero/` | The dark cycling map style |
+| `design/logo/` | The logo and the script that generates every launcher icon from it |
+| `tools/trackzero/` | Development tools (`emu_gps_play.py` rides a GPX on the Android emulator) |
+| `TZ_DECISIONS.md`, `TZ_PROGRESS.md` | Why things are the way they are, and what was built and verified, phase by phase |
+
+## Credits and license
+
+TrackZero is a fork of [CoMaps](https://codeberg.org/comaps/comaps), the community-led successor of Organic Maps and
+MAPS.ME. All the hard parts (the map engine, offline search, routing and map data processing) come from their
+contributors; thank you.
+
+Map data © [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors, available under the ODbL.
+
+TrackZero, like CoMaps, is licensed under the [Apache License 2.0](LICENSE). Third-party components keep their own
+licenses (see `NOTICE` and `data/copyright.html`).
