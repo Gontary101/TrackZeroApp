@@ -31,6 +31,7 @@ import app.organicmaps.R;
 import app.trackzero.TzConfig;
 import app.trackzero.TzNavigator;
 import app.trackzero.TzPrefs;
+import app.trackzero.TzTrace;
 import app.trackzero.base.TzMap;
 import app.trackzero.base.TzRouteLayer;
 import app.trackzero.follow.Climb;
@@ -103,6 +104,8 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
   private boolean mEnding;
   private long mRenderedAtMs;
   private int mZoom = -1;
+  /** The trace has the first render with a session. */
+  private boolean mTracedRender;
   private int mZoomCandidate = -1;
   private long mZoomCandidateSince;
   private int mTraceSize = -1;
@@ -176,6 +179,8 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
     public void onServiceConnected(ComponentName name, IBinder binder)
     {
       mService = ((TzRideService.LocalBinder) binder).service();
+      if (TzTrace.on())
+        TzTrace.log("ridescr", "onServiceConnected session=" + (mService.session() != null));
       mService.addListener(TzRideScreen.this);
       render();
     }
@@ -310,6 +315,8 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
   public void onStart()
   {
     super.onStart();
+    if (TzTrace.on())
+      TzTrace.log("ridescr", "onStart page=" + mPager.getCurrentItem());
     mBound = requireContext().bindService(new Intent(requireContext(), TzRideService.class), mConnection, 0);
     applyKeepAwake();
     TzDisplay.limitRefreshRate(requireActivity(), true);
@@ -516,6 +523,8 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
 
   private void setPage(int page)
   {
+    if (TzTrace.on())
+      TzTrace.log("ridescr", "setPage " + page);
     mPage = page;
     mHandle.setPage(page, true);
     mHandle.setContentDescription(getString(R.string.tz_cd_page_handle, page + 1, TzPageHandle.PAGES));
@@ -590,6 +599,11 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
     final RideSession s = session();
     if (s == null || getView() == null || s.state() == RideSession.State.SAVED)
       return;
+    if (TzTrace.on() && !mTracedRender)
+    {
+      mTracedRender = true;
+      TzTrace.log("ridescr", "first render with a session, state=" + s.state() + " guide=" + (mService != null && mService.guide() != null));
+    }
     loadRoute(s);
 
     final long now = SystemClock.elapsedRealtime();
@@ -705,6 +719,8 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
     final int band = kmh < 15 ? 17 : kmh <= 30 ? 16 : 15;
     if (mZoom < 0)
     {
+      if (TzTrace.on())
+        TzTrace.log("ridescr", "autoZoom first band=" + band);
       if (TzMap.setZoom(band))
         mZoom = band;
       return;
@@ -714,7 +730,11 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
       mZoomCandidate = -1;
       // A zoom animation can be cut short by follow updates: settle it on the next tick.
       if (TzMap.zoom() != mZoom)
+      {
+        if (TzTrace.on())
+          TzTrace.log("ridescr", "autoZoom settle " + TzMap.zoom() + " -> " + mZoom);
         TzMap.setZoom(mZoom);
+      }
       return;
     }
     if (band != mZoomCandidate)
@@ -725,6 +745,8 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
     }
     if (now - mZoomCandidateSince >= ZOOM_STABLE_MS && TzMap.setZoom(band))
     {
+      if (TzTrace.on())
+        TzTrace.log("ridescr", "autoZoom band " + mZoom + " -> " + band);
       mZoom = band;
       mZoomCandidate = -1;
     }
@@ -902,6 +924,8 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
     if (guide.linesVersion() == mLinesShown)
       return;
     mLinesShown = guide.linesVersion();
+    if (TzTrace.on())
+      TzTrace.log("ridescr", "showLines v" + mLinesShown + " leg=" + (guide.legLine() != null) + " toPlace=" + s.toPlace());
     final FollowRoute leg = guide.legLine();
     if (leg == null)
       TzRouteLayer.hideLeg();
@@ -918,12 +942,18 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
     if (mRouteRequested || s.routeId() == null)
       return;
     mRouteRequested = true;
+    if (TzTrace.on())
+      TzTrace.log("ridescr", "loadRoute request " + s.routeId());
     final RouteStore store = RouteStore.get(requireContext());
     store.find(s.routeId(), route -> {
+      if (TzTrace.on())
+        TzTrace.log("ridescr", "loadRoute found=" + (route != null) + " view=" + (getView() != null));
       if (getView() == null || route == null)
         return;
       mRoute = route;
       store.loadGeometry(route, g -> {
+        if (TzTrace.on())
+          TzTrace.log("ridescr", "loadRoute geometry=" + (g != null) + " view=" + (getView() != null));
         if (getView() != null && g != null)
           TzRouteLayer.show(this, g.lineLat, g.lineLon);
       });

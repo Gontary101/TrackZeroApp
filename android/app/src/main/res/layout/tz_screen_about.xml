@@ -57,7 +57,8 @@
         style="@style/TzText.Caption"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="@dimen/tz_space_4" />
+        android:layout_marginTop="@dimen/tz_space_4"
+        android:importantForAccessibility="no" />
 
       <TextView
         style="@style/TzText.Body"
@@ -92,6 +93,22 @@
         style="@style/TzListRow"
         app:tzIcon="@drawable/ic_tz_info"
         app:tzTitle="@string/tz_about_fonts" />
+    </LinearLayout>
+
+    <!-- Hidden tools (tracing on: debug builds, or 7 taps on the version) -->
+    <LinearLayout
+      android:id="@+id/tz_about_debug"
+      style="@style/TzListGroup"
+      android:layout_marginStart="@dimen/tz_gutter"
+      android:layout_marginTop="@dimen/tz_space_16"
+      android:layout_marginEnd="@dimen/tz_gutter"
+      android:visibility="gone">
+
+      <app.trackzero.ui.TzListRow
+        android:id="@+id/tz_about_share_trace"
+        style="@style/TzListRow"
+        app:tzIcon="@drawable/ic_tz_share"
+        app:tzTitle="@string/tz_about_share_trace" />
     </LinearLayout>
 
     <TextView

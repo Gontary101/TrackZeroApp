@@ -8,9 +8,11 @@ import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.location.Location;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.SystemClock;
 import android.view.MotionEvent;
 import android.widget.Toast;
 import androidx.activity.EdgeToEdge;
@@ -41,6 +43,7 @@ import app.organicmaps.sdk.widget.placepage.PlacePageData;
 import app.organicmaps.util.ThemeSwitcher;
 import app.trackzero.TzConfig;
 import app.trackzero.TzNavigator;
+import app.trackzero.TzTrace;
 import app.trackzero.ride.TzRideService;
 import app.trackzero.routes.TzImport;
 
@@ -87,6 +90,7 @@ public class TzActivity extends BaseMwmFragmentActivity
   protected void onSafeCreate(@Nullable Bundle savedInstanceState)
   {
     super.onSafeCreate(savedInstanceState);
+    TzTrace.init(this);
     if (savedInstanceState != null)
       mPermissionAsked = savedInstanceState.getBoolean(STATE_PERMISSION_ASKED);
     // Each map position wakes the CPU and animates the map: half as many, the rider can't tell.
@@ -152,6 +156,8 @@ public class TzActivity extends BaseMwmFragmentActivity
     TzMap.onHeading();
   };
   private final TzLocation.Listener mBearing = location -> {
+    if (TzTrace.on())
+      TzTrace.log("mapfix", fixText(location));
     if (location.hasBearing())
       TzMap.onHeading();
     // A fix without a speed says nothing about it.
@@ -253,6 +259,8 @@ public class TzActivity extends BaseMwmFragmentActivity
     final boolean run = mResumed && mRenderingWanted;
     if (run == mMapResumed)
       return;
+    if (TzTrace.on())
+      TzTrace.log("act", "updateMapRendering run=" + run + " resumed=" + mResumed + " wanted=" + mRenderingWanted);
     mMapResumed = run;
     if (run)
     {
@@ -355,6 +363,8 @@ public class TzActivity extends BaseMwmFragmentActivity
   @Override
   public void onRenderingInitializationFinished()
   {
+    if (TzTrace.on())
+      TzTrace.log("act", "onRenderingInitializationFinished");
     // Dark first: only the dark cycling style is shipped (ThemeSwitcher is dark-only when TrackZero is enabled).
     ThemeSwitcher.INSTANCE.restart(true);
     // Needs the engine. Persisted by the core, so later launches start in the cycling style directly.
@@ -369,6 +379,8 @@ public class TzActivity extends BaseMwmFragmentActivity
   @Override
   public void onMyPositionModeChanged(int newMode)
   {
+    if (TzTrace.on())
+      TzTrace.log("act", "onMyPositionModeChanged " + TzMap.modeName(newMode));
     final LocationHelper locationHelper = locationHelper();
     if (newMode == LocationState.NOT_FOLLOW_NO_POSITION)
     {
@@ -383,9 +395,21 @@ public class TzActivity extends BaseMwmFragmentActivity
     }
     else
     {
+      if (TzTrace.on())
+        TzTrace.log("act", "restartWithNewMode");
       locationHelper.restartWithNewMode();
     }
     TzMap.onModeChanged(newMode);
+  }
+
+  /** A map fix for the trace: provider, accuracy, age, position. */
+  @NonNull
+  static String fixText(@NonNull Location l)
+  {
+    final long ageMs = (SystemClock.elapsedRealtimeNanos() - l.getElapsedRealtimeNanos()) / 1_000_000;
+    return l.getProvider() + " acc=" + Math.round(l.getAccuracy()) + " age=" + ageMs + "ms "
+           + TzTrace.ll(l.getLatitude(), l.getLongitude()) + (l.hasSpeed() ? " v=" + l.getSpeed() : "")
+           + (l.hasBearing() ? " brg=" + Math.round(l.getBearing()) : "");
   }
 
   /** Asks at most once per activity instance so a refusal is never nagged about. */
@@ -448,6 +472,8 @@ public class TzActivity extends BaseMwmFragmentActivity
   @Override
   public void onPlacePageActivated(@NonNull PlacePageData data)
   {
+    if (TzTrace.on())
+      TzTrace.log("act", "onPlacePageActivated");
     if (!TzSearch.takeShowing())
       Framework.nativeDeactivatePopup();
   }
@@ -455,6 +481,8 @@ public class TzActivity extends BaseMwmFragmentActivity
   @Override
   public void onPlacePageDeactivated()
   {
+    if (TzTrace.on())
+      TzTrace.log("act", "onPlacePageDeactivated");
     TzSearch.selectionCleared();
   }
 

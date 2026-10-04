@@ -160,6 +160,8 @@ public final class TzNavigator
   /** Replaces the current screen (crossfade 150 ms). */
   public static void show(@NonNull Screen screen, @Nullable Bundle args)
   {
+    if (TzTrace.on())
+      TzTrace.log("nav", "show " + screen + " from " + sCurrent);
     if (sActivity == null || fm().isStateSaved())
       return;
     final TzScreen fragment = create(screen);
@@ -211,7 +213,7 @@ public final class TzNavigator
   private static void onShown(@NonNull Screen screen)
   {
     sCurrent = screen;
-    sBack.setEnabled(screen != Screen.MAP);
+    updateBack();
     // The ride screen pauses the map per carousel page itself.
     if (screen != Screen.RIDE)
       TzMap.setRenderingEnabled(!screen.opaque);
@@ -234,6 +236,18 @@ public final class TzNavigator
     final Fragment f = sActivity == null ? null : fm().findFragmentById(R.id.tz_screen_container);
     if (f instanceof TzScreen screen && f.getView() != null)
       screen.onInsets(sTopInset, sBottomInset);
+  }
+
+  /** Back is TrackZero's on every screen but the map, where it leaves the app unless the map has a card open. */
+  public static void updateBack()
+  {
+    if (sCurrent != Screen.MAP)
+    {
+      sBack.setEnabled(true);
+      return;
+    }
+    final Fragment f = sActivity == null ? null : fm().findFragmentById(R.id.tz_screen_container);
+    sBack.setEnabled(f instanceof TzScreen screen && screen.isAdded() && screen.handlesBack());
   }
 
   private static void onBack()

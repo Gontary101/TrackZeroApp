@@ -16,6 +16,15 @@ public abstract class TzScreen extends Fragment
    */
   public void onInsets(int top, int bottom) {}
 
+  /**
+   * The screen has something Back would close even where the navigator lets Back leave the app (the map's place
+   * card). Call {@link TzNavigator#updateBack()} when it changes.
+   */
+  public boolean handlesBack()
+  {
+    return false;
+  }
+
   /** @return true if the screen consumed Back itself (before the navigator's default mapping). */
   public boolean onBackPressed()
   {

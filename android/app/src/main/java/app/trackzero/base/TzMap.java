@@ -9,6 +9,7 @@ import app.organicmaps.MwmApplication;
 import app.organicmaps.sdk.Framework;
 import app.organicmaps.sdk.Map;
 import app.organicmaps.sdk.location.LocationState;
+import app.trackzero.TzTrace;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -80,6 +81,8 @@ public final class TzMap
   public static boolean setZoom(int level)
   {
     final int current = zoom();
+    if (TzTrace.on())
+      TzTrace.log("map", "setZoom current=" + current + " target=" + level);
     if (current <= 0)
       return false;
     // Band changes animate; a long way (first zoom of a ride) jumps, as an animation would be cut by follow updates.
@@ -97,12 +100,16 @@ public final class TzMap
   /** Centres the map on a point at a zoom level (no animation). */
   public static void centerOn(double lat, double lon, int zoom)
   {
+    if (TzTrace.on())
+      TzTrace.log("map", "centerOn " + TzTrace.ll(lat, lon) + " z" + zoom);
     if (Map.isEngineCreated())
       Framework.nativeSetViewportCenter(lat, lon, zoom);
   }
 
   public static void followRider(boolean headingUp)
   {
+    if (TzTrace.on())
+      TzTrace.log("map", "followRider headingUp=" + headingUp + " mode=" + modeName(currentMode()));
     sRequestedMode = headingUp ? LocationState.FOLLOW_AND_ROTATE : LocationState.FOLLOW;
     // FOLLOW -> FOLLOW_AND_ROTATE is silently refused until a heading is known; a new request retries.
     sSwitchPending = false;
@@ -119,12 +126,16 @@ public final class TzMap
     if (sRequestedMode == NO_REQUEST || !Map.isEngineCreated()
         || SystemClock.elapsedRealtime() - sSwitchAtMs < SWITCH_ANSWER_MS)
       return;
+    if (TzTrace.on())
+      TzTrace.log("map", "onHeading retry requested=" + modeName(sRequestedMode));
     sSwitchPending = false;
     step(LocationState.getMode());
   }
 
   public static void stopFollowing()
   {
+    if (TzTrace.on())
+      TzTrace.log("map", "stopFollowing");
     sRequestedMode = NO_REQUEST;
     if (Map.isEngineCreated())
       Framework.nativeStopLocationFollow();
@@ -132,6 +143,9 @@ public final class TzMap
 
   static void onEngineReady()
   {
+    if (TzTrace.on())
+      TzTrace.log("map", "onEngineReady mode=" + modeName(LocationState.getMode()) + " requested="
+                         + modeName(sRequestedMode));
     step(LocationState.getMode());
     TzRouteLayer.onEngineReady();
   }
@@ -162,6 +176,8 @@ public final class TzMap
    */
   public static void setVisibleArea(@NonNull Object owner, int topPx, int bottomPx)
   {
+    if (TzTrace.on())
+      TzTrace.log("map", "setVisibleArea " + owner.getClass().getSimpleName() + " top=" + topPx + " bottom=" + bottomPx);
     sAreaOwner = owner;
     if (sHost != null)
       sHost.setVisibleMapArea(topPx, bottomPx);
@@ -173,6 +189,8 @@ public final class TzMap
    */
   public static void clearVisibleArea(@NonNull Object owner)
   {
+    if (TzTrace.on())
+      TzTrace.log("map", "clearVisibleArea " + owner.getClass().getSimpleName() + (sAreaOwner == owner ? "" : " (not owner)"));
     if (sAreaOwner != owner)
       return;
     sAreaOwner = null;
@@ -183,6 +201,8 @@ public final class TzMap
   /** Frames the rect inside the area set by {@link #setVisibleArea}, keeping {@code paddingPx} clear on every side. */
   public static void showRect(double minLat, double minLon, double maxLat, double maxLon, int paddingPx)
   {
+    if (TzTrace.on())
+      TzTrace.log("map", "showRect " + TzTrace.ll(minLat, minLon) + " " + TzTrace.ll(maxLat, maxLon) + " pad=" + paddingPx);
     if (sHost == null || !Map.isEngineCreated())
       return;
     final int w = sHost.visibleMapWidth();
@@ -253,6 +273,9 @@ public final class TzMap
   static void onModeChanged(int mode)
   {
     final boolean causedByUs = sSwitchPending;
+    if (TzTrace.on())
+      TzTrace.log("map", "onModeChanged " + modeName(mode) + " causedByUs=" + causedByUs + " requested="
+                         + modeName(sRequestedMode));
     sSwitchPending = false;
     // The rider panned the map away: drop the request instead of fighting the gesture.
     if (!causedByUs && mode == LocationState.NOT_FOLLOW)
@@ -267,6 +290,27 @@ public final class TzMap
       l.onFollowChanged(following);
   }
 
+  private static int currentMode()
+  {
+    return Map.isEngineCreated() ? LocationState.getMode() : -2; // -2: no engine yet
+  }
+
+  /** For the trace. */
+  @NonNull
+  static String modeName(int mode)
+  {
+    return switch (mode)
+    {
+      case LocationState.PENDING_POSITION -> "PENDING_POSITION";
+      case LocationState.NOT_FOLLOW_NO_POSITION -> "NOT_FOLLOW_NO_POSITION";
+      case LocationState.NOT_FOLLOW -> "NOT_FOLLOW";
+      case LocationState.FOLLOW -> "FOLLOW";
+      case LocationState.FOLLOW_AND_ROTATE -> "FOLLOW_AND_ROTATE";
+      case NO_REQUEST -> "none";
+      default -> String.valueOf(mode);
+    };
+  }
+
   private static void step(int mode)
   {
     if (sRequestedMode == NO_REQUEST || sSwitchPending)
@@ -279,6 +323,8 @@ public final class TzMap
     // Waiting for the first fix: the core enters FOLLOW by itself once it arrives.
     if (mode == LocationState.PENDING_POSITION)
       return;
+    if (TzTrace.on())
+      TzTrace.log("map", "switchToNextMode from " + modeName(mode) + " toward " + modeName(sRequestedMode));
     sSwitchPending = true;
     sSwitchAtMs = SystemClock.elapsedRealtime();
     LocationState.nativeSwitchToNextMode();

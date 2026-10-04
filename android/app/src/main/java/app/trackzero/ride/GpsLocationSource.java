@@ -6,12 +6,14 @@ import android.location.Location;
 import android.location.LocationManager;
 import android.os.Build;
 import android.os.Looper;
+import android.os.SystemClock;
 import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.location.LocationListenerCompat;
 import androidx.core.location.LocationManagerCompat;
 import androidx.core.location.LocationRequestCompat;
+import app.trackzero.TzTrace;
 
 /** GPS fixes once a second straight from the GPS provider (no Play Services). */
 final class GpsLocationSource implements TzLocationSource, LocationListenerCompat
@@ -35,6 +37,8 @@ final class GpsLocationSource implements TzLocationSource, LocationListenerCompa
   @Override
   public void start(@NonNull Listener listener)
   {
+    if (TzTrace.on())
+      TzTrace.log("gps", "start");
     mListener = listener;
     request();
   }
@@ -64,6 +68,8 @@ final class GpsLocationSource implements TzLocationSource, LocationListenerCompa
   {
     if (maxDelayMs == mMaxDelayMs)
       return;
+    if (TzTrace.on())
+      TzTrace.log("gps", "setMaxDelay " + maxDelayMs);
     // Going back to fixes at once (the screen came on): the ones batched so far first.
     if (maxDelayMs < mMaxDelayMs && mListener != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
     {
@@ -84,6 +90,8 @@ final class GpsLocationSource implements TzLocationSource, LocationListenerCompa
   @Override
   public void stop()
   {
+    if (TzTrace.on())
+      TzTrace.log("gps", "stop");
     LocationManagerCompat.removeUpdates(mManager, this);
     mListener = null;
   }
@@ -91,6 +99,10 @@ final class GpsLocationSource implements TzLocationSource, LocationListenerCompa
   @Override
   public void onLocationChanged(@NonNull Location l)
   {
+    if (TzTrace.on())
+      TzTrace.log("gpsfix", l.getProvider() + " acc=" + Math.round(l.getAccuracy()) + " age="
+                            + (SystemClock.elapsedRealtimeNanos() - l.getElapsedRealtimeNanos()) / 1_000_000 + "ms "
+                            + TzTrace.ll(l.getLatitude(), l.getLongitude()) + (l.hasSpeed() ? " v=" + l.getSpeed() : ""));
     if (mListener != null)
       mListener.onFix(toFix(l));
   }

@@ -142,6 +142,10 @@
   <string name="tz_about_osm">Map data © OpenStreetMap contributors (ODbL).</string>
   <string name="tz_about_fonts">Font licences</string>
   <string name="tz_about_fonts_detail">OFL 1.1</string>
+  <string name="tz_about_trace_on">Tracing on</string>
+  <string name="tz_about_trace_off">Tracing off</string>
+  <string name="tz_about_share_trace">Share trace</string>
+  <string name="tz_about_share_trace_detail">Map and ride events</string>
   <string name="tz_about_fonts_list">Barlow, Barlow Condensed and Doto are used under the SIL Open Font License 1.1.</string>
   <string name="tz_more_footer">No account. No tracking. Rides and routes stay on this phone.\nMap data © OpenStreetMap contributors.</string>
 

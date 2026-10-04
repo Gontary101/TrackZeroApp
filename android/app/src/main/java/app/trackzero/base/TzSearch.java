@@ -8,6 +8,7 @@ import app.organicmaps.sdk.Framework;
 import app.organicmaps.sdk.search.SearchEngine;
 import app.organicmaps.sdk.search.SearchListener;
 import app.organicmaps.sdk.search.SearchResult;
+import app.trackzero.TzTrace;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -148,6 +149,8 @@ public final class TzSearch
   /** Centres the map on a place of the last search and marks it (the map's selection). */
   public static void show(@NonNull Place place)
   {
+    if (TzTrace.on())
+      TzTrace.log("search", "show " + place.name);
     // The result, not the rider: following would pull the camera back on the next fix.
     TzMap.stopFollowing();
     sShowing = true;
@@ -184,6 +187,8 @@ public final class TzSearch
   /** Drops the pinned result and its pin. */
   public static void clearShown()
   {
+    if (TzTrace.on())
+      TzTrace.log("search", "clearShown");
     sShown = null;
     Framework.nativeDeactivatePopup();
   }

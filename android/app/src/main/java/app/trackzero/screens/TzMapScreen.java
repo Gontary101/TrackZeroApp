@@ -158,6 +158,7 @@ public class TzMapScreen extends TzScreen implements TzLocation.Listener, TzMap.
       mPlaceCard.setVisibility(show ? View.VISIBLE : View.GONE);
       layoutFooter();
     }
+    TzNavigator.updateBack();
     if (p == null)
       return;
     String label = p.subtitle;
@@ -170,6 +171,23 @@ public class TzMapScreen extends TzScreen implements TzLocation.Listener, TzMap.
     }
     ((TextView) v.findViewById(R.id.tz_map_place_label)).setText(label);
     ((TextView) v.findViewById(R.id.tz_map_place_title)).setText(p.name);
+  }
+
+  @Override
+  public boolean handlesBack()
+  {
+    return TzSearch.shown() != null;
+  }
+
+  /** Back closes the place card (and its pin) before it leaves the app. */
+  @Override
+  public boolean onBackPressed()
+  {
+    if (TzSearch.shown() == null)
+      return false;
+    TzSearch.clearShown();
+    bindPlace();
+    return true;
   }
 
   private void navigateToPlace()

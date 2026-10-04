@@ -3,6 +3,8 @@ package app.trackzero.base;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import app.organicmaps.sdk.Framework;
+import app.trackzero.TzTrace;
+import java.util.Arrays;
 
 /**
  * The route lines on the map: drawn by the engine's route renderer (mint line, glow, ring), not imported as a
@@ -20,6 +22,14 @@ public final class TzRouteLayer
   /** One line: its points, its ring and what the engine drew for it. */
   private static final class Line
   {
+    @NonNull
+    final String name;
+
+    Line(@NonNull String name)
+    {
+      this.name = name;
+    }
+
     @Nullable
     double[] lat;
     @Nullable
@@ -54,38 +64,51 @@ public final class TzRouteLayer
     void draw()
     {
       if (lat != null && lon != null && ids == null)
+      {
         ids = Framework.nativeShowTrackLine(lat, lon, dimmed, ring);
+        if (TzTrace.on())
+          TzTrace.log("line", name + " drawn owner=" + ownerName(owner) + " points=" + lat.length + " dimmed=" + dimmed
+                              + " ids=" + Arrays.toString(ids));
+      }
     }
 
     void remove()
     {
       if (ids == null)
         return;
+      if (TzTrace.on())
+        TzTrace.log("line", name + " removed ids=" + Arrays.toString(ids));
       Framework.nativeRemoveTrackLine(ids);
       ids = null;
     }
   }
 
-  private static final Line sRoute = new Line();
-  private static final Line sLeg = new Line();
+  private static final Line sRoute = new Line("route");
+  private static final Line sLeg = new Line("leg");
 
   private TzRouteLayer() {}
 
   /** Shows a track (ring at its start), replacing the route shown. */
   public static void show(@NonNull Object owner, @NonNull double[] lat, @NonNull double[] lon)
   {
+    if (TzTrace.on())
+      TzTrace.log("line", "show owner=" + ownerName(owner) + " points=" + lat.length);
     sRoute.set(owner, lat, lon, RING_START);
   }
 
   /** Shows the path to a place (ring at the place), replacing the route shown. */
   public static void showPath(@NonNull Object owner, @NonNull double[] lat, @NonNull double[] lon)
   {
+    if (TzTrace.on())
+      TzTrace.log("line", "showPath owner=" + ownerName(owner) + " points=" + lat.length);
     sRoute.set(owner, lat, lon, RING_END);
   }
 
   /** Shows the leg leading onto the route (to its start, or back onto it). */
   public static void showLeg(@NonNull Object owner, @NonNull double[] lat, @NonNull double[] lon)
   {
+    if (TzTrace.on())
+      TzTrace.log("line", "showLeg owner=" + ownerName(owner) + " points=" + lat.length);
     sLeg.set(owner, lat, lon, RING_NONE);
   }
 
@@ -97,16 +120,27 @@ public final class TzRouteLayer
   /** Off route (R3): the route dashed, at 45 %, without its glow. */
   public static void setDimmed(boolean dimmed)
   {
+    if (TzTrace.on() && dimmed != sRoute.dimmed)
+      TzTrace.log("line", "setDimmed " + dimmed);
     sRoute.setDimmed(dimmed);
   }
 
   /** Hides the lines {@code owner} showed. */
   public static void hide(@NonNull Object owner)
   {
+    if (TzTrace.on())
+      TzTrace.log("line", "hide owner=" + ownerName(owner) + " route=" + ownerName(sRoute.owner) + " leg="
+                          + ownerName(sLeg.owner));
     if (sRoute.owner == owner)
       sRoute.set(null, null, null, RING_NONE);
     if (sLeg.owner == owner)
       sLeg.set(null, null, null, RING_NONE);
+  }
+
+  @NonNull
+  private static String ownerName(@Nullable Object owner)
+  {
+    return owner == null ? "none" : owner.getClass().getSimpleName();
   }
 
   public static boolean isShown()
@@ -116,6 +150,8 @@ public final class TzRouteLayer
 
   static void onEngineReady()
   {
+    if (TzTrace.on())
+      TzTrace.log("line", "onEngineReady route=" + ownerName(sRoute.owner) + " leg=" + ownerName(sLeg.owner));
     sRoute.draw();
     sLeg.draw();
   }

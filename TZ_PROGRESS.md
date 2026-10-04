@@ -1,5 +1,16 @@
 # TrackZero — Progress log
 
+## NEEDS OWNER (checks on the real phone)
+
+Collected from the v2 phases; each says what to do, what to look at and what counts as a pass. Report back per item.
+
+- **N16 · Battery baseline, real ride (Phase 16).** With the build already on the phone (2026.10.02-5, before v2;
+  git tag `phase-16` builds the same ride code), ride the same 60-minute route you know, screen on, a route loaded, voice on. Before: fully charge,
+  then *Settings › Battery › Battery usage* and reset if the phone allows it. After: note TrackZero's share and the
+  phone's total % used. If a computer is at hand: `adb shell dumpsys batterystats --reset` before,
+  `adb shell dumpsys batterystats app.trackzero > ride.txt` after, and send `ride.txt`. Repeat the same ride on the
+  final build (Phase 38). Pass: the two numbers are recorded for both builds.
+
 ## Phase 0 — Recon and baseline build
 
 - Cloned CoMaps `v2026.08.31-14` into `trackzero/`, branch `trackzero`; submodules initialised (`--depth 1`).
@@ -270,3 +281,29 @@ it led to).
   - the B1 ruler sits above the place card;
   - START RIDE is neutral until there is a path.
 
+
+## Phase 16 — Baseline, trace tool, backlog file (plan v2)
+
+- `TZ_BACKLOG.md` copied to the repository root as handed over.
+- `TzTrace` (D40): ring buffer of 2,000 events, `files/tz/trace.txt` on demand. Trace points in TzMap (camera calls,
+  mode changes, engine ready, heading retries, mode switches), TzActivity (mode changes, provider restarts, map
+  rendering, rendering ready, every map fix with provider / accuracy / age), GpsLocationSource (start, stop,
+  `setMaxDelay`, every fix), TzRouteLayer (show / showPath / showLeg / hide / setDimmed / engine ready, owners and
+  engine ids), TzRideScreen (start, service connected, pages, first render, route load, lines, each auto-zoom branch),
+  TzRideService (session start, guide created, first fix, placed), TzNavigator.show. Debug builds also mirror them to
+  logcat (tag `TzTrace`).
+- About: 7 quick taps on the version toggle tracing in release builds; a hidden group then shows **Share trace**
+  (always shown in debug builds). `TzBase.shareGpx` and the trace share one FileProvider share path.
+- Appendix A icons added (24 files, copied from the plan by script).
+- `TZ_BASELINE.md`: the Road baseline on the emulator (scripts `tools/trackzero/measure.sh`, `baseline_run.sh`,
+  build `-PtzMeasure`).
+- Smoke test scripted (`tools/trackzero/smoke.sh`, D40). Starting point (debug build): all 13 steps pass after one fix:
+  - **Fixed:** step 12's second Back left the app with the place card open; Back now closes the card first (D41).
+  - Step 8: with Phase 15's rerouting, R3 shows for a few seconds and becomes a routed leg back ("Turn right · 60 m"),
+    as designed (D37).
+  - No crash in `logcat -b crash`.
+- Unit tests: `TzTraceTest` (order, ring wrap, coordinate format). 169 JVM tests pass.
+- **Open, for Phase 38:** leaving a place preview while its framing animation runs (Back within about 0.5 s of the
+  path arriving), then closing the card on B1, can leave the place's selection circle drawn (1 of 5 tries). The trace
+  shows the same calls as a clean run (`clearShown`, then the core's place-page deactivation); the engine keeps the
+  circle after an interrupted camera animation.

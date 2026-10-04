@@ -14,6 +14,7 @@ public final class TzPrefs
   private static final String KEEP_AWAKE = "keepAwake";
   private static final String AUTO_PAUSE = "autoPause";
   private static final String FIRST_CAMERA_DONE = "firstCameraDone";
+  private static final String TRACE = "trace";
 
   private TzPrefs() {}
 
@@ -79,5 +80,16 @@ public final class TzPrefs
   public static void setFirstCameraDone(@NonNull Context c)
   {
     prefs(c).edit().putBoolean(FIRST_CAMERA_DONE, true).apply();
+  }
+
+  /** The hidden tracing switch of release builds (About, Phase 16). */
+  public static boolean trace(@NonNull Context c)
+  {
+    return prefs(c).getBoolean(TRACE, false);
+  }
+
+  public static void setTrace(@NonNull Context c, boolean on)
+  {
+    prefs(c).edit().putBoolean(TRACE, on).apply();
   }
 }

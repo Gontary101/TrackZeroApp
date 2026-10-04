@@ -402,3 +402,25 @@ Measured or read in the code, each without changing what the rider sees:
 `onDestroyView`. The preview's teardown (`TzRouteLayer.hide()`, `setVisibleArea(0, 0)`) then ran after the ride
 screen had drawn its line and set its 67 % rider point, leaving R2 with no line and the rider centred. Visible area
 and route lines now carry their owner, and a screen going away clears only what it still owns.
+
+## D40 · Tracing and measuring (Phase 16, plan v2)
+- `TzTrace` keeps the last 2,000 events in memory; nothing is written until someone shares the trace (About). Every
+  call site checks `TzTrace.on()` first, so with tracing off a trace point is one static read and no string is
+  built. Release builds trace only after 7 quick taps on the version in About (the switch is kept in `tz_prefs`);
+  the same taps show the hidden tools group, which holds "Share trace" (and the later debug switches of the plan).
+- Debug builds also copy each event to logcat (tag `TzTrace`), so test scripts read traces with `adb logcat` instead
+  of going through the share sheet.
+- The map's fixes are traced in TzActivity's location listener (the one the compass logic already has), not in the
+  SDK: it sees exactly what LocationHelper delivers, with provider, accuracy and age.
+- Measurements use a `-PtzMeasure` Gradle property instead of editing the debug build type by hand: the debug
+  package (with its downloaded maps) built non-debuggable, so the Java code runs at release speed. The native code
+  is still the debug build; Phase 38 measures the same way, so the comparison holds. The runs are scripted
+  (`tools/trackzero/measure.sh`, `baseline_run.sh`) so they can be repeated exactly.
+- Appendix D is scripted too (`tools/trackzero/smoke.sh`): it drives the emulator and takes a screenshot per step;
+  the screenshots are the check.
+
+## D41 · Back closes the place card (Phase 16 smoke test)
+Appendix D step 12 ends "Back twice → B1", but the second Back left the app: B1 let the system handle Back even with
+a search result's card open. Back on B1 now closes the card and its pin first (`TzScreen.handlesBack`, the
+navigator enables its Back callback on MAP only while the card is shown), through the existing
+`TzSearch.clearShown()`.

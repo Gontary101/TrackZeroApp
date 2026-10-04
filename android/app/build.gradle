@@ -202,6 +202,10 @@ android {
       signingConfig = signingConfigs.debug
       resValue 'string', 'app_name', project.ext.appName
       packagingOptions.jniLibs.useLegacyPackaging true
+      // TrackZero measurements (TZ_BASELINE.md): -PtzMeasure gives a non-debuggable debug build, so the Java code runs
+      // at release speed while keeping the debug package and its downloaded maps.
+      if (project.hasProperty('tzMeasure'))
+        debuggable false
     }
 
     release {

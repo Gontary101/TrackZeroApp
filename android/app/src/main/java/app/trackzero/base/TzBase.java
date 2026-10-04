@@ -12,6 +12,7 @@ import app.organicmaps.BuildConfig;
 import app.organicmaps.sdk.settings.UnitLocale;
 import app.trackzero.TzIo;
 import app.trackzero.TzPrefs;
+import app.trackzero.TzTrace;
 import app.trackzero.format.TzFormat;
 import java.io.File;
 import java.io.FileInputStream;
@@ -82,17 +83,41 @@ public final class TzBase
         return null;
       }
     }, copy -> {
-      if (copy == null || activity.isFinishing())
-        return;
-      final Uri uri = FileProvider.getUriForFile(activity, BuildConfig.FILE_PROVIDER_AUTHORITY, copy);
-      final Intent send = new Intent(Intent.ACTION_SEND)
-                              .setType("application/gpx+xml")
-                              .putExtra(Intent.EXTRA_STREAM, uri)
-                              .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-      // The ClipData carries the read grant through the chooser to the target app.
-      send.setClipData(ClipData.newRawUri(copy.getName(), uri));
-      activity.startActivity(Intent.createChooser(send, chooserTitle));
+      if (copy != null && !activity.isFinishing())
+        share(activity, copy, "application/gpx+xml", chooserTitle);
     });
+  }
+
+  /** Writes the trace ({@link TzTrace}) and opens the system share sheet with it. */
+  public static void shareTrace(@NonNull Activity activity, @NonNull CharSequence chooserTitle)
+  {
+    TzIo.submit(() -> {
+      try
+      {
+        return TzTrace.dump(activity);
+      }
+      catch (IOException e)
+      {
+        Log.e(TAG, "Cannot write the trace", e);
+        return null;
+      }
+    }, file -> {
+      if (file != null && !activity.isFinishing())
+        share(activity, file, "text/plain", chooserTitle);
+    });
+  }
+
+  private static void share(@NonNull Activity activity, @NonNull File file, @NonNull String type,
+                            @NonNull CharSequence chooserTitle)
+  {
+    final Uri uri = FileProvider.getUriForFile(activity, BuildConfig.FILE_PROVIDER_AUTHORITY, file);
+    final Intent send = new Intent(Intent.ACTION_SEND)
+                            .setType(type)
+                            .putExtra(Intent.EXTRA_STREAM, uri)
+                            .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+    // The ClipData carries the read grant through the chooser to the target app.
+    send.setClipData(ClipData.newRawUri(file.getName(), uri));
+    activity.startActivity(Intent.createChooser(send, chooserTitle));
   }
 
   @NonNull

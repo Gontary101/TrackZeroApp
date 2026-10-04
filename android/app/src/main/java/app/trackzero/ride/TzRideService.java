@@ -27,6 +27,7 @@ import app.organicmaps.R;
 import app.trackzero.TzConfig;
 import app.trackzero.TzIo;
 import app.trackzero.TzPrefs;
+import app.trackzero.TzTrace;
 import app.trackzero.base.TzActivity;
 import app.trackzero.base.TzRoads;
 import app.trackzero.base.TzRouter;
@@ -179,6 +180,7 @@ public final class TzRideService extends Service
   public void onCreate()
   {
     super.onCreate();
+    TzTrace.init(this);
     NotificationManagerCompat.from(this).createNotificationChannel(
         new NotificationChannelCompat.Builder(CHANNEL_ID, NotificationManagerCompat.IMPORTANCE_LOW)
             .setName(getString(R.string.tz_ride_channel))
@@ -345,6 +347,8 @@ public final class TzRideService extends Service
   private void startSession(@Nullable String routeId, @Nullable String name, double placeLat, double placeLon)
   {
     final long now = SystemClock.elapsedRealtime();
+    if (TzTrace.on())
+      TzTrace.log("ride", "startSession route=" + routeId + (Double.isNaN(placeLat) ? "" : " place=" + TzTrace.ll(placeLat, placeLon)));
     mSession = new RideSession(TzPrefs.autoPause(this));
     sRiding = true;
     if (Double.isNaN(placeLat))
@@ -415,6 +419,8 @@ public final class TzRideService extends Service
       final RoutedPath path = sPreviewedPath;
       sPreviewedPath = null;
       mGuide = Guide.forPlace(s.placeLat(), s.placeLon(), path, mPaths, mFollowEvents);
+      if (TzTrace.on())
+        TzTrace.log("ride", "guide created (place, path " + (path == null ? "none" : Math.round(path.line.totalM()) + " m") + ")");
       mVoice = new TzVoice(this);
       updateSources();
       placeClimbs();
@@ -438,6 +444,8 @@ public final class TzRideService extends Service
           if (mSession == null || mGuide != null)
             return;
           mGuide = Guide.forTrack(prepared.engine, mPaths, mFollowEvents);
+          if (TzTrace.on())
+            TzTrace.log("ride", "guide created (track " + Math.round(prepared.engine.totalM()) + " m)");
           mClimbs = prepared.climbs;
           mVoice = new TzVoice(this);
           updateSources();
@@ -641,6 +649,8 @@ public final class TzRideService extends Service
     final RideSession s = mSession;
     if (s == null)
       return;
+    if (TzTrace.on() && mFollowFix == null)
+      TzTrace.log("ride", "first fix acc=" + Math.round(f.accuracyM) + " " + TzTrace.ll(f.lat, f.lon));
     final RideSession.State before = s.state();
     s.onFix(f);
     if (f.accuracyM <= TzConfig.IGNORE_FIX_ACCURACY_M)
@@ -659,8 +669,11 @@ public final class TzRideService extends Service
     if (g == null)
       return;
     final double speedMps = f.hasSpeed ? f.speedMps : s.stats().speedKmh() / 3.6;
+    final boolean placed = g.placed();
     g.update(f.lat, f.lon, f.hasBearing ? f.bearingDeg : Double.NaN, speedMps, f.elapsedMs, s.stats().distanceM(),
              s.stats().movingMs(f.elapsedMs));
+    if (TzTrace.on() && !placed && g.placed())
+      TzTrace.log("ride", "follow placed along=" + Math.round(g.along()));
     placeClimbs();
     if (mClimbs != null)
       mClimbs.update(g.along(), s.stats().movingMs(f.elapsedMs));

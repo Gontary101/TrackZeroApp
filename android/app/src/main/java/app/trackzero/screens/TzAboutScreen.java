@@ -1,17 +1,20 @@
 package app.trackzero.screens;
 
 import android.content.res.AssetManager;
+import android.os.SystemClock;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
+import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import app.organicmaps.R;
 import app.trackzero.TzIo;
 import app.trackzero.TzNavigator;
+import app.trackzero.TzTrace;
 import app.trackzero.base.TzBase;
 import app.trackzero.ui.TzListRow;
 import java.io.ByteArrayOutputStream;
@@ -24,6 +27,14 @@ public class TzAboutScreen extends TzScreen
 {
   private static final String TAG = "TzAbout";
   private static final String LICENCES_DIR = "licenses";
+  /** Taps on the version that toggle tracing, each within {@link #TAP_GAP_MS} of the last. */
+  private static final int TRACE_TAPS = 7;
+  private static final long TAP_GAP_MS = 600;
+
+  private int mTaps;
+  private long mLastTapMs;
+  @Nullable
+  private View mDebug;
 
   @Nullable
   private View mContent;
@@ -44,8 +55,14 @@ public class TzAboutScreen extends TzScreen
     mContent = view.findViewById(R.id.tz_about_content);
     mLicences = view.findViewById(R.id.tz_about_licences);
     view.findViewById(R.id.tz_about_back).setOnClickListener(v -> TzNavigator.show(TzNavigator.Screen.MORE, null));
-    ((TextView) view.findViewById(R.id.tz_about_version)).setText(getString(R.string.tz_version,
-                                                                            TzBase.versionName()));
+    final TextView version = view.findViewById(R.id.tz_about_version);
+    version.setText(getString(R.string.tz_version, TzBase.versionName()));
+    version.setOnClickListener(v -> onVersionTapped());
+    mDebug = view.findViewById(R.id.tz_about_debug);
+    final TzListRow shareTrace = view.findViewById(R.id.tz_about_share_trace);
+    shareTrace.setDetail(getString(R.string.tz_about_share_trace_detail));
+    shareTrace.setOnClickListener(v -> shareTrace());
+    showDebug();
     final TzListRow fonts = view.findViewById(R.id.tz_about_fonts);
     fonts.setDetail(getString(R.string.tz_about_fonts_detail));
     fonts.setOnClickListener(v -> toggleLicences());
@@ -61,6 +78,32 @@ public class TzAboutScreen extends TzScreen
                           + getResources().getDimensionPixelSize(R.dimen.tz_island_h)
                           + getResources().getDimensionPixelSize(R.dimen.tz_space_32);
     mContent.setPadding(0, top + getResources().getDimensionPixelSize(R.dimen.tz_space_8), 0, islandSpace);
+  }
+
+  /** Seven quick taps on the version toggle tracing (release builds; debug builds always trace). */
+  private void onVersionTapped()
+  {
+    final long now = SystemClock.elapsedRealtime();
+    mTaps = now - mLastTapMs <= TAP_GAP_MS ? mTaps + 1 : 1;
+    mLastTapMs = now;
+    if (mTaps < TRACE_TAPS)
+      return;
+    mTaps = 0;
+    TzTrace.setOn(requireContext(), !TzTrace.on());
+    Toast.makeText(requireContext(), TzTrace.on() ? R.string.tz_about_trace_on : R.string.tz_about_trace_off,
+                   Toast.LENGTH_SHORT).show();
+    showDebug();
+  }
+
+  private void showDebug()
+  {
+    if (mDebug != null)
+      mDebug.setVisibility(TzTrace.on() ? View.VISIBLE : View.GONE);
+  }
+
+  private void shareTrace()
+  {
+    TzBase.shareTrace(requireActivity(), getString(R.string.tz_about_share_trace));
   }
 
   /** The full licence texts, from the app's assets, under the row. */
