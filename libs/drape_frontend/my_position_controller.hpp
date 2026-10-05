@@ -147,6 +147,10 @@ public:
 
   void StopLocationFollow();
   void NextMode(ScreenBase const & screen);
+  // TrackZero: follows the position in Follow or FollowAndRotate, whatever the current mode (unlike NextMode, which
+  // steps through the modes and so cannot be repeated safely). Without a position yet, the first one is followed
+  // at `zoomLevel` (kDoNotChangeZoom keeps the zoom).
+  void FollowPosition(bool rotate, int zoomLevel);
   void LoseLocation();
   location::EMyPositionMode GetCurrentMode() const { return m_mode; }
   void StartPendingPositionMode();
@@ -206,6 +210,10 @@ private:
   location::EMyPositionMode m_mode;
   /// @brief The desired mode to switch to when the location is resolved
   location::EMyPositionMode m_desiredInitMode;
+  // TrackZero: FollowPosition() asked before there was a position, applied with the first one.
+  bool m_followRequested = false;
+  location::EMyPositionMode m_followRequestMode = location::Follow;
+  int m_followRequestZoom = -1;
   /// @brief The user preferred mode when routing
   location::EMyPositionMode m_preferredRoutingMode;
   /// @brief The last follow mode used

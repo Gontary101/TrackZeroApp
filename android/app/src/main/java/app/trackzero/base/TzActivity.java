@@ -153,13 +153,10 @@ public class TzActivity extends BaseMwmFragmentActivity
       return;
     mLastNorth = north;
     Map.onCompassUpdated(north, false);
-    TzMap.onHeading();
   };
   private final TzLocation.Listener mBearing = location -> {
     if (TzTrace.on())
       TzTrace.log("mapfix", fixText(location));
-    if (location.hasBearing())
-      TzMap.onHeading();
     // A fix without a speed says nothing about it.
     if (!location.hasSpeed())
       return;

@@ -62,6 +62,8 @@ public class LocationHelper implements BaseLocationProvider.Listener
   private final HashMap<String, Float> mProviderAccuracyMeans = new HashMap<>();
   private double mTimeAtLastProviderChange = Double.NaN;
   private String mCurrentProvider = null;
+  /** TrackZero: positions come from {@link #pushLocation}, the provider is not running. */
+  private boolean mExternalSource;
 
   @NonNull
   private final GnssStatusCompat.Callback mGnssStatusCallback = new GnssStatusCompat.Callback() {
@@ -387,6 +389,38 @@ public class LocationHelper implements BaseLocationProvider.Listener
     mListeners.removeObserver(listener);
   }
 
+  /**
+   * TrackZero: while on, the position comes only from {@link #pushLocation} (a ride's own GPS) and the provider is
+   * stopped, so the map shows exactly the position the ride records, and only one location request runs. Off: the
+   * provider runs again (if location is started).
+   */
+  @RequiresPermission(anyOf = {ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION})
+  public void setExternalSource(boolean on)
+  {
+    if (on == mExternalSource)
+      return;
+    Logger.i(TAG, "external source = " + on);
+    mExternalSource = on;
+    // The provider choice is made among the providers seen lately: start it again for the new source.
+    mProviderLocationCounts.clear();
+    mProviderAccuracyMeans.clear();
+    mTimeAtLastProviderChange = Double.NaN;
+    mCurrentProvider = null;
+    if (!isActive())
+      return;
+    if (on)
+      mLocationProvider.stop();
+    else
+      mLocationProvider.start(mInterval);
+  }
+
+  /** TrackZero: a position from the external source; it takes the same path as a provider's (core, listeners). */
+  public void pushLocation(@NonNull Location location)
+  {
+    if (mExternalSource)
+      onLocationChanged(location);
+  }
+
   /** TrackZero: how often the map's position updates while the app is open (CoMaps: twice a second). */
   private long mForegroundIntervalMs = INTERVAL_MS;
 
@@ -427,8 +461,10 @@ public class LocationHelper implements BaseLocationProvider.Listener
       return;
 
     Logger.i(TAG, "update refresh interval: old = " + mInterval + " new = " + newInterval);
-    mLocationProvider.stop();
     mInterval = newInterval;
+    if (mExternalSource)
+      return;
+    mLocationProvider.stop();
     mLocationProvider.start(newInterval);
   }
 
@@ -455,7 +491,8 @@ public class LocationHelper implements BaseLocationProvider.Listener
     Logger.i(TAG, "provider = " + mLocationProvider.getClass().getSimpleName() + " mInFirstRun = " + mInFirstRun
                       + " oldInterval = " + oldInterval + " interval = " + mInterval);
     mActive = true;
-    mLocationProvider.start(mInterval);
+    if (!mExternalSource)
+      mLocationProvider.start(mInterval);
     mHandler.postDelayed(mLocationTimeoutRunnable, LOCATION_UPDATE_TIMEOUT_MS);
     subscribeToGnssStatusUpdates();
   }
@@ -472,7 +509,8 @@ public class LocationHelper implements BaseLocationProvider.Listener
     }
 
     Logger.i(TAG);
-    mLocationProvider.stop();
+    if (!mExternalSource)
+      mLocationProvider.stop();
     unsubscribeFromGnssStatusUpdates();
     mSensorHelper.stop();
     mHandler.removeCallbacks(mLocationTimeoutRunnable);

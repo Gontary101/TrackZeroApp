@@ -10,6 +10,13 @@ Collected from the v2 phases; each says what to do, what to look at and what cou
   phone's total % used. If a computer is at hand: `adb shell dumpsys batterystats --reset` before,
   `adb shell dumpsys batterystats app.trackzero > ride.txt` after, and send `ride.txt`. Repeat the same ride on the
   final build (Phase 38). Pass: the two numbers are recorded for both builds.
+- **N17 · Ride start (BUG-004, Phase 17).** Mobile data on, Wi-Fi off. 10 ride starts from B5 START RIDE and 10 from
+  the island RIDE, half of them indoors right after opening the app (GPS not locked yet) and then walking outside,
+  half outdoors. Look at the first seconds: does the map jump to other places or zoom in and out? Is the route line
+  there all the time (no blink between preview and ride)? How long until the map is heading-up on the rider at about
+  two thirds of the screen height? Pass: every start shows the rider and the line correctly from the first second (or
+  from the first GPS position, indoors), no jumps, no zoom in/out; heading-up within about a second. If one fails:
+  About › tap the version 7 times › Share trace, and send the file.
 
 ## Phase 0 — Recon and baseline build
 
@@ -307,3 +314,34 @@ it led to).
   path arriving), then closing the card on B1, can leave the place's selection circle drawn (1 of 5 tries). The trace
   shows the same calls as a clean run (`clearShown`, then the core's place-page deactivation); the engine keeps the
   circle after an interrupted camera animation.
+
+## Phase 17 — BUG-004: ride start camera and line
+
+- **Reproduced first** with `TzTrace` (`tools/trackzero/ride_start_check.sh`, cold start → B3 → route → START RIDE
+  2 s after the preview appears, GPS moving): 3 of 3 starts failed. Causes and evidence in D42: zooms added up
+  (13 → 19 → 13), the follow toggle flipped heading-up off, the line was missing for over a second, the camera used
+  the preview's visible area; map and ride used different position sources (fused vs GPS). Provider restarts ruled out.
+- **Fixes:**
+  - engine command `FollowMyPosition(rotate, zoom, animate)` (drape, map framework, JNI) instead of "switch to next
+    mode";
+  - `TzMap`: one follow request (`FollowRequest`), cancelled only by a touch; the ride camera in one command after
+    the ride's visible area; zooms as levels (`RideZoom`);
+  - `TzRouteLayer.transfer`: START RIDE hands the preview's line to the ride screen;
+  - `LocationHelper.setExternalSource` / `pushLocation`: during a ride the map shows the ride's GPS fixes, and CoMaps'
+    fused request is stopped.
+  - Removed: the D10 step machine, the "refused" timeout and heading retries (D36), `Framework.nativeScale`.
+- **Matrix** (emulator, debug build):
+  - cold starts, 20 each with mobile data / Wi-Fi only / no network: 59 / 60 pass, with a 10 s window for follow
+    (`shots/bug004/`). Lines from the first frame (handed over), map fixes = ride fixes, at most 2 zoom commands.
+  - The one miss (no network #9) was the engine's queue (D42): follow was asked again correctly and arrived later.
+    The extra no-network set with a 15 s window passed 8 / 8, follow at +2.6 to +8.9 s.
+  - Follow took 0.7–9 s on this emulator: SwiftShader GL handles queued engine commands at a few per second. CoMaps'
+    own locate button took 4.7 s on an idle B1. Phone timing is N17.
+  - Warm starts, START after 10 s, place rides (NAVIGATE HERE → START) and the island RIDE: same traces in the smoke
+    runs; the island free ride uses the same camera command.
+  - Not reproducible here: network positions before GPS lock (the emulator has none). The fix removes the second
+    source; field check N17.
+- **Earlier fix superseded:** the first zoom fix waited for a "settled" zoom and still went 13 → 19 in 1 start of
+  18. The final version sends zoom levels, which cannot add up.
+- Tests: `FollowRequestTest` (6), `RideZoomTest` (6), `TzRouteLayerTest` (4); 185 JVM tests pass.
+- Smoke test (Appendix D): all steps pass, no crash. The script's page swipes now wait 3 s (one was dropped at 2 s).

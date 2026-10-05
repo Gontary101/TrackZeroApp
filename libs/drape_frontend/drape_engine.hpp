@@ -183,6 +183,8 @@ public:
   void StartPendingPositionMode();
   void LoseLocation();
   void StopLocationFollow();
+  // TrackZero: follow the position (rotated with the heading or north up) in one step; zoomLevel -1 keeps the zoom.
+  void FollowMyPosition(bool rotate, int zoomLevel, bool animateZoom);
 
   using TapEventInfoHandler = FrontendRenderer::TapEventInfoHandler;
   void SetTapEventInfoListener(TapEventInfoHandler && fn);

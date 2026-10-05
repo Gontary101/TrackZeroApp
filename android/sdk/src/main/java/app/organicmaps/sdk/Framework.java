@@ -110,9 +110,6 @@ public class Framework
 
   public static native int nativeGetDrawScale();
 
-  /// TrackZero: zoom by a factor (2 = one level in) like a gesture; keeps follow mode.
-  public static native void nativeScale(double factor, boolean animate);
-
   public static native void nativePokeSearchInViewport();
 
   @Size(2)
@@ -395,6 +392,14 @@ public class Framework
 
   public static native void nativeSetViewportCenter(double lat, double lon, int zoom);
   public static native void nativeStopLocationFollow();
+
+  /**
+   * TrackZero: follows the rider, heading-up ({@code rotate}) or north-up, in one step whatever the current mode (unlike
+   * {@code LocationState.nativeSwitchToNextMode}, which toggles). Without a position yet, the first one is followed.
+   * {@code zoom} -1 keeps the zoom; else the map goes to that zoom level (a level, not a factor: repeating the command
+   * cannot add up), at once or animated.
+   */
+  public static native void nativeFollowMyPosition(boolean rotate, int zoom, boolean animateZoom);
 
   public static native void nativeSetSearchViewport(double lat, double lon, int zoom);
 

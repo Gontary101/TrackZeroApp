@@ -1878,14 +1878,6 @@ JNIEXPORT void JNICALL Java_app_organicmaps_sdk_Framework_nativeZoomToPoint(JNIE
   g_framework->Scale(m2::PointD(mercator::FromLatLon(lat, lon)), zoom, animate);
 }
 
-// TrackZero: a zoom gesture by `factor` (2 = one level in). Unlike nativeZoomToPoint it keeps follow mode: while
-// following, the core scales around the rider.
-JNIEXPORT void JNICALL Java_app_organicmaps_sdk_Framework_nativeScale(JNIEnv *, jclass, jdouble factor,
-                                                                     jboolean animate)
-{
-  frm()->Scale(factor, animate);
-}
-
 JNIEXPORT jobject JNICALL Java_app_organicmaps_sdk_Framework_nativeDeleteBookmarkFromMapObject(JNIEnv * env, jclass)
 {
   if (!frm()->HasPlacePageInfo())
@@ -2143,6 +2135,13 @@ JNIEXPORT void JNICALL Java_app_organicmaps_sdk_Framework_nativeSetViewportCente
 JNIEXPORT void JNICALL Java_app_organicmaps_sdk_Framework_nativeStopLocationFollow(JNIEnv *, jclass)
 {
   frm()->StopLocationFollow();
+}
+
+// TrackZero: follow the rider in one step (not a mode toggle, so it can be repeated), zoom -1 keeps the zoom.
+JNIEXPORT void JNICALL Java_app_organicmaps_sdk_Framework_nativeFollowMyPosition(JNIEnv *, jclass, jboolean rotate,
+                                                                                 jint zoom, jboolean animateZoom)
+{
+  frm()->FollowMyPosition(rotate, static_cast<int>(zoom), animateZoom);
 }
 
 JNIEXPORT void JNICALL Java_app_organicmaps_sdk_Framework_nativeSetSearchViewport(JNIEnv *, jclass, jdouble lat,

@@ -29,6 +29,7 @@ import app.trackzero.TzIo;
 import app.trackzero.TzPrefs;
 import app.trackzero.TzTrace;
 import app.trackzero.base.TzActivity;
+import app.trackzero.base.TzLocation;
 import app.trackzero.base.TzRoads;
 import app.trackzero.base.TzRouter;
 import app.trackzero.follow.Climb;
@@ -387,6 +388,8 @@ public final class TzRideService extends Service
 
   private void startSources()
   {
+    // The map shows the fixes the ride records, not a position of its own (BUG-004).
+    TzLocation.setRideSource(this, true);
     mLocation = TzConfig.DEBUG_REPLAY ? new ReplayLocationSource(this) : new GpsLocationSource(this);
     mLocation.start(this::onFix);
     // A replayed track carries its own elevation; the phone's barometer knows nothing about it.
@@ -401,6 +404,7 @@ public final class TzRideService extends Service
 
   private void stopSources()
   {
+    TzLocation.setRideSource(this, false);
     if (mLocation != null)
       mLocation.stop();
     mLocation = null;
@@ -655,6 +659,7 @@ public final class TzRideService extends Service
     s.onFix(f);
     if (f.accuracyM <= TzConfig.IGNORE_FIX_ACCURACY_M)
     {
+      TzLocation.pushRideFix(this, f);
       mFollowFix = f;
       follow(s, f);
     }

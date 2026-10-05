@@ -19,6 +19,31 @@ public final class TzRouteLayer
   private static final int RING_START = 1;
   private static final int RING_END = 2;
 
+  /** What draws the lines: the map engine (tests use a fake). */
+  interface Engine
+  {
+    @NonNull
+    int[] show(@NonNull double[] lat, @NonNull double[] lon, boolean dimmed, int ring);
+
+    void remove(@NonNull int[] ids);
+  }
+
+  @NonNull
+  static Engine sEngine = new Engine() {
+    @NonNull
+    @Override
+    public int[] show(@NonNull double[] lat, @NonNull double[] lon, boolean dimmed, int ring)
+    {
+      return Framework.nativeShowTrackLine(lat, lon, dimmed, ring);
+    }
+
+    @Override
+    public void remove(@NonNull int[] ids)
+    {
+      Framework.nativeRemoveTrackLine(ids);
+    }
+  };
+
   /** One line: its points, its ring and what the engine drew for it. */
   private static final class Line
   {
@@ -43,6 +68,13 @@ public final class TzRouteLayer
 
     void set(@Nullable Object owner, @Nullable double[] lat, @Nullable double[] lon, int ring)
     {
+      // Already on the map (a line handed over by the screen before): only the owner changes.
+      if (lat != null && ids != null && ring == this.ring && Arrays.equals(lat, this.lat) && Arrays.equals(lon, this.lon))
+      {
+        this.owner = owner;
+        setDimmed(false);
+        return;
+      }
       remove();
       this.owner = owner;
       this.lat = lat;
@@ -65,7 +97,7 @@ public final class TzRouteLayer
     {
       if (lat != null && lon != null && ids == null)
       {
-        ids = Framework.nativeShowTrackLine(lat, lon, dimmed, ring);
+        ids = sEngine.show(lat, lon, dimmed, ring);
         if (TzTrace.on())
           TzTrace.log("line", name + " drawn owner=" + ownerName(owner) + " points=" + lat.length + " dimmed=" + dimmed
                               + " ids=" + Arrays.toString(ids));
@@ -78,7 +110,7 @@ public final class TzRouteLayer
         return;
       if (TzTrace.on())
         TzTrace.log("line", name + " removed ids=" + Arrays.toString(ids));
-      Framework.nativeRemoveTrackLine(ids);
+      sEngine.remove(ids);
       ids = null;
     }
   }
@@ -86,7 +118,25 @@ public final class TzRouteLayer
   private static final Line sRoute = new Line("route");
   private static final Line sLeg = new Line("leg");
 
+  /** Owns the lines between START RIDE and the ride screen taking them ({@link #transfer}). */
+  public static final Object RIDE_START = new Object();
+
   private TzRouteLayer() {}
+
+  /**
+   * Hands {@code from}'s lines to {@code to} without touching the engine: the route stays drawn while one screen
+   * replaces another (BUG-004: the preview's line went before the ride screen had loaded its own).
+   */
+  public static void transfer(@NonNull Object from, @NonNull Object to)
+  {
+    if (TzTrace.on())
+      TzTrace.log("line", "transfer " + ownerName(from) + " -> " + ownerName(to) + " route=" + ownerName(sRoute.owner)
+                          + " leg=" + ownerName(sLeg.owner));
+    if (sRoute.owner == from)
+      sRoute.owner = to;
+    if (sLeg.owner == from)
+      sLeg.owner = to;
+  }
 
   /** Shows a track (ring at its start), replacing the route shown. */
   public static void show(@NonNull Object owner, @NonNull double[] lat, @NonNull double[] lon)
@@ -140,6 +190,8 @@ public final class TzRouteLayer
   @NonNull
   private static String ownerName(@Nullable Object owner)
   {
+    if (owner == RIDE_START)
+      return "RIDE_START";
     return owner == null ? "none" : owner.getClass().getSimpleName();
   }
 

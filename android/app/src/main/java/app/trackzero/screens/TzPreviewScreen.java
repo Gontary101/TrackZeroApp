@@ -121,11 +121,11 @@ public class TzPreviewScreen extends TzScreen implements TzMap.TouchObserver, Tz
         if (mPath == null)
           return;
         mStarted = true;
-        TzRide.startTo(requireActivity(), mPlaceName, mPlaceLat, mPlaceLon, mPath);
+        TzRide.startTo(requireActivity(), mPlaceName, mPlaceLat, mPlaceLon, mPath, this);
       }
       else if (mRoute != null)
       {
-        TzRide.start(requireActivity(), mRoute);
+        TzRide.start(requireActivity(), mRoute, this);
       }
     });
     // Frame once the card has its final height; later size changes (collapse/expand) keep the rider's view.

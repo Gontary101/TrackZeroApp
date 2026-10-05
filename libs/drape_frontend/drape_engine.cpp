@@ -580,6 +580,17 @@ void DrapeEngine::StopLocationFollow()
                                   MessagePriority::Normal);
 }
 
+void DrapeEngine::FollowMyPosition(bool rotate, int zoomLevel, bool animateZoom)
+{
+  using Mode = ChangeMyPositionModeMessage::EChangeType;
+  m_threadCommutator->PostMessage(
+      ThreadsCommutator::RenderThread,
+      make_unique_dp<ChangeMyPositionModeMessage>(rotate ? Mode::FollowAndRotate : Mode::Follow, zoomLevel,
+                                                  animateZoom),
+      // In order: after the visible area and any stop of an earlier screen.
+      MessagePriority::Normal);
+}
+
 void DrapeEngine::FollowRoute(int preferredZoomLevel, int preferredZoomLevel3d, bool enableAutoZoom, bool isArrowGlued,
                               bool allowRouteRotation)
 {

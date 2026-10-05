@@ -634,6 +634,8 @@ public:
 #endif
 
   void StopLocationFollow();
+  // TrackZero: see DrapeEngine::FollowMyPosition.
+  void FollowMyPosition(bool rotate, int zoomLevel, bool animateZoom);
 
   /// Resize event from window.
   void OnSize(int w, int h);

@@ -424,3 +424,54 @@ Appendix D step 12 ends "Back twice → B1", but the second Back left the app: B
 a search result's card open. Back on B1 now closes the card and its pin first (`TzScreen.handlesBack`, the
 navigator enables its Back callback on MAP only while the card is shown), through the existing
 `TzSearch.clearShown()`.
+
+## D42 · BUG-004: what made the ride start unstable, and the fixes (Phase 17)
+Found with `TzTrace` on the emulator (`tools/trackzero/ride_start_check.sh`: cold start, B3 → route → START RIDE 2 s
+after the preview appears, GPS moving): 3 of 3 starts failed before the fix. The causes, with their evidence:
+- **Zoom added up (H3, confirmed).** The first auto-zoom scaled the map by 2^(16 − 13) while the follow animation was
+  still flying in from the preview; one second later the "settle" read the zoom mid-animation (still 13) and scaled by
+  8 again: the trace reads `setZoom current=13`, `current=13`, then `current=19`, `current=19`, then `current=13`. That
+  is the map zooming in and out. Fix: the ride's first camera is one engine command that jumps to the rider at the zoom
+  for the speed (no animation, so follow updates cannot cut it short) and follows. Every later zoom is a *level*
+  given to the same command (animated for one or two levels), not a scale factor computed from a zoom read while the
+  map may still be moving: the first version of this fix kept the factor and waited for the zoom to look settled, and
+  1 start in 18 still went 13 -> 19 when the engine applied the camera after the second reading. A level asked twice
+  is the same level. `follow/RideZoom` asks again only if the map is not at its level 3 s after asking (a cut-short
+  animation). `Framework.nativeScale` (D24) is gone.
+- **Follow toggled (not in the plan, confirmed).** TrackZero drove follow mode with the engine's only public command,
+  "switch to the next mode" (D10), which is a toggle: NOT_FOLLOW → FOLLOW → FOLLOW_AND_ROTATE → FOLLOW. The ride screen
+  asks for follow twice at start (`onStart` and the pager's first page callback); the engine answers about a second
+  later, so two switches were in flight and the second turned heading-up back off and reset the view north-up:
+  `onModeChanged FOLLOW_AND_ROTATE` then `FOLLOW causedByUs=false` with no touch. In another start no answer came for
+  3.7 s and the request looked refused. Fix at the source: a new engine command `FollowMyPosition(rotate, zoom)`
+  (drape `MyPositionController::FollowPosition`, a `ChangeMyPositionModeMessage` type, `Framework.nativeFollowMyPosition`)
+  sets the mode whatever it was, so it can be repeated; asked before there is a position, it is applied with the first
+  one. The step machine, the "refused" timeout and the heading retries of D10 / D36 are gone.
+- **A late NOT_FOLLOW (H2).** Not seen in the traces as a cause, but the new follow request needs a rule for it: a
+  NOT_FOLLOW cancels the request only while a finger is on the screen (or 300 ms after, a fling). Without a touch it
+  answers an older command, and if the engine is really not following the request is sent again (`FollowRequest`).
+- **The line went missing (H4, confirmed).** The preview removed its line in `onDestroyView` (+930 ms) and the ride
+  screen drew its own only after reading the route's geometry (+2,033 ms): a second without a line, longer with a cold
+  cache. Fix: START RIDE hands the preview's line to the ride (`TzRouteLayer.transfer` through `RIDE_START`), the ride
+  screen adopts it, and showing the same geometry again only changes the owner.
+- **The camera used the preview's area (found while fixing).** The ride screen sets its visible area (rider at 67 %)
+  when it is laid out, about 0.7 s after `onStart`, after it had asked for follow: the engine placed the rider in the
+  preview's area (34 %) first. The ride camera now goes out right after the ride's visible area, in the engine's
+  message order.
+- **Two positions (H1, confirmed in structure).** The trace shows the map fed by `fused` and the ride by `gps`, and
+  `dumpsys location` two requests during a ride (TZ_BASELINE). The emulator has no network positions, so the hops the
+  owner saw with mobile data cannot be reproduced here; with mobile data the fused provider reports network positions
+  (hundreds of metres) until GPS locks, and from PENDING_POSITION the engine zooms to the accuracy circle. Fix: while a
+  ride records, the map is fed the ride's accepted fixes (accuracy ≤ 30 m) through `LocationHelper.setExternalSource`
+  / `pushLocation` (same path as a provider fix: core, saved location, listeners) and CoMaps' provider is stopped. Replay
+  rides feed the map too (D26's split is gone). Field check in NEEDS OWNER.
+- **Provider restarts (H5, ruled out).** `restartWithNewMode` is called on every mode change but returns at once when
+  the interval is unchanged: no "update refresh interval" in any trace, and no map fix older than 1.1 s.
+- **Emulator note.** The engine handles queued commands between frames, one per frame once a frame takes longer than
+  60 ms. This emulator draws with SwiftShader (software GL on a busy host), so any queued command waits behind the
+  tiles of the last camera move: CoMaps' own locate button took 4.7 s to answer on an idle B1, and the ride's follow
+  1 to 10 s. An optimised engine build without AddressSanitizer did not change that (the GL is the bottleneck). Raising
+  the follow command's priority was tried and dropped: high-priority messages are taken last-in-first-out and can
+  overtake the visible area, so the rider was placed in the preview's area. The order is kept (the camera follows
+  the area in the queue); the start check measures correctness with a longer window and the latency is a phone check
+  (NEEDS OWNER N17).

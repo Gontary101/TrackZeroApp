@@ -105,3 +105,9 @@ Once the app is complete and ready to showcase, create a **sleek, professional m
 ## Fixed and verified
 
 _No bugs marked as fixed yet._
+
+### Fixed, awaiting field check
+
+- **BUG-004** — Phase 17 (commit below). Causes found from traces and fixed at the source (D42); emulator check 59/60
+  cold starts across mobile data / Wi-Fi / no network (the miss: emulator engine latency, passed with a longer window).
+  Field check: NEEDS OWNER N17 in `TZ_PROGRESS.md`.

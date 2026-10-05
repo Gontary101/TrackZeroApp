@@ -49,8 +49,8 @@ sleep 4; shot R2_5s
 echo "5. pages"
 adb shell input swipe 1000 1300 80 1300 120; sleep 2; shot R4
 adb shell input swipe 1000 1300 80 1300 120; sleep 2; shot R5
-adb shell input swipe 80 1300 1000 1300 120; sleep 2
-adb shell input swipe 80 1300 1000 1300 120; sleep 2; shot R2_back
+adb shell input swipe 80 1300 1000 1300 120; sleep 3
+adb shell input swipe 80 1300 1000 1300 120; sleep 3; shot R2_back
 echo "6. controls sheet"
 tap 540 2290; shot R6_tap  # the handle opens the sheet
 adb shell input keyevent KEYCODE_BACK; sleep 2; shot R2_closed

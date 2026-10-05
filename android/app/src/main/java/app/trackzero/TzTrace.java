@@ -4,6 +4,7 @@ import android.content.Context;
 import android.os.SystemClock;
 import android.util.Log;
 import androidx.annotation.NonNull;
+import androidx.annotation.VisibleForTesting;
 import app.organicmaps.BuildConfig;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -57,6 +58,13 @@ public final class TzTrace
   {
     TzPrefs.setTrace(c, on);
     sOn = on || BuildConfig.DEBUG;
+  }
+
+  /** JVM tests: tracing reads the Android clock. */
+  @VisibleForTesting
+  public static void enableForTests(boolean on)
+  {
+    sOn = on;
   }
 
   public static void log(@NonNull String tag, @NonNull String text)

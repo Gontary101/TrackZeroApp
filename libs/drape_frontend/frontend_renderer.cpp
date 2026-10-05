@@ -454,6 +454,18 @@ void FrontendRenderer::AcceptMessage(ref_ptr<Message> message)
       break;
     case ChangeMyPositionModeMessage::StopFollowing: m_myPositionController->StopLocationFollow(); break;
     case ChangeMyPositionModeMessage::LoseLocation: m_myPositionController->LoseLocation(); break;
+    case ChangeMyPositionModeMessage::Follow:
+    case ChangeMyPositionModeMessage::FollowAndRotate:
+    {
+      // TrackZero: a zoom level, not a factor, so a repeated command cannot add up. A long change is applied at once:
+      // follow updates would cut its animation short.
+      int const zoom = msg->GetZoomLevel();
+      if (zoom != kDoNotChangeZoom && m_myPositionController->IsModeHasPosition())
+        AddUserEvent(make_unique_dp<SetCenterEvent>(m_myPositionController->Position(), zoom, msg->IsZoomAnimated(),
+                                                    false /* trackVisibleViewport */, nullptr /* parallelAnimCreator */));
+      m_myPositionController->FollowPosition(msg->GetChangeType() == ChangeMyPositionModeMessage::FollowAndRotate, zoom);
+      break;
+    }
     default: ASSERT(false, ("Unknown change type:", static_cast<int>(msg->GetChangeType()))); break;
     }
     break;

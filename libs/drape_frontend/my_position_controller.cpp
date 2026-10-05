@@ -470,6 +470,26 @@ void MyPositionController::NextMode(ScreenBase const & screen)
   }
 }
 
+void MyPositionController::FollowPosition(bool rotate, int zoomLevel)
+{
+  auto const mode = rotate ? location::FollowAndRotate : location::Follow;
+  // Location off by the user: start looking for it again, as NextMode does.
+  if (m_mode == location::NotFollowNoPosition)
+    ChangeMode(location::PendingPosition);
+  if (IsWaitingForLocation())
+  {
+    m_followRequested = true;
+    m_followRequestMode = mode;
+    m_followRequestZoom = zoomLevel;
+    return;
+  }
+  m_followRequested = false;
+  if (m_mode != mode)
+    ChangeMode(mode, true);
+  // The zoom itself was set already (FrontendRenderer); this moves the map onto the position.
+  UpdateViewport(kDoNotChangeZoom);
+}
+
 void MyPositionController::StartPendingPositionMode()
 {
   if (m_mode == location::NotFollowNoPosition)
@@ -584,7 +604,15 @@ void MyPositionController::OnLocationUpdate(location::GpsInfo const & info,
   // on valid time settings on endpoint device.
   m_positionIsObsolete = false;
 
-  if (!m_isPositionAssigned)
+  if (!m_isPositionAssigned && m_followRequested)
+  {
+    // TrackZero: a FollowPosition() asked before the first position.
+    m_followRequested = false;
+    m_isPositionAssigned = true;  // UpdateViewport waits for it
+    ChangeMode(m_followRequestMode, true);
+    UpdateViewport(m_followRequestZoom);
+  }
+  else if (!m_isPositionAssigned)
   {
     ChangeMode(m_isInRouting ? m_preferredRoutingMode : m_desiredInitMode, true);
 
@@ -601,6 +629,13 @@ void MyPositionController::OnLocationUpdate(location::GpsInfo const & info,
                         kDoNotChangeZoom);
       }
     }
+  }
+  else if (m_mode == location::PendingPosition && m_followRequested)
+  {
+    // TrackZero: a FollowPosition() asked while waiting for this position.
+    m_followRequested = false;
+    ChangeMode(m_followRequestMode, true);
+    UpdateViewport(m_followRequestZoom);
   }
   else if (m_mode == location::PendingPosition)
   {
@@ -801,6 +836,7 @@ bool MyPositionController::IsWaitingForLocation() const
 
 void MyPositionController::StopLocationFollow()
 {
+  m_followRequested = false;
   if (m_mode == location::Follow || m_mode == location::FollowAndRotate)
   {
     m_lastFollowMode = m_mode;

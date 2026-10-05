@@ -1119,6 +1119,12 @@ void Framework::StopLocationFollow()
     m_drapeEngine->StopLocationFollow();
 }
 
+void Framework::FollowMyPosition(bool rotate, int zoomLevel, bool animateZoom)
+{
+  if (m_drapeEngine != nullptr)
+    m_drapeEngine->FollowMyPosition(rotate, zoomLevel, animateZoom);
+}
+
 void Framework::OnSize(int w, int h)
 {
   if (m_drapeEngine != nullptr)

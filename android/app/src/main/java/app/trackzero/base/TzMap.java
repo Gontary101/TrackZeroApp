@@ -30,21 +30,20 @@ public final class TzMap
     void onTouch(@NonNull MotionEvent e);
   }
 
-  private static final int NO_REQUEST = -1;
-  /** A switch with no mode change after this long was refused. */
-  private static final long SWITCH_ANSWER_MS = 1000;
+  /** A NOT_FOLLOW this soon after the finger left the screen is still the rider's gesture (a fling). */
+  private static final long FLING_MS = 300;
 
   @Nullable
   private static TzActivity sHost;
   private static final List<FollowListener> sFollowListeners = new ArrayList<>();
   private static final List<TouchObserver> sTouchObservers = new ArrayList<>();
 
-  // The core only exposes "switch to next mode" and reports the result asynchronously, so a follow request is
-  // driven one step per mode change until the requested mode is reached.
-  private static int sRequestedMode = NO_REQUEST;
-  private static boolean sSwitchPending;
-  private static long sSwitchAtMs;
+  private static final FollowRequest sRequest = new FollowRequest();
+  /** The zoom of a request made before the engine existed. */
+  private static int sRequestedZoom = -1;
   private static boolean sFollowing;
+  private static boolean sTouchDown;
+  private static long sTouchUpAtMs;
 
   private TzMap() {}
 
@@ -75,19 +74,19 @@ public final class TzMap
   }
 
   /**
-   * Zooms to a level like a pinch: around the rider while following (follow mode stays on), else around the
-   * visible centre. Returns false (nothing done) until the map is ready.
+   * Zooms the ride map to a level while it follows the rider (follow mode stays on). A level, not a factor: asking
+   * again before the engine has applied it cannot add up (BUG-004, 13 -> 19 -> 13). Changes of up to two levels are
+   * animated. Returns false (nothing done) when the map is not following.
    */
   public static boolean setZoom(int level)
   {
     final int current = zoom();
     if (TzTrace.on())
       TzTrace.log("map", "setZoom current=" + current + " target=" + level);
-    if (current <= 0)
+    if (current <= 0 || !sFollowing)
       return false;
-    // Band changes animate; a long way (first zoom of a ride) jumps, as an animation would be cut by follow updates.
-    if (current != level)
-      Framework.nativeScale(Math.pow(2, level - current), Math.abs(level - current) <= 2);
+    Framework.nativeFollowMyPosition(LocationState.getMode() == LocationState.FOLLOW_AND_ROTATE, level,
+                                     Math.abs(level - current) <= 2);
     return true;
   }
 
@@ -106,37 +105,45 @@ public final class TzMap
       Framework.nativeSetViewportCenter(lat, lon, zoom);
   }
 
+  /** Follows the rider, heading-up or north-up, keeping the zoom. */
   public static void followRider(boolean headingUp)
   {
-    if (TzTrace.on())
-      TzTrace.log("map", "followRider headingUp=" + headingUp + " mode=" + modeName(currentMode()));
-    sRequestedMode = headingUp ? LocationState.FOLLOW_AND_ROTATE : LocationState.FOLLOW;
-    // FOLLOW -> FOLLOW_AND_ROTATE is silently refused until a heading is known; a new request retries.
-    sSwitchPending = false;
-    if (Map.isEngineCreated())
-      step(LocationState.getMode());
+    follow(headingUp, -1);
   }
 
   /**
-   * A new heading (compass reading, or a fix with a bearing). The core refuses FOLLOW → FOLLOW_AND_ROTATE without
-   * one and reports nothing, so a heading-up request still waiting asks again, at most once a second.
+   * The first camera of a ride, in one command: the map jumps to the rider at {@code zoom} (no animation) and follows,
+   * heading-up or north-up. Without a position yet, the first one is shown that way.
    */
-  static void onHeading()
+  public static void startRideCamera(int zoom, boolean headingUp)
   {
-    if (sRequestedMode == NO_REQUEST || !Map.isEngineCreated()
-        || SystemClock.elapsedRealtime() - sSwitchAtMs < SWITCH_ANSWER_MS)
-      return;
+    follow(headingUp, zoom);
+  }
+
+  private static void follow(boolean headingUp, int zoom)
+  {
+    sRequest.request(headingUp);
+    final boolean engine = Map.isEngineCreated();
     if (TzTrace.on())
-      TzTrace.log("map", "onHeading retry requested=" + modeName(sRequestedMode));
-    sSwitchPending = false;
-    step(LocationState.getMode());
+      TzTrace.log("map", (zoom < 0 ? "followRider" : "startRideCamera z" + zoom) + " headingUp=" + headingUp + " mode="
+                         + modeName(currentMode()) + (engine ? "" : " (before the engine)"));
+    if (engine)
+      Framework.nativeFollowMyPosition(headingUp, zoom, false);
+    else
+      sRequestedZoom = zoom;
+  }
+
+  /** The screen that asked to follow goes away: the map keeps following, but nothing asks for it any more. */
+  public static void forgetFollowRequest()
+  {
+    sRequest.forget();
   }
 
   public static void stopFollowing()
   {
     if (TzTrace.on())
       TzTrace.log("map", "stopFollowing");
-    sRequestedMode = NO_REQUEST;
+    sRequest.forget();
     if (Map.isEngineCreated())
       Framework.nativeStopLocationFollow();
   }
@@ -145,8 +152,10 @@ public final class TzMap
   {
     if (TzTrace.on())
       TzTrace.log("map", "onEngineReady mode=" + modeName(LocationState.getMode()) + " requested="
-                         + modeName(sRequestedMode));
-    step(LocationState.getMode());
+                         + modeName(sRequest.mode()));
+    if (sRequest.mode() != FollowRequest.NONE)
+      Framework.nativeFollowMyPosition(sRequest.mode() == LocationState.FOLLOW_AND_ROTATE, sRequestedZoom, false);
+    sRequestedZoom = -1;
     TzRouteLayer.onEngineReady();
   }
 
@@ -258,6 +267,16 @@ public final class TzMap
 
   static void dispatchTouch(@NonNull MotionEvent e)
   {
+    switch (e.getActionMasked())
+    {
+    case MotionEvent.ACTION_DOWN -> sTouchDown = true;
+    case MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL ->
+    {
+      sTouchDown = false;
+      sTouchUpAtMs = SystemClock.uptimeMillis();
+    }
+    default -> {}
+    }
     for (int i = 0; i < sTouchObservers.size(); i++)
       sTouchObservers.get(i).onTouch(e);
   }
@@ -272,15 +291,16 @@ public final class TzMap
 
   static void onModeChanged(int mode)
   {
-    final boolean causedByUs = sSwitchPending;
+    final boolean touching = sTouchDown || SystemClock.uptimeMillis() - sTouchUpAtMs < FLING_MS;
     if (TzTrace.on())
-      TzTrace.log("map", "onModeChanged " + modeName(mode) + " causedByUs=" + causedByUs + " requested="
-                         + modeName(sRequestedMode));
-    sSwitchPending = false;
-    // The rider panned the map away: drop the request instead of fighting the gesture.
-    if (!causedByUs && mode == LocationState.NOT_FOLLOW)
-      sRequestedMode = NO_REQUEST;
-    step(mode);
+      TzTrace.log("map", "onModeChanged " + modeName(mode) + " requested=" + modeName(sRequest.mode())
+                         + (touching ? " touching" : ""));
+    if (sRequest.onModeChanged(mode, touching, LocationState.getMode()) == FollowRequest.Action.ASK_AGAIN)
+    {
+      if (TzTrace.on())
+        TzTrace.log("map", "follow asked again");
+      Framework.nativeFollowMyPosition(sRequest.mode() == LocationState.FOLLOW_AND_ROTATE, -1, false);
+    }
 
     final boolean following = mode == LocationState.FOLLOW || mode == LocationState.FOLLOW_AND_ROTATE;
     if (following == sFollowing)
@@ -306,27 +326,8 @@ public final class TzMap
       case LocationState.NOT_FOLLOW -> "NOT_FOLLOW";
       case LocationState.FOLLOW -> "FOLLOW";
       case LocationState.FOLLOW_AND_ROTATE -> "FOLLOW_AND_ROTATE";
-      case NO_REQUEST -> "none";
+      case FollowRequest.NONE -> "none";
       default -> String.valueOf(mode);
     };
-  }
-
-  private static void step(int mode)
-  {
-    if (sRequestedMode == NO_REQUEST || sSwitchPending)
-      return;
-    if (mode == sRequestedMode)
-    {
-      sRequestedMode = NO_REQUEST;
-      return;
-    }
-    // Waiting for the first fix: the core enters FOLLOW by itself once it arrives.
-    if (mode == LocationState.PENDING_POSITION)
-      return;
-    if (TzTrace.on())
-      TzTrace.log("map", "switchToNextMode from " + modeName(mode) + " toward " + modeName(sRequestedMode));
-    sSwitchPending = true;
-    sSwitchAtMs = SystemClock.elapsedRealtime();
-    LocationState.nativeSwitchToNextMode();
   }
 }

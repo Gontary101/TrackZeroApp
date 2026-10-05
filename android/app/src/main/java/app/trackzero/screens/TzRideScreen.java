@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.res.ColorStateList;
+import android.location.Location;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -38,6 +39,7 @@ import app.trackzero.follow.Climb;
 import app.trackzero.follow.ClimbTracker;
 import app.trackzero.follow.FollowRoute;
 import app.trackzero.follow.Guide;
+import app.trackzero.follow.RideZoom;
 import app.trackzero.follow.TurnState;
 import app.trackzero.format.TzFormat;
 import app.trackzero.ride.RideSession;
@@ -74,7 +76,6 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
   private static final long REFRESH_MS = 1000;
   /** A fix rendered this close to a tick makes the tick unnecessary. */
   private static final long TICK_SLACK_MS = 100;
-  private static final long ZOOM_STABLE_MS = 5000;
   /** The rider arrow sits at 67 % of the screen height (R1 note). */
   private static final float RIDER_Y = 0.67f;
   private static final float PAUSED_HERO_ALPHA = 0.35f;
@@ -103,11 +104,9 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
   private int mLinesShown = -1;
   private boolean mEnding;
   private long mRenderedAtMs;
-  private int mZoom = -1;
+  private final RideZoom mZoom = new RideZoom();
   /** The trace has the first render with a session. */
   private boolean mTracedRender;
-  private int mZoomCandidate = -1;
-  private long mZoomCandidateSince;
   private int mTraceSize = -1;
   private int mTopInset;
   private int mBottomInset;
@@ -214,6 +213,8 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
     mSheetSummary = view.findViewById(R.id.tz_ride_sheet_summary);
     mVoice = view.findViewById(R.id.tz_ride_voice);
 
+    // The preview's line, handed over by START RIDE: shown until this screen has the route, and kept if it is the same.
+    TzRouteLayer.transfer(TzRouteLayer.RIDE_START, this);
     mPager.setAdapter(new Pages());
     // All three pages stay alive: they are cheap, and the screen updates them in place.
     mPager.setOffscreenPageLimit(2);
@@ -346,6 +347,7 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
     TzRouteLayer.hide(this);
     mLinesShown = -1;
     TzMap.clearVisibleArea(this);
+    TzMap.forgetFollowRequest();
   }
 
   @Override
@@ -519,6 +521,13 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
     // The engine centres the rider in the visible area: start it low enough to put the centre at 67 %.
     final int h = root.getHeight();
     TzMap.setVisibleArea(this, Math.round(h * (2 * RIDER_Y - 1)), 0);
+    // The ride camera places the rider in this area, so it goes out after it (BUG-004: it used the preview's area).
+    if (mPage == PAGE_MAP && !mZoom.started())
+    {
+      final Location here = TzMap.riderLocation();
+      TzMap.startRideCamera(mZoom.start(here != null && here.hasSpeed() ? here.getSpeed() * 3.6 : 0,
+                                        SystemClock.elapsedRealtime()), true);
+    }
   }
 
   private void setPage(int page)
@@ -531,7 +540,7 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
     // Speed and elevation pages are opaque: no need to draw the map behind them.
     TzMap.setRenderingEnabled(page == PAGE_MAP);
     if (page == PAGE_MAP)
-      TzMap.followRider(true);
+      showRider();
     mTraceSize = -1;
     // The REC dot pulses only where it is seen (the speed page stays attached beside the others).
     if (page != PAGE_SPEED && mSpeedChip != null)
@@ -711,45 +720,29 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
     autoZoom(st.speedKmh(now), now);
   }
 
-  /** z17 below 15 km/h, z16 up to 30, z15 above; a new band must hold for 5 s. */
+  /**
+   * Follows the rider heading-up. The first time on this screen, in one command at the zoom for the rider's speed, once
+   * the screen has its size: no zoom of ours runs against the camera's move from wherever the map was (BUG-004).
+   */
+  private void showRider()
+  {
+    if (mZoom.started())
+      TzMap.followRider(true);
+    else
+      applyVisibleArea();
+  }
+
   private void autoZoom(double kmh, long now)
   {
     if (!TzMap.isFollowing())
       return;
-    final int band = kmh < 15 ? 17 : kmh <= 30 ? 16 : 15;
-    if (mZoom < 0)
-    {
-      if (TzTrace.on())
-        TzTrace.log("ridescr", "autoZoom first band=" + band);
-      if (TzMap.setZoom(band))
-        mZoom = band;
+    final int seen = TzMap.zoom();
+    final int zoom = mZoom.update(kmh, seen, now);
+    if (zoom == RideZoom.NONE)
       return;
-    }
-    if (band == mZoom)
-    {
-      mZoomCandidate = -1;
-      // A zoom animation can be cut short by follow updates: settle it on the next tick.
-      if (TzMap.zoom() != mZoom)
-      {
-        if (TzTrace.on())
-          TzTrace.log("ridescr", "autoZoom settle " + TzMap.zoom() + " -> " + mZoom);
-        TzMap.setZoom(mZoom);
-      }
-      return;
-    }
-    if (band != mZoomCandidate)
-    {
-      mZoomCandidate = band;
-      mZoomCandidateSince = now;
-      return;
-    }
-    if (now - mZoomCandidateSince >= ZOOM_STABLE_MS && TzMap.setZoom(band))
-    {
-      if (TzTrace.on())
-        TzTrace.log("ridescr", "autoZoom band " + mZoom + " -> " + band);
-      mZoom = band;
-      mZoomCandidate = -1;
-    }
+    if (TzTrace.on())
+      TzTrace.log("ridescr", "autoZoom " + seen + " -> " + zoom);
+    TzMap.setZoom(zoom);
   }
 
   private void renderSpeed(@NonNull RideSession s, @NonNull RideStats st, long now, @NonNull TzFormat.Units units,

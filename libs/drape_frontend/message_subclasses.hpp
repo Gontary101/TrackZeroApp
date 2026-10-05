@@ -449,16 +449,28 @@ public:
   {
     SwitchNextMode,
     LoseLocation,
-    StopFollowing
+    StopFollowing,
+    // TrackZero: follow the position (map rotated with the heading or north up) in one step, at a zoom level.
+    Follow,
+    FollowAndRotate
   };
 
-  explicit ChangeMyPositionModeMessage(EChangeType changeType) : m_changeType(changeType) {}
+  explicit ChangeMyPositionModeMessage(EChangeType changeType, int zoomLevel = -1, bool animateZoom = false)
+    : m_changeType(changeType)
+    , m_zoomLevel(zoomLevel)
+    , m_animateZoom(animateZoom)
+  {}
 
   EChangeType GetChangeType() const { return m_changeType; }
+  // Follow / FollowAndRotate: the zoom level to show the position at, -1 to keep the zoom.
+  int GetZoomLevel() const { return m_zoomLevel; }
+  bool IsZoomAnimated() const { return m_animateZoom; }
   Type GetType() const override { return Type::ChangeMyPositionMode; }
 
 private:
   EChangeType const m_changeType;
+  int const m_zoomLevel;
+  bool const m_animateZoom;
 };
 
 class StartPendingPositionModeMessage : public Message
