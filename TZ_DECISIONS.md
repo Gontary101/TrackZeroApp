@@ -515,3 +515,40 @@ Departures from the plan's steps:
   choice is made.
 - The ring keeps its on-screen size: marker scales are relative to the line's half-width, so they are computed from
   each style's line width.
+
+## D46 · Direction chevrons as route mesh, and wrong way (Phase 21, BUG-002)
+**Chevrons: approach B (the plan's fallback), chosen after reading the engine's turn arrows, not after building A.**
+The turn arrows (`CacheRouteArrows`) are textured quads sized from the line's half-width times
+`kArrowHeightFactor`, i.e. wider than the line. Their borders are worked out again on the frontend at every zoom
+change (`CalculateArrowBorders` → a recache on the backend), and they are merged where they overlap. A "›" inside an
+8dp line needs a new texture region, a different size factor and Track-only exceptions in that path. Each zoom step would
+also recache, which goes against the battery rule. Instead each chevron is two strokes added to the line's own mesh
+when it is cached (`RouteShape::AddChevrons`), with the colour `TrackArrow` as a per-vertex colour. The route shader
+already supports per-vertex colours (traffic): `RouteRenderer` turns them on for a line with chevrons. Nothing is
+recomputed per frame or per zoom. The offsets are in half-width units, so a chevron keeps its 5dp × 2dp shape at every
+zoom and in every style. The vertex order matches the line's own quads: drape culls back faces, and the first build
+(opposite order) drew nothing.
+
+Spacing is in metres along the line, from Java: 150 m on a ride (about 96dp at zoom 16–17). On a preview it is
+max(150 m, length / 14), so an overview shows about a dozen. The first chevron is half a spacing in and none is within
+25 m of either end (the ring). Dimmed lines get none. Changing only the spacing (preview → ride) redraws the line: the
+new line is drawn before the old one is removed, so the route never blinks out (BUG-004). At lower zooms they come closer on
+screen and nothing culls them: a 150 m spacing is about 12dp at zoom 13 and 6dp at zoom 12. The ride never zooms out
+that far, and the preview's spacing grows with the route's length.
+
+Cost: R2 82 % CPU and 125 frames in 2 min, against the Phase 16 baseline of 90 % and 130 (noise range 76–90 %)
+(`shots/baseline/phase21_chevrons.md`).
+
+**Wrong way.** It is a phase of `FollowEngine` (plan 21.2), between on route and off route. Two details beyond the plan:
+- The route's direction at the rider's place is the bearing over ±10 m of it, so a corner does not read as a reversal.
+- The 30 m back is counted from the furthest place reached since the course turned against the route, so progress with a
+  bad course (slow, noisy) does not count as going back. The "remaining" frozen while wrong way is the value at that
+  furthest place, the last one on route.
+- The emulator's GPS reports a course of 0 on every fix (`geo fix` has no course and `geo nmea` is ignored). The
+  emulator check (`tools/trackzero/wrong_way_check.sh`) therefore rides backwards up the route's one southbound
+  stretch, where 0 is the true course. There R3W came 34 m after turning back and cleared 20 m after turning forward
+  again. The 10 s window had already run during the forward ride, which on the emulator also reads as "against".
+
+The line is not dimmed (the rider is on it; the chevrons show the way), the ETA shows `--:--`, and a buzz marks the
+start as for off route. Guide treats wrong way as on the route: no leg is asked for and a leg is dropped as before.
+The voice says "Wrong way" once per episode (a tone comes in Phase 32).

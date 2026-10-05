@@ -164,6 +164,8 @@ struct Subroute
   df::RouteType m_routeType;
   m2::PolylineD m_polyline;
   std::vector<double> m_turns;
+  // TrackZero: direction chevrons drawn inside a Track line, at these distances along the polyline (mercator).
+  std::vector<double> m_chevrons;
   std::vector<traffic::SpeedGroup> m_traffic;
   double m_baseDistance = 0.0;
   double m_baseDepthIndex = 0.0;
@@ -253,6 +255,8 @@ private:
   static void PrepareGeometry(std::vector<m2::PointD> const & path, m2::PointD const & pivot,
                               std::vector<glsl::vec4> const & segmentsColors, float baseDepth,
                               std::vector<GeometryBufferData<GeometryBuffer>> & geometryBufferData);
+  static void AddChevrons(Subroute const & subroute, m2::PointD const & pivot, float baseDepth,
+                          GeometryBufferData<GeometryBuffer> & data);
   static void PrepareArrowGeometry(std::vector<m2::PointD> const & path, m2::PointD const & pivot,
                                    m2::RectF const & texRect, float depthStep, float depth,
                                    GeometryBufferData<ArrowGeometryBuffer> & geometryBufferData);

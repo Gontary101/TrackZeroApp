@@ -161,6 +161,47 @@ public class GuideTest
     assertEquals(Maneuver.ARRIVE, g.turnState().maneuver);
   }
 
+  @Test
+  public void wrongWayOnTheTrackIsPassedThrough()
+  {
+    final int[] wrongWay = {0};
+    final Rider r = Rider.onTrack(new FollowEngine.Events() {
+      @Override
+      public void onWrongWay()
+      {
+        wrongWay[0]++;
+      }
+    });
+    r.at(0, 0);
+    r.rideTo(0, 500);
+    r.rideTo(0, 400); // 100 m back.
+    assertTrue(r.guide.turnState().wrongWay);
+    assertFalse(r.guide.offRoute());
+    assertEquals(1, wrongWay[0]);
+    assertEquals(500, r.guide.remainingM(), 10); // As when the rider turned.
+    assertTrue("No way back is asked for: the rider is on the track", r.paths.requests.isEmpty());
+  }
+
+  @Test
+  public void wrongWayOnALegIsPassedThrough()
+  {
+    final int[] wrongWay = {0};
+    final Rider r = Rider.onTrack(new FollowEngine.Events() {
+      @Override
+      public void onWrongWay()
+      {
+        wrongWay[0]++;
+      }
+    });
+    r.at(500, -300);
+    r.guide.onPath(path(new double[] {500, -300}, new double[] {0, -300}, new double[] {0, 0}));
+    r.rideTo(200, -300); // 300 m along the leg...
+    r.rideTo(400, -300); // ...and 200 m back along it.
+    assertNotNull(r.guide.legLine());
+    assertTrue(r.guide.turnState().wrongWay);
+    assertEquals(1, wrongWay[0]);
+  }
+
   /** A routed path through corners (metres east / north), turning at each inner corner, named "Rue du Coin". */
   private static RoutedPath path(double[]... corners)
   {
@@ -215,8 +256,12 @@ public class GuideTest
 
     static Rider onTrack()
     {
+      return onTrack(new FollowEngine.Events() {});
+    }
+
+    static Rider onTrack(FollowEngine.Events events)
+    {
       final Paths paths = new Paths();
-      final FollowEngine.Events events = new FollowEngine.Events() {};
       return new Rider(Guide.forTrack(new FollowEngine(TRACK, events), paths, events), paths);
     }
 

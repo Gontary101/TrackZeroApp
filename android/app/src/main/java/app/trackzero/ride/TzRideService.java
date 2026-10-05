@@ -622,6 +622,13 @@ public final class TzRideService extends Service
     }
 
     @Override
+    public void onWrongWay()
+    {
+      if (voiceOn())
+        mVoice.say(R.string.tz_voice_wrong_way);
+    }
+
+    @Override
     public void onBackOnRoute()
     {
       if (voiceOn())
@@ -679,6 +686,10 @@ public final class TzRideService extends Service
              s.stats().movingMs(f.elapsedMs));
     if (TzTrace.on() && !placed && g.placed())
       TzTrace.log("ride", "follow placed along=" + Math.round(g.along()));
+    if (TzTrace.on() && g.placed())
+      TzTrace.log("ride", "follow along=" + Math.round(g.along()) + " course="
+                          + (f.hasBearing ? Math.round(f.bearingDeg) : "none") + " v=" + Math.round(speedMps * 10) / 10.0
+                          + (g.turnState().wrongWay ? " WRONG WAY" : g.offRoute() ? " OFF ROUTE" : ""));
     placeClimbs();
     if (mClimbs != null)
       mClimbs.update(g.along(), s.stats().movingMs(f.elapsedMs));

@@ -235,7 +235,7 @@ public class TzPreviewScreen extends TzScreen implements TzMap.TouchObserver, Tz
     mPath = path;
     bindPlace(getString(R.string.tz_preview_to_place));
     final FollowRoute line = path.line;
-    TzRouteLayer.showPath(this, line.lats(), line.lons());
+    TzRouteLayer.showPath(this, line.lats(), line.lons(), false);
     mBox = extent(line.lats(), line.lons());
     frameRoute();
   }
@@ -385,7 +385,7 @@ public class TzPreviewScreen extends TzScreen implements TzMap.TouchObserver, Tz
     if (g.profileDist != null)
       ((TzElevationProfileView) requireView().findViewById(R.id.tz_preview_profile))
           .setProfile(g.profileDist, g.profileAlt);
-    TzRouteLayer.show(this, g.lineLat, g.lineLon);
+    TzRouteLayer.show(this, g.lineLat, g.lineLon, false);
     frameRoute();
   }
 

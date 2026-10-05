@@ -27,6 +27,8 @@ public final class TurnState
   public final boolean offRoute;
   /** Off route while a way back is being worked out (R3 "Recalculating…"). */
   public final boolean recalculating;
+  /** Riding the route backwards (R3W); the maneuver fields say nothing then. */
+  public final boolean wrongWay;
   /** {@link Maneuver#ROUNDABOUT} exits, from 1; 0 otherwise. */
   public final int exit;
   public final int thenExit;
@@ -43,6 +45,15 @@ public final class TurnState
                    @Nullable Maneuver thenManeuver, double thenDistanceM, @NonNull String thenStreet,
                    boolean imminent, boolean offRoute, boolean recalculating, int exit, int thenExit)
   {
+    this(maneuver, distanceM, street, glyphRotationDeg, thenManeuver, thenDistanceM, thenStreet, imminent, offRoute,
+         recalculating, exit, thenExit, false);
+  }
+
+  private TurnState(@NonNull Maneuver maneuver, double distanceM, @NonNull String street, float glyphRotationDeg,
+                    @Nullable Maneuver thenManeuver, double thenDistanceM, @NonNull String thenStreet,
+                    boolean imminent, boolean offRoute, boolean recalculating, int exit, int thenExit,
+                    boolean wrongWay)
+  {
     this.maneuver = maneuver;
     this.distanceM = distanceM;
     this.street = street;
@@ -55,6 +66,7 @@ public final class TurnState
     this.recalculating = recalculating;
     this.exit = exit;
     this.thenExit = thenExit;
+    this.wrongWay = wrongWay;
   }
 
   @NonNull
@@ -67,5 +79,11 @@ public final class TurnState
   public static TurnState recalculating(double distanceToRouteM)
   {
     return new TurnState(Maneuver.REROUTE, distanceToRouteM, "", 0, null, 0, "", false, true, true, 0, 0);
+  }
+
+  @NonNull
+  public static TurnState wrongWay()
+  {
+    return new TurnState(Maneuver.UTURN, 0, "", 0, null, 0, "", false, false, false, 0, 0, true);
   }
 }

@@ -21,6 +21,11 @@ Collected from the v2 phases; each says what to do, what to look at and what cou
   About › tap the version 7 times › **Route line** cycles B → A → C → D (B is the default). For each, look at a route
   preview (B5) and a ride (R2) for a second and look away: which line can you follow most easily at a glance? Report
   the order. Pass: one is chosen; I then remove the others.
+- **N21 · Direction and wrong way (BUG-002, Phase 21).** On a route preview (B5) and a ride (R2), the black chevrons
+  inside the line point the way to ride and can be seen at a glance. On a quiet road, ride about 100 m of the route
+  backwards: the card turns amber with "WRONG WAY · Turn around" and the voice says "Wrong way" within about 10 s.
+  Turn round: it clears within a few seconds. At the turning point of an out-and-back route it must not appear. Pass:
+  all of these.
 - **N18 · Immersive ride (FEAT-001, Phase 18).** On a ride, no status bar or navigation bar on all three pages and with
   the controls open. Swipe from the top or bottom edge: the bars appear briefly over the ride and nothing moves. Tap the
   handle 10 times: it opens the controls every time. A quick upward swipe from just above the handle opens them too.
@@ -403,3 +408,27 @@ it led to).
 - Smoke test: all steps pass. The line shown on B1 just after the ride is the emulator engine's lag (D43): it was
   gone 2.5 minutes later.
 - `shots/B5.png`, `R2.png`, `R3.png` updated.
+
+## Phase 21 — Direction chevrons and wrong way (BUG-002)
+
+- Chevrons (D46, the plan's approach B): two black strokes per chevron in the line's own mesh
+  (`RouteShape::AddChevrons`), at distances that `nativeShowTrackLine(…, chevronSpacingM)` computes. Ride lines and
+  the leg: every 150 m. Previews: max(150 m, length / 14). None on the dimmed line, none within 25 m of the ring.
+  Drape colour `TrackArrow` (#000000); styles regenerated. `TzRouteLayer` keeps the spacing per line, and a spacing
+  change (preview → ride) draws the new line before removing the old one.
+- First build drew nothing: the strokes' winding was the opposite of the line's and drape culls back faces (found from
+  a native log of the built mesh, fixed by vertex order).
+- Cost: baseline run with chevrons (`shots/baseline/phase21_chevrons.md`): R2 82 % CPU, 125 frames (Phase 16: 90 %,
+  130), within the noise and the +5 % budget.
+- Wrong way: `FollowEngine.Phase.WRONG_WAY` (10 s against the route's direction by more than 120° and 30 m back; leaves
+  after 3 s with it or 20 m forward; never near a U-turn or off route). `TurnState.wrongWay`, frozen remaining, ETA
+  `--:--`. `TzTurnCard` has one warning layout for off route and wrong way (R3W: U-turn glyph, "WRONG WAY",
+  "Turn around", "The route goes the other way"). `Events.onWrongWay` → voice "Wrong way". `Guide` passes it
+  through for the track and for legs, and treats it as being on the route.
+- Tests: `FollowEngineTest` (backwards ride enters after 10 s and 30 m and leaves on turning round; 30 m from the furthest place; slow creep needs the
+  30 m; out-and-back turn-around; standing still; off route), `GuideTest` (track and leg pass-through),
+  `TzRouteLayerTest` (spacing, redraw without a blink). 196 tests pass.
+- `tools/trackzero/wrong_way_check.sh`: rides the route forward, backwards, forward again on the emulator, then ends
+  the ride. R3W shown and cleared as expected (`shots/R3W.png`); the emulator's fixed course of 0 limits where it can
+  be checked (D46). A per-fix trace line (`ride follow along= course= v=`) shows the engine's view.
+- Smoke test: all steps pass, no crashes. `shots/B5.png`, `R2.png` (with chevrons), `R3W.png` updated.

@@ -461,7 +461,9 @@ void RouteRenderer::RenderSubroute(ref_ptr<dp::GraphicsContext> context, ref_ptr
   math::Matrix<float, 4, 4> mv = screen.GetModelView(subrouteData->m_pivot, kShapeCoordScalar);
   params.m_modelView = glsl::make_mat4(mv.m_data);
   params.m_color = glsl::ToVec4(df::GetColorConstant(style.m_color));
-  params.m_routeParams = glsl::vec4(currentHalfWidth, screenHalfWidth, dist, trafficShown ? 1.0f : 0.0f);
+  // Per-vertex colours: traffic, or TrackZero's direction chevrons (the line's own vertices carry none).
+  bool const vertexColors = trafficShown || !subrouteInfo.m_subroute->m_chevrons.empty();
+  params.m_routeParams = glsl::vec4(currentHalfWidth, screenHalfWidth, dist, vertexColors ? 1.0f : 0.0f);
 
   // Adjust line color depending on route type and subroute distance. After the first stop point
   // route color is adjusted according to RouteMaskCar, RouteMaskBicycle or RouteMaskPedestrian properties.

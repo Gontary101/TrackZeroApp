@@ -117,3 +117,5 @@ _No bugs marked as fixed yet._
   under the island on every page. Field check: NEEDS OWNER N18 (handle part).
 - **FEAT-005** — Phase 20. Research in `TZ_RESEARCH_ROUTE_VISIBILITY.md`; 8dp line with a black casing (D45).
   Field check: NEEDS OWNER N20 (choose among four candidates).
+- **BUG-002** — Phase 21. Direction chevrons inside the line, and a wrong-way warning (R3W) when the route is ridden
+  backwards (D46); the thicker line came with FEAT-005. Field check: NEEDS OWNER N21.

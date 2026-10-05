@@ -232,6 +232,155 @@ public class FollowEngineTest
     assertFalse(ride.events.streets.contains(maneuvers.get(3))); // ARRIVE has no street after it.
   }
 
+  @Test
+  public void ridingTheRouteBackwardsIsWrongWayAfterTenSecondsAndThirtyMetres()
+  {
+    Ride ride = new Ride(longStraight());
+    while (ride.seconds < 100)
+      ride.onRoute(); // To 600 m.
+    double remaining = ride.engine.remainingM();
+    double north = 600;
+    // Back south along the route: wrong way once the course has been against it for 10 s (and 60 m back).
+    for (int s = 1; s <= 10; s++)
+    {
+      north -= Ride.SPEED_MPS;
+      ride.atOffset(0, north, 180);
+      assertEquals("second " + s, FollowEngine.Phase.ON_ROUTE, ride.engine.phase());
+    }
+    north -= Ride.SPEED_MPS;
+    ride.atOffset(0, north, 180);
+    assertEquals(FollowEngine.Phase.WRONG_WAY, ride.engine.phase());
+    assertEquals(1, ride.events.wrongWay);
+    TurnState state = ride.engine.turnState();
+    assertTrue(state.wrongWay);
+    assertFalse(state.offRoute);
+    assertEquals(remaining, ride.engine.remainingM(), Ride.SPEED_MPS + 0.5); // As when the rider turned.
+    for (int s = 0; s < 20; s++)
+    {
+      north -= Ride.SPEED_MPS;
+      ride.atOffset(0, north, 180);
+    }
+    assertEquals(FollowEngine.Phase.WRONG_WAY, ride.engine.phase());
+    assertEquals("Once per episode", 1, ride.events.wrongWay);
+    assertEquals(remaining, ride.engine.remainingM(), Ride.SPEED_MPS + 0.5);
+
+    // Turning round: the course with the route for 3 s clears it.
+    for (int s = 1; s <= 3; s++)
+    {
+      north += Ride.SPEED_MPS;
+      ride.atOffset(0, north, 0);
+      assertEquals(FollowEngine.Phase.WRONG_WAY, ride.engine.phase());
+    }
+    north += Ride.SPEED_MPS;
+    ride.atOffset(0, north, 0);
+    assertEquals(FollowEngine.Phase.ON_ROUTE, ride.engine.phase());
+    assertFalse(ride.engine.turnState().wrongWay);
+    assertEquals(4000 - north, ride.engine.remainingM(), 1);
+    assertEquals(0, ride.events.offRoute);
+  }
+
+  @Test
+  public void wrongWayNeedsThirtyMetresBack()
+  {
+    Ride ride = new Ride(longStraight());
+    while (ride.seconds < 100)
+      ride.onRoute();
+    // Creeping back at 2 m/s: 10 s gives 20 m, and the course has to stay against the route until 30 m (counted from
+    // the first fix against it, at 598 m).
+    double north = 600;
+    for (int s = 1; s <= 15; s++)
+    {
+      north -= 2;
+      ride.atOffset(0, north, 180, 2);
+      assertEquals("second " + s, FollowEngine.Phase.ON_ROUTE, ride.engine.phase());
+    }
+    // 30 m back at the next fix (route metres are not exactly test metres: one more for the margin).
+    for (int s = 0; s < 2; s++)
+    {
+      north -= 2;
+      ride.atOffset(0, north, 180, 2);
+    }
+    assertEquals(FollowEngine.Phase.WRONG_WAY, ride.engine.phase());
+  }
+
+  @Test
+  public void wrongWayCountsTheThirtyMetresFromTheFurthestPlace()
+  {
+    Ride ride = new Ride(longStraight());
+    while (ride.seconds < 100)
+      ride.onRoute();
+    // Forward 60 m with a course that says south (a bad course), then back: the 30 m count from 660 m, not 600 m.
+    double north = 600;
+    for (int s = 0; s < 10; s++)
+    {
+      north += Ride.SPEED_MPS;
+      ride.fixWithCourse(0, north, 180);
+    }
+    for (int s = 0; s < 4; s++)
+    {
+      north -= Ride.SPEED_MPS;
+      ride.atOffset(0, north, 180);
+      assertEquals(FollowEngine.Phase.ON_ROUTE, ride.engine.phase());
+    }
+    north -= 2 * Ride.SPEED_MPS;
+    ride.atOffset(0, north, 180);
+    ride.atOffset(0, north - Ride.SPEED_MPS, 180);
+    assertEquals(FollowEngine.Phase.WRONG_WAY, ride.engine.phase());
+    assertEquals(4000 - 660, ride.engine.remainingM(), 1);
+  }
+
+  @Test
+  public void turningRoundWithAnOutAndBackIsNotWrongWay()
+  {
+    // Out 400 m north and back on the same road, 4 m east: a U-turn at the top.
+    FollowRoute route = FollowTestRoutes.polyline(new double[] {0, 0}, new double[] {0, 400},
+        new double[] {4, 400}, new double[] {4, 0});
+    Ride ride = new Ride(route);
+    assertTrue(ride.engine.maneuvers().stream().anyMatch(m -> m.type == Maneuver.UTURN));
+    // North to 390 m, turning round 10 m short of the top, and back south down the middle of the road.
+    for (double north = 0; north <= 390; north += Ride.SPEED_MPS)
+      ride.atOffset(0, north, 0);
+    for (double north = 390; north >= 100; north -= Ride.SPEED_MPS)
+    {
+      ride.atOffset(2, north, 180);
+      assertTrue(ride.engine.phase() != FollowEngine.Phase.WRONG_WAY);
+    }
+    assertEquals(0, ride.events.wrongWay);
+    assertEquals(FollowEngine.Phase.ON_ROUTE, ride.engine.phase());
+    assertEquals(route.totalM() - 100, ride.engine.along(), 5);
+  }
+
+  @Test
+  public void standingStillIsNotWrongWay()
+  {
+    Ride ride = new Ride(longStraight());
+    while (ride.seconds < 100)
+      ride.onRoute();
+    // GPS jitter while stopped: points wandering a few metres back, with a course, at walking-pace noise speeds.
+    for (int s = 0; s < 60; s++)
+    {
+      ride.atOffset(s % 2, 600 - (s % 7), 180, 1);
+      assertEquals(FollowEngine.Phase.ON_ROUTE, ride.engine.phase());
+    }
+    assertEquals(0, ride.events.wrongWay);
+  }
+
+  @Test
+  public void offRouteIsNeverWrongWay()
+  {
+    Ride ride = new Ride(longStraight());
+    while (ride.seconds < 100)
+      ride.onRoute();
+    // Riding south on a road 60 m east of the route: off route, however long, whatever the course.
+    for (double north = 600; north >= 300; north -= Ride.SPEED_MPS)
+    {
+      ride.atOffset(60, north, 180);
+      assertTrue(ride.engine.phase() != FollowEngine.Phase.WRONG_WAY);
+    }
+    assertEquals(FollowEngine.Phase.OFF_ROUTE, ride.engine.phase());
+    assertEquals(0, ride.events.wrongWay);
+  }
+
   private static FollowRoute lShape()
   {
     return FollowTestRoutes.polyline(new double[] {0, 0}, new double[] {0, 500}, new double[] {500, 500});
@@ -274,6 +423,22 @@ public class FollowEngineTest
       fix(FollowTestRoutes.point(east, north), course);
     }
 
+    /** A fix with this course, not the one of the movement (a GPS course can be wrong). */
+    void fixWithCourse(double east, double north, double course)
+    {
+      seconds++;
+      double[] point = FollowTestRoutes.point(east, north);
+      distanceM += Geo.distance(previous[0], previous[1], point[0], point[1]);
+      movingMs += 1000;
+      previous = point;
+      engine.update(point[0], point[1], course, SPEED_MPS, seconds * 1000L, distanceM, movingMs);
+    }
+
+    void atOffset(double east, double north, double course, double speedMps)
+    {
+      fix(FollowTestRoutes.point(east, north), course, speedMps);
+    }
+
     void toEnd()
     {
       int lastSecond = (int) Math.ceil(route.totalM() / SPEED_MPS);
@@ -284,6 +449,11 @@ public class FollowEngineTest
     }
 
     private void fix(double[] point, double course)
+    {
+      fix(point, course, SPEED_MPS);
+    }
+
+    private void fix(double[] point, double course, double speedMps)
     {
       seconds++;
       if (previous != null)
@@ -297,7 +467,7 @@ public class FollowEngineTest
         }
       }
       previous = point;
-      engine.update(point[0], point[1], course, SPEED_MPS, seconds * 1000L, distanceM, movingMs);
+      engine.update(point[0], point[1], course, speedMps, seconds * 1000L, distanceM, movingMs);
     }
   }
 
@@ -312,6 +482,7 @@ public class FollowEngineTest
     int offRoute;
     int backOnRoute;
     int arrived;
+    int wrongWay;
 
     @Override
     public void onTurnSoon(RouteManeuver maneuver, double distanceM)
@@ -331,6 +502,12 @@ public class FollowEngineTest
     public void onOffRoute()
     {
       offRoute++;
+    }
+
+    @Override
+    public void onWrongWay()
+    {
+      wrongWay++;
     }
 
     @Override

@@ -98,6 +98,12 @@ public final class Guide
         if (m.type != Maneuver.JOIN)
           mEvents.onTurnNow(m);
       }
+
+      @Override
+      public void onWrongWay()
+      {
+        mEvents.onWrongWay();
+      }
     };
   }
 
@@ -163,7 +169,7 @@ public final class Guide
     if (leg != null)
     {
       // On the track (it has the turns now), or at the leg's end without being on the track: done either way.
-      if (main.phase() == FollowEngine.Phase.ON_ROUTE || leg.phase() == FollowEngine.Phase.ARRIVED)
+      if (onIt(main) || leg.phase() == FollowEngine.Phase.ARRIVED)
         dropLeg();
       else if (leg.phase() == FollowEngine.Phase.OFF_ROUTE)
         request(main.phase() == FollowEngine.Phase.HEAD_TO_START ? Want.START : Want.REJOIN);
@@ -173,8 +179,14 @@ public final class Guide
       request(Want.START);
     else if (main.phase() == FollowEngine.Phase.OFF_ROUTE)
       request(Want.REJOIN);
-    else if (mPending != Want.NONE && main.phase() == FollowEngine.Phase.ON_ROUTE)
+    else if (mPending != Want.NONE && onIt(main))
       cancel();
+  }
+
+  /** On the route, either way along it. */
+  private static boolean onIt(@NonNull FollowEngine e)
+  {
+    return e.phase() == FollowEngine.Phase.ON_ROUTE || e.phase() == FollowEngine.Phase.WRONG_WAY;
   }
 
   private void request(@NonNull Want want)
@@ -263,7 +275,7 @@ public final class Guide
       return;
     }
     // Back on the track by themselves while the path was worked out: no leg.
-    if (mMain == null || mMain.phase() == FollowEngine.Phase.ON_ROUTE)
+    if (mMain == null || onIt(mMain))
       return;
     mLeg = new FollowEngine(path.line, path.maneuvers(Maneuver.JOIN), mLegEvents);
     mLegEndAlong = mPendingEndAlong;

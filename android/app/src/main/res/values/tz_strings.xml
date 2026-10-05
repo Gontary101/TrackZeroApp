@@ -28,6 +28,11 @@
   <string name="tz_off_route_away">away</string>
   <string name="tz_head_back">Head back to the route</string>
   <string name="tz_recalculating">Recalculating…</string>
+  <!-- R3W: riding the route backwards. Big text "Turn", its unit "around". -->
+  <string name="tz_wrong_way">WRONG WAY</string>
+  <string name="tz_wrong_way_turn">Turn</string>
+  <string name="tz_wrong_way_around">around</string>
+  <string name="tz_wrong_way_line">The route goes the other way</string>
   <string name="tz_navigate_here">Navigate here</string>
   <!-- Route preview of a ride to a place (Phase 15). -->
   <string name="tz_preview_to_place">Route by bike</string>
@@ -57,6 +62,7 @@
   <string name="tz_voice_feet">%d feet</string>
   <string name="tz_voice_off_route">Off route</string>
   <string name="tz_voice_back_on_route">Back on route</string>
+  <string name="tz_voice_wrong_way">Wrong way</string>
   <string name="tz_voice_arrived">You have arrived</string>
   <string name="tz_voice_roundabout">At the roundabout, take exit %1$d</string>
 

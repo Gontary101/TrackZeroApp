@@ -483,6 +483,60 @@ void RouteShape::CacheRouteArrows(ref_ptr<dp::GraphicsContext> context, ref_ptr<
                 AV::GetBindingInfo(), routeArrowsData.m_renderProperty);
 }
 
+// TrackZero (BUG-002): a "›" pointing the way to ride, inside the line, at each of the subroute's chevron distances.
+// Two short strokes per chevron, as 4-vertex strips like the line's own quads. Offsets are in units of the line's half
+// width (the shader scales them), so a chevron keeps its shape at any line width; the vertex colour (TrackArrow)
+// replaces the line's colour (RouteRenderer turns per-vertex colours on for lines with chevrons).
+void RouteShape::AddChevrons(Subroute const & subroute, m2::PointD const & pivot, float baseDepth,
+                             GeometryBufferData<GeometryBuffer> & data)
+{
+  dp::Color const c = df::GetColorConstant("TrackArrow");
+  glsl::vec4 const color(c.GetRedF(), c.GetGreenF(), c.GetBlueF(), 1.0f);
+  float const depth = baseDepth + rs::kRouteDepth + 0.5f;  // above the line, below the ring (markers)
+  // The chevron in (along, across) half-width units: arms from the back corners to the tip; stroke half-width.
+  float constexpr kBack = -0.45f;
+  float constexpr kTip = 0.4f;
+  float constexpr kSide = 0.62f;
+  float constexpr kStroke = 0.25f;
+
+  auto const & points = subroute.m_polyline.GetPoints();
+  size_t seg = 0;
+  double segStart = 0.0;
+  for (double const d : subroute.m_chevrons)
+  {
+    // The segment holding distance d (chevron distances are increasing).
+    while (seg + 1 < points.size() - 1 && segStart + points[seg].Length(points[seg + 1]) < d)
+    {
+      segStart += points[seg].Length(points[seg + 1]);
+      ++seg;
+    }
+    m2::PointD const a = points[seg];
+    m2::PointD const b = points[seg + 1];
+    double const len = a.Length(b);
+    if (len <= 0.0)
+      continue;
+    m2::PointD const t = (b - a) / len;
+    m2::PointD const pt = a + t * std::min(len, std::max(0.0, d - segStart));
+    m2::PointD const local = MapShape::ConvertToLocal(pt, pivot, kShapeCoordScalar);
+    glsl::vec3 const p(glsl::ToVec2(local), depth);
+    glsl::vec2 const tv(static_cast<float>(t.x), static_cast<float>(t.y));
+    glsl::vec2 const nv(-tv.y, tv.x);
+    glsl::vec3 const len3(static_cast<float>(d), 0.0f, rs::kCenter);
+    for (float const side : {kSide, -kSide})
+    {
+      glsl::vec2 const from = tv * kBack + nv * side;
+      glsl::vec2 const to = tv * kTip;
+      glsl::vec2 const dir = glsl::normalize(to - from);
+      glsl::vec2 const perp = glsl::vec2(-dir.y, dir.x) * kStroke;
+      // The line's own winding (perp is to the left of the stroke): the other way round is culled as a back face.
+      data.m_geometry.emplace_back(p, from - perp, len3, color);
+      data.m_geometry.emplace_back(p, from + perp, len3, color);
+      data.m_geometry.emplace_back(p, to - perp, len3, color);
+      data.m_geometry.emplace_back(p, to + perp, len3, color);
+    }
+  }
+}
+
 drape_ptr<df::SubrouteData> RouteShape::CacheRoute(ref_ptr<dp::GraphicsContext> context, dp::DrapeID subrouteId,
                                                    SubrouteConstPtr subroute, size_t styleIndex, int recacheId)
 {
@@ -537,6 +591,9 @@ drape_ptr<df::SubrouteData> RouteShape::CacheRoute(ref_ptr<dp::GraphicsContext> 
   std::vector<GeometryBufferData<GeometryBuffer>> geometryBufferData;
   PrepareGeometry(points, subrouteData->m_pivot, segmentsColors,
                   static_cast<float>(subroute->m_baseDepthIndex * rs::kDepthPerSubroute), geometryBufferData);
+  if (!subroute->m_chevrons.empty() && !geometryBufferData.empty())
+    AddChevrons(*subroute, subrouteData->m_pivot,
+                static_cast<float>(subroute->m_baseDepthIndex * rs::kDepthPerSubroute), geometryBufferData.back());
 
   auto state = CreateRenderState(
       subroute->m_style[styleIndex].m_pattern.m_isDashed ? gpu::Program::RouteDash : gpu::Program::Route,

@@ -20,7 +20,7 @@ import app.trackzero.follow.TurnState;
 import app.trackzero.format.TzFormat;
 import java.util.Locale;
 
-/** Ride page 0 turn instruction (R2), imminent state (≤ 30 m) and off-route state (R3). */
+/** Ride page 0 turn instruction (R2), imminent state (≤ 30 m) and the warnings: off route (R3), wrong way (R3W). */
 public class TzTurnCard extends LinearLayout
 {
   private static final float DISTANCE_SP = 64f;
@@ -51,9 +51,17 @@ public class TzTurnCard extends LinearLayout
   @NonNull
   private final TextView mThenText;
 
+  /** What the card shows: a turn, or one of the warnings, each in the same amber layout. */
+  private enum Mode
+  {
+    TURN,
+    OFF_ROUTE,
+    WRONG_WAY
+  }
+
   private TzFormat.Units mUnits = TzFormat.Units.METRIC;
   @Nullable
-  private Boolean mOffRoute;
+  private Mode mMode;
   private boolean mRecalculating;
   private int mShownExit = -1;
 
@@ -77,7 +85,7 @@ public class TzTurnCard extends LinearLayout
     mThenGlyph = findViewById(R.id.tz_turn_then_glyph);
     mThenText = findViewById(R.id.tz_turn_then_text);
     mDistance.setUnitGap(getResources().getDimensionPixelSize(R.dimen.tz_unit_gap_turn));
-    setOffRoute(false);
+    setMode(Mode.TURN);
   }
 
   public void setUnits(@NonNull TzFormat.Units units)
@@ -88,7 +96,9 @@ public class TzTurnCard extends LinearLayout
   public void bind(@NonNull TurnState s)
   {
     final Locale locale = Locale.getDefault();
-    setOffRoute(s.offRoute);
+    setMode(s.wrongWay ? Mode.WRONG_WAY : s.offRoute ? Mode.OFF_ROUTE : Mode.TURN);
+    if (s.wrongWay)
+      return;
     final TzFormat.Value distance = TzFormat.distance(s.distanceM, mUnits, locale);
     if (s.offRoute)
     {
@@ -138,11 +148,12 @@ public class TzTurnCard extends LinearLayout
   }
 
   /** Restyles only on a state change; bind() runs on every fix. */
-  private void setOffRoute(boolean off)
+  private void setMode(@NonNull Mode mode)
   {
-    if (mOffRoute != null && mOffRoute == off)
+    if (mode == mMode)
       return;
-    mOffRoute = off;
+    mMode = mode;
+    final boolean off = mode != Mode.TURN;
     setBackgroundResource(off ? R.drawable.tz_bg_amber_bg_r28 : R.drawable.tz_bg_surface2_r28);
     mOffTitle.setVisibility(off ? VISIBLE : GONE);
     mDistance.setNumberSize(off ? OFF_ROUTE_SP : DISTANCE_SP);
@@ -152,11 +163,20 @@ public class TzTurnCard extends LinearLayout
     if (!off)
       return;
     mWell.setBackgroundResource(R.drawable.tz_bg_amber_well_r22);
-    TzManeuvers.applyGlyph(mGlyph, Maneuver.REROUTE, 0f, true);
+    final boolean wrongWay = mode == Mode.WRONG_WAY;
+    // A warning: glyph, title, big text and its unit, a line.
+    mOffTitle.setText(wrongWay ? R.string.tz_wrong_way : R.string.tz_off_route);
+    TzManeuvers.applyGlyph(mGlyph, Maneuver.REROUTE, 0f, true); // also undoes a turn glyph's mirror and rotation
+    if (wrongWay)
+    {
+      mGlyph.setImageResource(R.drawable.ic_tz_uturn_bold);
+      mDistance.setValue(getResources().getString(R.string.tz_wrong_way_turn),
+                         getResources().getString(R.string.tz_wrong_way_around));
+    }
     showExit(0);
     tintGlyph(R.color.tz_amber);
     mRecalculating = false;
-    mInstruction.setText(R.string.tz_head_back);
+    mInstruction.setText(wrongWay ? R.string.tz_wrong_way_line : R.string.tz_head_back);
     mStreet.setVisibility(GONE);
     mDivider.setVisibility(GONE);
     mThenRow.setVisibility(GONE);

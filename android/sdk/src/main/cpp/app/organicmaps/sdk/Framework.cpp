@@ -1968,9 +1968,11 @@ JNIEXPORT void JNICALL Java_app_organicmaps_sdk_Framework_nativeShowRect(JNIEnv 
 //   0 (B, default): an 8dp line on a 12dp black casing; 1 (A, as built before): 5.5dp line on a 16dp glow;
 //   2 (C): as B with a brighter line; 3 (D): a 10dp line on a 14dp casing.
 // Dimmed (off route, R3) is the same in every style: no casing, the line dashed at 5.5dp in 45 % mint.
+// chevronSpacingM > 0: direction chevrons inside the line every that many metres (never on a dimmed line).
 JNIEXPORT jintArray JNICALL Java_app_organicmaps_sdk_Framework_nativeShowTrackLine(JNIEnv * env, jclass,
                                                                                    jdoubleArray lats, jdoubleArray lons,
-                                                                                   jboolean dimmed, jint ring, jint style)
+                                                                                   jboolean dimmed, jint ring, jint style,
+                                                                                   jdouble chevronSpacingM)
 {
   auto engine = frm()->GetDrapeEngine();
   jsize const n = env->GetArrayLength(lats);
@@ -2012,6 +2014,31 @@ JNIEXPORT jintArray JNICALL Java_app_organicmaps_sdk_Framework_nativeShowTrackLi
                       : makeSubroute(glowStyle ? "TrackGlow" : "TrackCasing", 0.0, df::RoutePattern(), underDp * vs);
   auto line = makeSubroute(dimmed ? "TrackLineOff" : style == 2 ? "TrackLineBright" : "TrackLine", 1.0,
                            dimmed ? df::RoutePattern(2.0, 3.0) : df::RoutePattern(), lineDp * vs);
+
+  // Direction chevrons (BUG-002): every chevronSpacingM metres, none within 25 m of either end (the ring).
+  if (!dimmed && chevronSpacingM > 0)
+  {
+    double constexpr kEndClearM = 25.0;
+    auto const & pts = polyline.GetPoints();
+    double totalM = 0.0;
+    for (size_t i = 1; i < pts.size(); ++i)
+      totalM += mercator::DistanceOnEarth(pts[i - 1], pts[i]);
+    double nextM = std::max(kEndClearM, chevronSpacingM / 2);
+    double doneM = 0.0;
+    double doneMerc = 0.0;
+    for (size_t i = 1; i < pts.size() && nextM <= totalM - kEndClearM; ++i)
+    {
+      double const segM = mercator::DistanceOnEarth(pts[i - 1], pts[i]);
+      double const segMerc = pts[i - 1].Length(pts[i]);
+      while (segM > 0 && nextM <= doneM + segM && nextM <= totalM - kEndClearM)
+      {
+        line->m_chevrons.push_back(doneMerc + segMerc * (nextM - doneM) / segM);
+        nextM += chevronSpacingM;
+      }
+      doneM += segM;
+      doneMerc += segMerc;
+    }
+  }
 
   // Ring: 13dp black disc with a 3dp mint ring and a 4.5dp mint dot, whatever the line's width. Markers stack in list
   // order and are scaled by the line's half width.

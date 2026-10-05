@@ -105,8 +105,9 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
   @Nullable
   private Route mRoute;
   private boolean mRouteRequested;
-  /** The follow engine said off route at the last render (R3). */
+  /** The follow engine said off route (R3), wrong way (R3W), at the last render. */
   private boolean mOffRoute;
+  private boolean mWrongWay;
   /** {@link Guide#linesVersion()} drawn; -1: none yet. */
   private int mLinesShown = -1;
   private boolean mEnding;
@@ -749,17 +750,25 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
     {
       final TurnState turn = guide.turnState();
       final boolean off = turn.offRoute;
-      if (off && !mOffRoute)
+      // A warning (off route, wrong way) starts with a buzz; only off route dims the line (wrong way is still on it).
+      if ((off && !mOffRoute) || (turn.wrongWay && !mWrongWay))
         mTurn.performHapticFeedback(Build.VERSION.SDK_INT >= Build.VERSION_CODES.R ? HapticFeedbackConstants.REJECT
                                                                                    : HapticFeedbackConstants.LONG_PRESS);
       if (off != mOffRoute)
         TzRouteLayer.setDimmed(off);
       mOffRoute = off;
+      mWrongWay = turn.wrongWay;
       final TzFormat.Value rem = TzFormat.distance(guide.remainingM(), units, locale);
       if (off)
       {
         mStats.setCell(1, getString(R.string.tz_stat_eta), getString(R.string.tz_eta_unknown), "");
         mStats.setCell(2, getString(R.string.tz_stat_remaining), getString(R.string.tz_value_unknown), rem.unit);
+      }
+      else if (turn.wrongWay)
+      {
+        // R3W: no ETA while riding away from the end; the remaining distance as it was when the rider turned.
+        mStats.setCell(1, getString(R.string.tz_stat_eta), getString(R.string.tz_eta_unknown), "");
+        mStats.setCell(2, getString(R.string.tz_stat_remaining), rem.number, rem.unit);
       }
       else
       {
@@ -989,7 +998,7 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
       TzRouteLayer.showLeg(this, leg.lats(), leg.lons());
     final FollowRoute line = guide.line();
     if (s.toPlace() && line != null)
-      TzRouteLayer.showPath(this, line.lats(), line.lons());
+      TzRouteLayer.showPath(this, line.lats(), line.lons(), true);
   }
 
   /** A route ride draws its line and shows the route's numbers; loaded once per screen. */
@@ -1011,7 +1020,7 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
         if (TzTrace.on())
           TzTrace.log("ridescr", "loadRoute geometry=" + (g != null) + " view=" + (getView() != null));
         if (getView() != null && g != null)
-          TzRouteLayer.show(this, g.lineLat, g.lineLon);
+          TzRouteLayer.show(this, g.lineLat, g.lineLon, true);
       });
       render();
     });

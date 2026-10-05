@@ -32,6 +32,21 @@ public final class FollowEngine
   /** The street after a maneuver is looked up this far after it, at two places: the leg must run along it. */
   static final double STREET_NEAR_M = 30;
   static final double STREET_FAR_M = 80;
+  /**
+   * Wrong way (BUG-002): for this long the course has been this far off the route's direction and the rider's place on
+   * the route has gone back at least this much.
+   */
+  static final long WRONG_WAY_MS = 10_000;
+  static final double WRONG_WAY_DEG = 120;
+  static final double WRONG_WAY_BACK_M = 30;
+  /** It clears when the course is within this of the route's direction for this long, or after this much forward. */
+  static final double RIGHT_WAY_DEG = 90;
+  static final long RIGHT_WAY_MS = 3_000;
+  static final double RIGHT_WAY_AHEAD_M = 20;
+  /** Not this close to a U-turn on the route: there the rider turns round with it (an out-and-back). */
+  static final double WRONG_WAY_UTURN_M = 50;
+  /** The route's direction at the rider's place is taken over this much of it on either side. */
+  static final double ROUTE_BEARING_M = 10;
   static final long ETA_MIN_DATA_MS = 2 * 60_000;
   static final long ETA_SAMPLE_MS = 10_000;
 
@@ -39,6 +54,8 @@ public final class FollowEngine
   {
     HEAD_TO_START,
     ON_ROUTE,
+    /** On the route, riding it backwards. */
+    WRONG_WAY,
     OFF_ROUTE,
     ARRIVED
   }
@@ -53,6 +70,9 @@ public final class FollowEngine
     default void onTurnNow(@NonNull RouteManeuver m) {}
 
     default void onOffRoute() {}
+
+    /** Riding the route backwards; once per episode. */
+    default void onWrongWay() {}
 
     default void onBackOnRoute() {}
 
@@ -86,6 +106,14 @@ public final class FollowEngine
   private double mCourseDeg = Double.NaN;
   /** Index of the next maneuver ahead. */
   private int mNext;
+  /** Since when the course has been against the route (-1: it is not), and the furthest place on it since then. */
+  private long mAgainstSinceMs = -1;
+  private double mAgainstFromAlong;
+  /** While wrong way: since when the course has been with the route (-1: it is not); the place furthest back. */
+  private long mWithSinceMs = -1;
+  private double mWrongMinAlong;
+  /** While wrong way: the remaining distance when the rider turned. */
+  private double mWrongRemainingM;
   private final Snapper.Result mSnap = new Snapper.Result();
   private final Snapper.Result mWide = new Snapper.Result();
 
@@ -129,15 +157,27 @@ public final class FollowEngine
     mBearingToStartDeg = Geo.bearing(lat, lon, mRoute.startLat(), mRoute.startLon());
     if (!mJoined && mAlong > JOINED_ALONG_M && mOffRouteM < TzConfig.OFF_ROUTE_M)
       mJoined = true;
-    // From the start each time: a rider rejoining further back gets the turns again.
-    mNext = 0;
-    while (mNext < mManeuvers.size() - 1 && mManeuvers.get(mNext).at <= mAlong)
-      mNext++;
+    // From the start each time: a rider rejoining further back gets the turns again. Frozen while riding backwards.
+    if (mPhase != Phase.WRONG_WAY)
+    {
+      mNext = 0;
+      while (mNext < mManeuvers.size() - 1 && mManeuvers.get(mNext).at <= mAlong)
+        mNext++;
+    }
 
     final Phase before = mPhase;
-    mPhase = phase(elapsedMs);
+    mPhase = phase(elapsedMs, course);
     if (mPhase != before)
     {
+      if (mPhase == Phase.WRONG_WAY)
+      {
+        mWrongMinAlong = mAlong;
+        mWithSinceMs = -1;
+        mWrongRemainingM = Math.max(0, mRoute.totalM() - mAgainstFromAlong);
+        mEvents.onWrongWay();
+      }
+      if (mPhase != Phase.ON_ROUTE)
+        mAgainstSinceMs = -1;
       if (mPhase == Phase.OFF_ROUTE)
         mEvents.onOffRoute();
       else if (before == Phase.OFF_ROUTE && mPhase == Phase.ON_ROUTE)
@@ -188,7 +228,7 @@ public final class FollowEngine
   }
 
   @NonNull
-  private Phase phase(long elapsedMs)
+  private Phase phase(long elapsedMs, double course)
   {
     if (mPhase == Phase.ARRIVED)
       return Phase.ARRIVED;
@@ -208,9 +248,58 @@ public final class FollowEngine
       return mOffRouteM < TzConfig.BACK_ON_ROUTE_M ? Phase.ON_ROUTE : Phase.OFF_ROUTE;
     if (mFarSinceMs >= 0 && elapsedMs - mFarSinceMs >= TzConfig.OFF_ROUTE_SECONDS * 1000L)
       return Phase.OFF_ROUTE;
+    if (wrongWay(elapsedMs, course))
+      return Phase.WRONG_WAY;
     if (mAlong > mRoute.totalM() - ARRIVE_M)
       return Phase.ARRIVED;
     return Phase.ON_ROUTE;
+  }
+
+  /** Riding the route backwards (plan v2 21.2); {@code course} NaN when unknown. */
+  private boolean wrongWay(long elapsedMs, double course)
+  {
+    final double diff = Double.isNaN(course) ? Double.NaN : Math.abs(Geo.normalizeAngle(course - routeBearing()));
+    if (mPhase == Phase.WRONG_WAY)
+    {
+      mWrongMinAlong = Math.min(mWrongMinAlong, mAlong);
+      if (mAlong >= mWrongMinAlong + RIGHT_WAY_AHEAD_M)
+        return false;
+      if (Double.isNaN(diff) || diff > RIGHT_WAY_DEG)
+      {
+        mWithSinceMs = -1;
+        return true;
+      }
+      if (mWithSinceMs < 0)
+        mWithSinceMs = elapsedMs;
+      return elapsedMs - mWithSinceMs < RIGHT_WAY_MS;
+    }
+    if (Double.isNaN(diff) || diff <= WRONG_WAY_DEG || nearUTurn())
+    {
+      mAgainstSinceMs = -1;
+      return false;
+    }
+    if (mAgainstSinceMs < 0)
+    {
+      mAgainstSinceMs = elapsedMs;
+      mAgainstFromAlong = mAlong;
+    }
+    // Back from the furthest place: going forward with a bad course (slow, noisy) must not count as going back.
+    mAgainstFromAlong = Math.max(mAgainstFromAlong, mAlong);
+    return elapsedMs - mAgainstSinceMs >= WRONG_WAY_MS && mAgainstFromAlong - mAlong >= WRONG_WAY_BACK_M;
+  }
+
+  /** The route's compass direction at the rider's place. */
+  private double routeBearing()
+  {
+    return mRoute.bearing(Math.max(0, mAlong - ROUTE_BEARING_M), Math.min(mRoute.totalM(), mAlong + ROUTE_BEARING_M));
+  }
+
+  private boolean nearUTurn()
+  {
+    for (RouteManeuver m : mManeuvers)
+      if (m.type == Maneuver.UTURN && Math.abs(m.at - mAlong) <= WRONG_WAY_UTURN_M)
+        return true;
+    return false;
   }
 
   private void announce()
@@ -299,9 +388,10 @@ public final class FollowEngine
     return mOffRouteM;
   }
 
+  /** While riding backwards, what it was when the rider turned. */
   public double remainingM()
   {
-    return Math.max(0, mRoute.totalM() - mAlong);
+    return mPhase == Phase.WRONG_WAY ? mWrongRemainingM : Math.max(0, mRoute.totalM() - mAlong);
   }
 
   /** Seconds to the end at the recent moving speed (plan §10.2). */
@@ -358,6 +448,8 @@ public final class FollowEngine
   {
     if (mPhase == Phase.OFF_ROUTE)
       return TurnState.offRoute(mOffRouteM);
+    if (mPhase == Phase.WRONG_WAY)
+      return TurnState.wrongWay();
     if (mPhase == Phase.ARRIVED)
       return new TurnState(Maneuver.ARRIVE, remainingM(), "", 0, null, 0, "", true, false);
     if (mPhase == Phase.HEAD_TO_START)

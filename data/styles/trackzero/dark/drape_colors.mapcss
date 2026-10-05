@@ -28,6 +28,7 @@ colors
   TrackLineOff-color: #4C6F53;
   TrackGlow-color: #1E2C21;
   TrackCasing-color: #000000;
+  TrackArrow-color: #000000;
   TrackLineBright-color: #C8FFD4;
   TrackMarkerCenter-color: #000000;
   RouteRuler-color: #924ab5;
