@@ -26,6 +26,10 @@ Collected from the v2 phases; each says what to do, what to look at and what cou
   backwards: the card turns amber with "WRONG WAY · Turn around" and the voice says "Wrong way" within about 10 s.
   Turn round: it clears within a few seconds. At the turning point of an out-and-back route it must not appear. Pass:
   all of these.
+- **N23 · Surfaces (FEAT-006, Phase 23).** Open the preview of a long route you know (B5), for the first time after
+  installing: the surface bar should appear within about a second, and at once the next time. Do the paved, gravel
+  and rough parts match what you know of the route? "No data" is roads the map has no surface for. Pass: quick, and
+  plausible.
 - **N18 · Immersive ride (FEAT-001, Phase 18).** On a ride, no status bar or navigation bar on all three pages and with
   the controls open. Swipe from the top or bottom edge: the bars appear briefly over the ride and nothing moves. Tap the
   handle 10 times: it opens the controls every time. A quick upward swipe from just above the handle opens them too.
@@ -454,3 +458,23 @@ it led to).
   location request and sensors as Phases 16 and 21; CPU within the emulator's noise (R2 83 %, Phase 16 90 %).
 - Smoke test: all steps pass, no crashes. In step 28 the place path came 6 s after opening (debug native on the
   emulator: 2.1 s to load the road graph, 2.6 s to route), after the screenshot; the log shows it was found.
+
+## Phase 23 — Surface preview (FEAT-006)
+
+- `Framework.nativeRoadSurfaces` (closest road within 15 m, its `psurface` class; samples read a stretch at a time,
+  D48), `TzRoads.surfaces`, `routes/SurfaceProfile` (runs, 1 % merging on the bar, percentages summing to 100,
+  `upToDate`), `routes/RouteSurfaces` (sampling every max(50 m, length / 3000), maps stamp, paths to a place),
+  `RouteStore.loadSurfaces` (RouteGeometry format 3 cache; version 2 read without surfaces).
+- `ui/TzSurfaceBarView`: 8dp bar, 2dp gaps, radius 4, legend of the classes present (8dp squares, 11sp caps, wraps),
+  content description "60 percent paved, 1 percent poor paved, …". Colours `tz_sf_*` (Tokens v2).
+- B5: bar and legend under the sparkline; the card grows (180 ms) when they arrive and the route is framed again;
+  "Download this region's map to see surfaces" when no sample has a map. A path to a place gets them too.
+- Checked on the emulator: the Clermont-Ferrand 70.7 km loop shows paved 60 %, poor paved 1 %, rough 1 %, no data
+  38 % after 1.6 s the first time (debug native) and at once the second time; a test route in Paris (no map) shows the
+  caption; the place path in the smoke test shows its bar. `shots/B5.png`, `B5_surfaces_loop.png`,
+  `B5_surfaces_no_map.png`.
+- First build aborted in CoMaps' storage thread check (maps stamp read on the IO thread); fixed by reading it on the
+  main thread before the work is queued.
+- Tests: `SurfaceProfileTest` (9), `RouteGeometryTest` (format 3 round trip, version 2 read). 216 tests pass.
+- Smoke test: all steps pass, no crashes.
+

@@ -41,4 +41,11 @@
   <color name="tz_map_water">#0A1620</color>
   <color name="tz_map_park">#06100A</color>
   <color name="tz_map_label">#5C6167</color>
+
+  <!-- Surface bar (Tokens v2, Phase 23) -->
+  <color name="tz_sf_paved">#F4F5F2</color>
+  <color name="tz_sf_poor">#9BA0A6</color>
+  <color name="tz_sf_gravel">#C8A26A</color>
+  <color name="tz_sf_rough">#FF7A7A</color>
+  <color name="tz_sf_none">#3A3D42</color>
 </resources>

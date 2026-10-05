@@ -51,6 +51,39 @@ public class RouteGeometryTest
   }
 
   @Test
+  public void cacheRoundTripKeepsSurfaces() throws Exception
+  {
+    RouteGeometry g = fixture("trk.gpx").withSurfaces(new int[] {1, 1, 3, -1, 0, 4}, 50, 26_100_512L);
+    RouteGeometry r = roundTrip(g);
+    assertNotNull(r);
+    assertArrayEquals(new int[] {1, 1, 3, -1, 0, 4}, r.surfaceCodes());
+    assertEquals(50, r.surfaceStepM, 0);
+    assertEquals(26_100_512L, r.surfaceMaps);
+    assertNull("Not computed yet", roundTrip(fixture("trk.gpx")).surfaces);
+  }
+
+  /** A version 2 cache (written before surfaces) is version 3 without them: read, not rebuilt from the GPX. */
+  @Test
+  public void versionTwoCacheIsReadWithoutSurfaces() throws Exception
+  {
+    RouteGeometry g = fixture("trk.gpx");
+    ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+    try (DataOutputStream out = new DataOutputStream(bytes))
+    {
+      g.write(out);
+    }
+    byte[] v3 = bytes.toByteArray();
+    // Version 2 = the same without the surface block (step, maps, count -1), under its own magic.
+    byte[] v2 = java.util.Arrays.copyOf(v3, v3.length - 8 - 8 - 4);
+    v2[3] = 0x02;
+    RouteGeometry r = RouteGeometry.read(new DataInputStream(new ByteArrayInputStream(v2)));
+    assertNotNull(r);
+    assertArrayEquals(g.lineLat, r.lineLat, 0);
+    assertArrayEquals(g.profileAlt, r.profileAlt, 0);
+    assertNull(r.surfaces);
+  }
+
+  @Test
   public void cacheRoundTripWithoutElevation() throws Exception
   {
     RouteGeometry r = roundTrip(fixture("noele.gpx"));

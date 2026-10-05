@@ -138,6 +138,21 @@
         android:layout_height="@dimen/tz_preview_profile_h"
         android:layout_marginTop="@dimen/tz_space_16"
         app:tzCompact="true" />
+      <!-- What the route is made of (Phase 23): shown when the surfaces are known; the caption without a map. -->
+      <app.trackzero.ui.TzSurfaceBarView
+        android:id="@+id/tz_preview_surfaces"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/tz_space_12"
+        android:visibility="gone" />
+      <TextView
+        android:id="@+id/tz_preview_surfaces_none"
+        style="@style/TzText.Caption"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/tz_space_12"
+        android:text="@string/tz_sf_no_map"
+        android:visibility="gone" />
       <com.google.android.material.button.MaterialButton
         android:id="@+id/tz_preview_start"
         style="@style/TzButton.Primary"

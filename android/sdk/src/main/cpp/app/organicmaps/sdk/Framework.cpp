@@ -76,6 +76,7 @@
 
 #include "3party/open-location-code/openlocationcode.h"
 
+#include <limits>
 #include <memory>
 #include <string>
 #include <vector>
@@ -1038,6 +1039,115 @@ JNIEXPORT jintArray JNICALL Java_app_organicmaps_sdk_Framework_nativeRoadJunctio
   }
   env->ReleaseDoubleArrayElements(lats, lat, JNI_ABORT);
   env->ReleaseDoubleArrayElements(lons, lon, JNI_ABORT);
+  jintArray out = env->NewIntArray(n);
+  env->SetIntArrayRegion(out, 0, n, result.data());
+  return out;
+}
+
+// TrackZero (FEAT-006): the surface of the closest road within radiusM of each point, as CoMaps' maps classify it:
+// -1 no map at the point, 0 no surface information (no road within the radius, or one without a psurface type),
+// 1 paved_good, 2 paved_bad, 3 unpaved_good, 4 unpaved_bad. Reads map data only: safe off the main thread.
+JNIEXPORT jintArray JNICALL Java_app_organicmaps_sdk_Framework_nativeRoadSurfaces(JNIEnv * env, jclass,
+                                                                                 jdoubleArray lats, jdoubleArray lons,
+                                                                                 jdouble radiusM)
+{
+  // The map index answers a query with whole cells, far larger than a sample's radius (a 30 m query read about 560
+  // features). So consecutive points (samples along a route) are read together, a stretch of up to this size at a
+  // time, and each takes the closest road from what was read.
+  double constexpr kStretchM = 1000.0;
+  size_t constexpr kStretchPoints = 32;
+  static uint32_t const kSurfaces[] = {
+      classif().GetTypeByPath({"psurface", "paved_good"}), classif().GetTypeByPath({"psurface", "paved_bad"}),
+      classif().GetTypeByPath({"psurface", "unpaved_good"}), classif().GetTypeByPath({"psurface", "unpaved_bad"})};
+  jsize const n = env->GetArrayLength(lats);
+  std::vector<jint> result(n, -1);
+  std::vector<m2::PointD> points(n);
+  {
+    jdouble * lat = env->GetDoubleArrayElements(lats, nullptr);
+    jdouble * lon = env->GetDoubleArrayElements(lons, nullptr);
+    for (jsize i = 0; i < n; ++i)
+      points[i] = mercator::FromLatLon(lat[i], lon[i]);
+    env->ReleaseDoubleArrayElements(lats, lat, JNI_ABORT);
+    env->ReleaseDoubleArrayElements(lons, lon, JNI_ABORT);
+  }
+  auto const & dataSource = frm()->GetDataSource();
+  auto const & infoGetter = frm()->GetCountryInfoGetter();
+  auto const & isWay = ftypes::IsWayChecker::Instance();
+
+  std::vector<double> closestM;
+  std::vector<jint> codes;
+  for (jsize first = 0; first < n;)
+  {
+    // The stretch: points from `first` while their bounding box stays small.
+    m2::RectD box(points[first], points[first]);
+    jsize last = first + 1;
+    while (last < n && static_cast<size_t>(last - first) < kStretchPoints)
+    {
+      m2::RectD grown = box;
+      grown.Add(points[last]);
+      if (mercator::DistanceOnEarth(grown.LeftBottom(), grown.RightTop()) > kStretchM)
+        break;
+      box = grown;
+      ++last;
+    }
+    // Mercator is conformal: one scale for both axes over a kilometre.
+    double const metresPerUnit = mercator::DistanceOnEarth(box.Center(), box.Center() + m2::PointD(1e-4, 0)) / 1e-4;
+    box.Inflate(radiusM / metresPerUnit, radiusM / metresPerUnit);
+
+    closestM.assign(last - first, radiusM);
+    codes.assign(last - first, -1);
+    // Every country map around the stretch at once (the world map's simplified roads do not count).
+    dataSource.ForEachInRect([&](FeatureType & ft)
+    {
+      if (ft.GetGeomType() != feature::GeomType::Line ||
+          ft.GetID().m_mwmId.GetInfo()->GetType() != MwmInfo::COUNTRY || !isWay(ft))
+        return;
+      ft.ParseGeometry(FeatureType::BEST_GEOMETRY);
+      if (!ft.GetLimitRect(FeatureType::BEST_GEOMETRY).IsIntersect(box))
+        return;
+      jint code = -1;  // Read when the road is the closest to some point.
+      for (jsize i = first; i < last; ++i)
+      {
+        double d2 = std::numeric_limits<double>::max();
+        for (size_t k = 0; k + 1 < ft.GetPointsCount(); ++k)
+        {
+          m2::ParametrizedSegment<m2::PointD> const segment(ft.GetPoint(k), ft.GetPoint(k + 1));
+          d2 = std::min(d2, segment.SquaredDistanceToPoint(points[i]));
+        }
+        double const d = std::sqrt(d2) * metresPerUnit;
+        if (d > closestM[i - first])
+          continue;
+        if (code < 0)
+        {
+          code = 0;
+          feature::TypesHolder const types(ft);
+          for (int s = 0; s < 4; ++s)
+          {
+            if (types.Has(kSurfaces[s]))
+            {
+              code = s + 1;
+              break;
+            }
+          }
+        }
+        closestM[i - first] = d;
+        codes[i - first] = code;
+      }
+    }, box, scales::GetUpperScale());
+
+    for (jsize i = first; i < last; ++i)
+    {
+      // No road near: 0 when there is a map here, -1 when there is none.
+      if (codes[i - first] < 0)
+        result[i] = dataSource.GetMwmIdByCountryFile(platform::CountryFile(infoGetter.GetRegionCountryId(points[i])))
+                            .IsAlive()
+                      ? 0
+                      : -1;
+      else
+        result[i] = codes[i - first];
+    }
+    first = last;
+  }
   jintArray out = env->NewIntArray(n);
   env->SetIntArrayRegion(out, 0, n, result.data());
   return out;

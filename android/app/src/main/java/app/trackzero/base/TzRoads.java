@@ -6,7 +6,10 @@ import app.organicmaps.MwmApplication;
 import app.organicmaps.sdk.Framework;
 import app.trackzero.TzIo;
 
-/** The road network of the downloaded maps: street names and junctions, for turn-by-turn on a GPX track. */
+/**
+ * The road network of the downloaded maps: street names and junctions, for turn-by-turn on a GPX track, and road
+ * surfaces for the route preview.
+ */
 public final class TzRoads
 {
   /** A GPX track is drawn a few metres beside the street it follows. */
@@ -15,6 +18,8 @@ public final class TzRoads
   private static final double JUNCTION_RADIUS_M = 12;
   /** A summit's peak or pass is at most this far from the top of the climb along the road. */
   private static final double SUMMIT_RADIUS_M = 300;
+  /** The road a sample of a route is on: GPS tracks lie a few metres beside it. */
+  private static final double SURFACE_RADIUS_M = 15;
 
   private TzRoads() {}
 
@@ -26,6 +31,16 @@ public final class TzRoads
   public static int[] junctions(@NonNull double[] lat, @NonNull double[] lon)
   {
     return Framework.nativeRoadJunctions(lat, lon, JUNCTION_RADIUS_M);
+  }
+
+  /**
+   * Per point, the surface of the road there ({@code SurfaceProfile} codes: -1 no map, 0 unknown, 1–4). Blocking: off
+   * the main thread, once {@link #ready}.
+   */
+  @NonNull
+  public static int[] surfaces(@NonNull double[] lat, @NonNull double[] lon)
+  {
+    return Framework.nativeRoadSurfaces(lat, lon, SURFACE_RADIUS_M);
   }
 
   /** The named peak or pass at a climb's summit, "" if none. Blocking: off the main thread, once {@link #ready}. */

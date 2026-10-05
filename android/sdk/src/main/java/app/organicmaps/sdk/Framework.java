@@ -142,6 +142,11 @@ public class Framework
   @NonNull
   public static native int[] nativeRoadJunctions(double[] lat, double[] lon, double radiusM);
 
+  /// TrackZero (FEAT-006): per point, the surface of the closest road within radiusM: -1 no map, 0 no information,
+  /// 1 paved (good), 2 paved (bad), 3 unpaved (good), 4 unpaved (bad). Safe off the main thread.
+  @NonNull
+  public static native int[] nativeRoadSurfaces(double[] lat, double[] lon, double radiusM);
+
   /// TrackZero: the closest named peak or mountain pass within radiusM, "" when none. Safe off the main thread.
   @NonNull
   public static native String nativeGetSummitName(double lat, double lon, double radiusM);

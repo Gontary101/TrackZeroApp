@@ -279,4 +279,13 @@
   <string name="tz_profile_note">Used for the route to the start, detours and time estimates. Only this profile runs.</string>
   <string name="tz_cd_profile">Profile: %1$s. Change</string>
 
+  <!-- Surface preview (Phase 23) -->
+  <string name="tz_sf_paved">Paved</string>
+  <string name="tz_sf_poor">Poor paved</string>
+  <string name="tz_sf_gravel">Gravel</string>
+  <string name="tz_sf_rough">Rough</string>
+  <string name="tz_sf_none">No data</string>
+  <string name="tz_sf_legend">%1$s %2$d%%</string>
+  <string name="tz_sf_cd_item">%1$d percent %2$s</string>
+  <string name="tz_sf_no_map">Download this region\'s map to see surfaces</string>
 </resources>

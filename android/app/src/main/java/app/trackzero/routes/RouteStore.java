@@ -6,9 +6,13 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.provider.OpenableColumns;
 import android.util.Log;
+import androidx.annotation.MainThread;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import app.trackzero.TzIo;
+import app.trackzero.TzTrace;
+import app.trackzero.base.TzRoads;
+import app.trackzero.follow.FollowRoute;
 import app.trackzero.geo.DouglasPeucker;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -62,6 +66,8 @@ public final class RouteStore
   private static RouteStore sInstance;
 
   @NonNull
+  private final Context mApp;
+  @NonNull
   private final ContentResolver mResolver;
   @NonNull
   private final File mDir;
@@ -82,6 +88,7 @@ public final class RouteStore
 
   private RouteStore(@NonNull Context app)
   {
+    mApp = app;
     mResolver = app.getContentResolver();
     mDir = new File(app.getFilesDir(), "tz");
     mIndex = new File(mDir, "routes.json");
@@ -146,6 +153,34 @@ public final class RouteStore
         Log.w(TAG, "Cannot read " + route.file, e);
         return null;
       }
+    }, callback);
+  }
+
+  /**
+   * The road surfaces along a route (Phase 23), from its geometry cache, else read from the maps and cached. Read again
+   * when some samples had no map and the maps on the phone have changed since. Null before the maps load.
+   */
+  @MainThread
+  public void loadSurfaces(@NonNull Route route, @NonNull RouteGeometry geometry,
+                           @NonNull TzIo.Callback<SurfaceProfile> callback)
+  {
+    final boolean ready = TzRoads.ready(mApp);
+    final long maps = ready ? RouteSurfaces.mapsStamp() : 0;
+    TzIo.submit(() -> {
+      final FollowRoute line = new FollowRoute(geometry.lineLat, geometry.lineLon);
+      final SurfaceProfile cached = RouteSurfaces.of(geometry, line.totalM());
+      if (!ready)
+        return cached;
+      if (cached != null && cached.upToDate(geometry.surfaceMaps, maps))
+        return cached;
+      final double step = SurfaceProfile.step(line.totalM());
+      final long start = System.nanoTime();
+      final int[] codes = RouteSurfaces.sample(line, step);
+      if (TzTrace.on())
+        TzTrace.log("surfaces", route.id + " " + codes.length + " samples in " + (System.nanoTime() - start) / 1_000_000
+                                + " ms");
+      saveGeometry(route.id, geometry.withSurfaces(codes, step, maps));
+      return SurfaceProfile.of(codes, line.totalM(), step);
     }, callback);
   }
 

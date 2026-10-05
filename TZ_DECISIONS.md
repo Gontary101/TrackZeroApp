@@ -574,3 +574,22 @@ The voice says "Wrong way" once per episode (a tone comes in Phase 32).
 - **Tests.** Local unit tests have no real `org.json` (Android's stub), and adding a test library is against the
   no-new-libraries rule. So the JSON fields are one call each to `Profile.of`, which `ProfileTest` covers, and the
   journal round trip is tested in `RideSessionTest`.
+
+## D48 · Surface preview (Phase 23, FEAT-006)
+- **Reading.** `Framework.nativeRoadSurfaces` takes the closest road within 15 m of each sample and reads its
+  `psurface` type. The plan said to copy `nativeRoadJunctions`' one query per point. Measured on the emulator's debug
+  build, that took 9.5 s for the 70 km loop (1,411 samples). The map index answers with whole cells: about 560
+  features read per 30 m query, the same ones again for the next sample. Now consecutive samples are read together:
+  one query per stretch of up to 1 km or 32 samples, each sample taking its closest road from what was read. Same
+  result, 1.6 s on the emulator's unoptimised native build. The country lookup (a border polygon test) is done only
+  for samples with no road near, to tell 0 (map, no road) from -1 (no map).
+- **Classes.** -1 and 0 are both "No data", its own class in the bar and legend, never merged into another surface
+  by classification. Runs under 1 % of the route join their longer neighbour on the bar only. The legend's percentages
+  are computed from all samples (largest remainder, summing to 100), and a class present on the route shows at least
+  1 %.
+- **Cache.** RouteGeometry format 3 appends the step, a maps stamp and one byte per sample. Version 2 caches are read
+  as version 3 without surfaces, not rebuilt from the GPX. Surfaces are read again only when some samples had no map
+  and the stamp has changed. The stamp is the map data version plus the number of downloaded maps, read on the main
+  thread: CoMaps' storage checks its thread, and the first build aborted reading it from the IO thread.
+- **Card.** The bar arrives after the card is drawn: the card grows over 180 ms (`TzMotion.GROW_MS`) and the route is
+  framed again for the taller card, unless the rider has moved the map since.

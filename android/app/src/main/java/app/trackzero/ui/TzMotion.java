@@ -15,6 +15,8 @@ public final class TzMotion
   public static final long CAROUSEL_MS = 280;
   public static final long SHEET_MS = 320;
   public static final long COLLAPSE_MS = 180;
+  /** A card growing for content that arrives late (the preview's surface bar). */
+  public static final long GROW_MS = 180;
   public static final long EXPAND_MS = 240;
   public static final long RESCALE_MS = 300;
 

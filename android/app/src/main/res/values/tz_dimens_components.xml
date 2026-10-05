@@ -145,4 +145,13 @@
   <dimen name="tz_choice_check">18dp</dimen>
   <dimen name="tz_choice_ring">2dp</dimen>
 
+  <!-- SurfaceBar (Components v2, Phase 23): 8dp bar, radius 4, 2dp gaps; legend 8dp squares, 11sp caps, wraps -->
+  <dimen name="tz_sf_bar_h">8dp</dimen>
+  <dimen name="tz_sf_bar_r">4dp</dimen>
+  <dimen name="tz_sf_gap">2dp</dimen>
+  <dimen name="tz_sf_legend_top">10dp</dimen>
+  <dimen name="tz_sf_square">8dp</dimen>
+  <dimen name="tz_sf_square_gap">6dp</dimen>
+  <dimen name="tz_sf_item_gap">14dp</dimen>
+  <dimen name="tz_sf_row_gap">8dp</dimen>
 </resources>

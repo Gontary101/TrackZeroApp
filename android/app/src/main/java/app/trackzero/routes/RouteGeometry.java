@@ -14,14 +14,19 @@ import java.util.List;
 /**
  * A route prepared for display and riding: map line, elevation profiles, waypoints and bounds. Built once at import
  * and cached next to the GPX (a few hundred KB for the largest tracks), so opening a route never parses its GPX again.
+ * The road surfaces along it (Phase 23) are added to the cache the first time the route is previewed with maps.
  *
  * Every distance is measured along {@link #lineLat}/{@link #lineLon}, the line the rider is followed on, so a place
  * on the profile and a place on the route agree to the metre even 1000 km in.
  */
 public final class RouteGeometry
 {
-  /** Bump when the format or the simplification changes; older caches are rebuilt from the GPX. */
-  private static final int FORMAT = 0x545A4702; // "TZG", version 2
+  /**
+   * Bump when the format or the simplification changes; older caches are rebuilt from the GPX, except version 2, which
+   * is version 3 without the surfaces.
+   */
+  private static final int FORMAT = 0x545A4703; // "TZG", version 3
+  private static final int FORMAT_V2 = 0x545A4702;
 
   /** Line simplification for drawing: invisible at riding zooms, cuts big tracks to a fraction of the points. */
   private static final double LINE_EPSILON_M = 2;
@@ -48,9 +53,18 @@ public final class RouteGeometry
   public final double minLon;
   public final double maxLat;
   public final double maxLon;
+  /** Road surface codes every {@link #surfaceStepM} along the line ({@code SurfaceProfile}); null until computed. */
+  @Nullable
+  public final byte[] surfaces;
+  public final double surfaceStepM;
+  /** The downloaded maps the surfaces were read from ({@code RouteSurfaces.mapsStamp}). */
+  public final long surfaceMaps;
 
   private RouteGeometry(@NonNull GpxTrack track)
   {
+    surfaces = null;
+    surfaceStepM = 0;
+    surfaceMaps = 0;
     final int[] keep = DouglasPeucker.simplifyLatLon(track.lat, track.lon, LINE_EPSILON_M);
     lineLat = new double[keep.length];
     lineLon = new double[keep.length];
@@ -95,8 +109,11 @@ public final class RouteGeometry
   private RouteGeometry(@NonNull double[] lineLat, @NonNull double[] lineLon, @Nullable float[] profileDist,
                         @Nullable float[] profileAlt, @Nullable float[] ele,
                         @NonNull List<GpxTrack.Waypoint> waypoints, double minLat, double minLon, double maxLat,
-                        double maxLon)
+                        double maxLon, @Nullable byte[] surfaces, double surfaceStepM, long surfaceMaps)
   {
+    this.surfaces = surfaces;
+    this.surfaceStepM = surfaceStepM;
+    this.surfaceMaps = surfaceMaps;
     this.lineLat = lineLat;
     this.lineLon = lineLon;
     this.profileDist = profileDist;
@@ -113,6 +130,29 @@ public final class RouteGeometry
   static RouteGeometry of(@NonNull GpxTrack track)
   {
     return new RouteGeometry(track);
+  }
+
+  /** This geometry with the surfaces read from {@code maps} added. */
+  @NonNull
+  RouteGeometry withSurfaces(@NonNull int[] codes, double stepM, long maps)
+  {
+    final byte[] b = new byte[codes.length];
+    for (int i = 0; i < codes.length; i++)
+      b[i] = (byte) codes[i];
+    return new RouteGeometry(lineLat, lineLon, profileDist, profileAlt, ele, waypoints, minLat, minLon, maxLat, maxLon,
+                             b, stepM, maps);
+  }
+
+  /** The surface codes as ints; null until computed. */
+  @Nullable
+  public int[] surfaceCodes()
+  {
+    if (surfaces == null)
+      return null;
+    final int[] codes = new int[surfaces.length];
+    for (int i = 0; i < codes.length; i++)
+      codes[i] = surfaces[i];
+    return codes;
   }
 
   /**
@@ -206,13 +246,19 @@ public final class RouteGeometry
       final String name = w.name == null ? "" : w.name;
       out.writeUTF(name.length() > MAX_NAME ? name.substring(0, MAX_NAME) : name);
     }
+    out.writeDouble(surfaceStepM);
+    out.writeLong(surfaceMaps);
+    out.writeInt(surfaces == null ? -1 : surfaces.length);
+    if (surfaces != null)
+      out.write(surfaces);
   }
 
-  /** Null when the data was written in another format version. */
+  /** Null when the data was written in another format version (version 2 is read, without surfaces). */
   @Nullable
   static RouteGeometry read(@NonNull DataInputStream in) throws IOException
   {
-    if (in.readInt() != FORMAT)
+    final int format = in.readInt();
+    if (format != FORMAT && format != FORMAT_V2)
       return null;
     final double minLat = in.readDouble();
     final double minLon = in.readDouble();
@@ -255,7 +301,21 @@ public final class RouteGeometry
       final double wLon = in.readDouble();
       waypoints.add(new GpxTrack.Waypoint(wLat, wLon, in.readUTF()));
     }
+    double step = 0;
+    long maps = 0;
+    byte[] surfaces = null;
+    if (format == FORMAT)
+    {
+      step = in.readDouble();
+      maps = in.readLong();
+      final int s = in.readInt();
+      if (s >= 0)
+      {
+        surfaces = new byte[s];
+        in.readFully(surfaces);
+      }
+    }
     return new RouteGeometry(lat, lon, dist, alt, ele, Collections.unmodifiableList(waypoints), minLat, minLon,
-                             maxLat, maxLon);
+                             maxLat, maxLon, surfaces, step, maps);
   }
 }

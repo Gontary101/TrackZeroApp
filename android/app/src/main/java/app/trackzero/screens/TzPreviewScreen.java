@@ -6,6 +6,8 @@ import android.animation.ValueAnimator;
 import android.graphics.Rect;
 import android.location.Location;
 import android.os.Bundle;
+import android.transition.ChangeBounds;
+import android.transition.TransitionManager;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -36,10 +38,13 @@ import app.trackzero.routes.Route;
 import app.trackzero.routes.RouteGeometry;
 import app.trackzero.routes.RouteStats;
 import app.trackzero.routes.RouteStore;
+import app.trackzero.routes.RouteSurfaces;
+import app.trackzero.routes.SurfaceProfile;
 import app.trackzero.ui.TzElevationProfileView;
 import app.trackzero.ui.TzMetricView;
 import app.trackzero.ui.TzMotion;
 import app.trackzero.ui.TzProfilePill;
+import app.trackzero.ui.TzSurfaceBarView;
 import java.util.Locale;
 
 /**
@@ -95,6 +100,12 @@ public class TzPreviewScreen extends TzScreen
   private float mDownY;
   private boolean mCollapsed;
   private boolean mFramed;
+  /** The rider has moved the map since it was framed: a taller card no longer reframes it. */
+  private boolean mPanned;
+  private final Runnable mReframe = () -> {
+    if (!mPanned)
+      frameRoute();
+  };
   @Nullable
   private ValueAnimator mAnimator;
   private final Runnable mExpand = () -> setCollapsed(false);
@@ -193,6 +204,7 @@ public class TzPreviewScreen extends TzScreen
     TzMap.removeTouchObserver(this);
     TzLocation.removeListener(requireContext(), this);
     mCard.removeCallbacks(mExpand);
+    mCard.removeCallbacks(mReframe);
   }
 
   @Override
@@ -252,6 +264,35 @@ public class TzPreviewScreen extends TzScreen
     TzRouteLayer.showPath(this, line.lats(), line.lons(), false);
     mBox = extent(line.lats(), line.lons());
     frameRoute();
+    RouteSurfaces.forPath(requireContext(), line, p -> {
+      if (path == mPath)
+        onSurfaces(p);
+    });
+  }
+
+  /** Surfaces known (Phase 23): the bar and legend, or the caption without a map; the card grows to them. */
+  private void onSurfaces(@Nullable SurfaceProfile p)
+  {
+    final View v = getView();
+    if (v == null || p == null || (!p.noMap && p.runs.isEmpty()))
+      return;
+    final TzSurfaceBarView bar = v.findViewById(R.id.tz_preview_surfaces);
+    final View none = v.findViewById(R.id.tz_preview_surfaces_none);
+    TransitionManager.beginDelayedTransition(mCard, new ChangeBounds().setDuration(TzMotion.GROW_MS));
+    bar.setProfile(p.noMap ? null : p);
+    bar.setVisibility(p.noMap ? View.GONE : View.VISIBLE);
+    none.setVisibility(p.noMap ? View.VISIBLE : View.GONE);
+    // The card is taller now: keep the route clear of it, unless the rider has moved the map.
+    mCard.removeCallbacks(mReframe);
+    mCard.postDelayed(mReframe, TzMotion.GROW_MS);
+  }
+
+  /** The surfaces go with the path they were read on. */
+  private void hideSurfaces()
+  {
+    final View v = requireView();
+    v.findViewById(R.id.tz_preview_surfaces).setVisibility(View.GONE);
+    v.findViewById(R.id.tz_preview_surfaces_none).setVisibility(View.GONE);
   }
 
   @Override
@@ -270,6 +311,7 @@ public class TzPreviewScreen extends TzScreen
     mRouting = false;
     mPath = null;
     TzRouteLayer.hide(this);
+    hideSurfaces();
     bindPlace(getString(R.string.tz_preview_finding));
     final Location here = TzLocation.last(requireContext());
     if (here != null)
@@ -425,6 +467,8 @@ public class TzPreviewScreen extends TzScreen
           .setProfile(g.profileDist, g.profileAlt);
     TzRouteLayer.show(this, g.lineLat, g.lineLon, false);
     frameRoute();
+    if (mRoute != null)
+      RouteStore.get(requireContext()).loadSurfaces(mRoute, g, this::onSurfaces);
   }
 
   /** Fits the route between the top buttons and the card, 24dp clear of both and of the screen sides. */
@@ -456,13 +500,19 @@ public class TzPreviewScreen extends TzScreen
     case MotionEvent.ACTION_POINTER_DOWN ->
     {
       if (mGestureOnMap)
+      {
+        mPanned = true;
         setCollapsed(true);
+      }
     }
     case MotionEvent.ACTION_MOVE ->
     {
       final float slop = getResources().getDimension(R.dimen.tz_space_8);
       if (mGestureOnMap && Math.hypot(e.getRawX() - mDownX, e.getRawY() - mDownY) > slop)
+      {
+        mPanned = true;
         setCollapsed(true);
+      }
     }
     case MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL ->
     {
