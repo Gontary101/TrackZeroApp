@@ -18,6 +18,7 @@ import app.trackzero.TzPrefs;
 import app.trackzero.TzTrace;
 import app.trackzero.base.TzBase;
 import app.trackzero.base.TzRouteLayer;
+import app.trackzero.routes.ProfileCompare;
 import app.trackzero.ui.TzListRow;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -71,6 +72,16 @@ public class TzAboutScreen extends TzScreen
       TzPrefs.setLineStyle(requireContext(), next);
       TzRouteLayer.setStyle(next);
       lineStyle.setDetail(TzRouteLayer.STYLES[next]);
+    });
+    final TzListRow compare = view.findViewById(R.id.tz_about_compare);
+    compare.setDetail(getString(R.string.tz_about_compare_detail));
+    compare.setOnClickListener(v -> {
+      compare.setEnabled(false);
+      compare.setDetail(getString(R.string.tz_about_compare_running));
+      ProfileCompare.run(requireContext(), () -> {
+        compare.setEnabled(true);
+        compare.setDetail(getString(R.string.tz_about_compare_done));
+      });
     });
     showDebug();
     final TzListRow fonts = view.findViewById(R.id.tz_about_fonts);

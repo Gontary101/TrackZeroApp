@@ -1,4 +1,5 @@
 #include "routing_common/bicycle_model.hpp"
+#include "routing_common/tz_profile.hpp"
 
 #include "indexer/classificator.hpp"
 #include "indexer/feature_data.hpp"
@@ -180,6 +181,93 @@ VehicleModel::SurfaceInitList const kBicycleSurface = {
     /// @todo(pastk): this heuristic is controversial, maybe remove completely?
     {{"hwtag", "nocycleway"}, {0.95, 0.95}},
 };
+
+// TrackZero (Phase 24): quieter roads for Road, and Gravel's preference for minor roads, gravel and easy tracks.
+// Applied on top of whatever a country model passes, so its rules stay. Factors must be in (0, 1].
+HighwayBasedFactors TzFactors(std::initializer_list<std::pair<HighwayType const, double>> factors)
+{
+  auto result = kDefaultFactors;
+  for (auto const & [type, factor] : factors)
+    result.at(type) = InOutCityFactor(factor);
+  return result;
+}
+
+// The base model keeps a reference to its factors: one table per profile for the life of the process.
+HighwayBasedFactors const & TzProfileFactors(TzProfile profile)
+{
+  static HighwayBasedFactors const kRoad = TzFactors({
+      {HighwayType::HighwayTrunk, 0.6},
+      {HighwayType::HighwayTrunkLink, 0.6},
+      {HighwayType::HighwayPrimary, 0.75},
+      {HighwayType::HighwayPrimaryLink, 0.75},
+      {HighwayType::HighwaySecondary, 0.9},
+      {HighwayType::HighwaySecondaryLink, 0.9},
+  });
+  static HighwayBasedFactors const kGravel = TzFactors({
+      {HighwayType::HighwayTrunk, 0.45},
+      {HighwayType::HighwayTrunkLink, 0.45},
+      {HighwayType::HighwayPrimary, 0.55},
+      {HighwayType::HighwayPrimaryLink, 0.55},
+      {HighwayType::HighwaySecondary, 0.75},
+      {HighwayType::HighwaySecondaryLink, 0.75},
+      {HighwayType::HighwayTertiary, 0.9},
+      {HighwayType::HighwayTertiaryLink, 0.9},
+  });
+  switch (profile)
+  {
+  case TzProfile::Road: return kRoad;
+  case TzProfile::Gravel: return kGravel;
+  default: return kDefaultFactors;
+  }
+}
+
+// Namespace scope like kBicycleSurface: an initializer_list's values live as long as the list's own storage.
+VehicleModel::SurfaceInitList const kRoadSurface = {
+    {{"psurface", "paved_good"}, {1.0, 1.0}},   {{"psurface", "paved_bad"}, {0.8, 0.8}},
+    {{"psurface", "unpaved_good"}, {0.6, 0.6}}, {{"psurface", "unpaved_bad"}, {0.2, 0.2}},
+    {{"hwtag", "nocycleway"}, {0.95, 0.95}},
+};
+// Rough, rocky or technical ground is avoided unless there is no other way.
+VehicleModel::SurfaceInitList const kGravelSurface = {
+    {{"psurface", "paved_good"}, {1.0, 1.0}},   {{"psurface", "paved_bad"}, {0.9, 0.9}},
+    {{"psurface", "unpaved_good"}, {1.0, 1.0}}, {{"psurface", "unpaved_bad"}, {0.35, 0.35}},
+    {{"hwtag", "nocycleway"}, {1.0, 1.0}},
+};
+
+VehicleModel::SurfaceInitList const & TzProfileSurfaces(TzProfile profile)
+{
+  switch (profile)
+  {
+  case TzProfile::Road: return kRoadSurface;
+  case TzProfile::Gravel: return kGravelSurface;
+  default: return kBicycleSurface;
+  }
+}
+
+HighwayBasedSpeeds TzProfileSpeeds(HighwayBasedSpeeds speeds, TzProfile profile)
+{
+  if (profile != TzProfile::Gravel)
+    return speeds;
+  // {weight in city, out of city}, ETA as passed unless given.
+  auto const set = [&speeds](HighwayType type, double weightIn, double weightOut, double etaIn, double etaOut)
+  {
+    auto const it = speeds.find(type);
+    if (it == speeds.end())
+      return;
+    auto & s = it->second;
+    s.m_inCity.m_weight = weightIn;
+    s.m_outCity.m_weight = weightOut;
+    if (etaIn > 0)
+      s.m_inCity.m_eta = etaIn;
+    if (etaOut > 0)
+      s.m_outCity.m_eta = etaOut;
+  };
+  set(HighwayType::HighwayTrack, 14.0, 16.0, 14.0, 15.0);
+  set(HighwayType::HighwayPath, 11.0, 12.0, 11.0, 12.0);
+  set(HighwayType::HighwayBridleway, 8.0, 9.0, 0, 0);
+  set(HighwayType::HighwayUnclassified, 15.0, 17.0, 0, 0);
+  return speeds;
+}
 }  // namespace bicycle_model
 
 namespace routing
@@ -191,7 +279,10 @@ BicycleModel::BicycleModel(VehicleModel::LimitsInitList const & limits)
 {}
 
 BicycleModel::BicycleModel(VehicleModel::LimitsInitList const & limits, HighwayBasedSpeeds const & speeds)
-  : VehicleModel(classif(), limits, bicycle_model::kBicycleSurface, {speeds, bicycle_model::kDefaultFactors})
+  // TrackZero: adjusted for the profile the router is being built for (Phase 24).
+  : VehicleModel(classif(), limits, bicycle_model::TzProfileSurfaces(GetTzProfile()),
+                 {bicycle_model::TzProfileSpeeds(speeds, GetTzProfile()),
+                  bicycle_model::TzProfileFactors(GetTzProfile())})
 {
   using namespace bicycle_model;
 

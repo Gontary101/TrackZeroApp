@@ -288,4 +288,10 @@
   <string name="tz_sf_legend">%1$s %2$d%%</string>
   <string name="tz_sf_cd_item">%1$d percent %2$s</string>
   <string name="tz_sf_no_map">Download this region\'s map to see surfaces</string>
+
+  <!-- Hidden tools: the profile comparison (Phase 24) -->
+  <string name="tz_about_compare" translatable="false">Compare profiles</string>
+  <string name="tz_about_compare_detail" translatable="false">Road and Gravel on 10 trips, into the trace</string>
+  <string name="tz_about_compare_running" translatable="false">Running…</string>
+  <string name="tz_about_compare_done" translatable="false">Done: share the trace</string>
 </resources>

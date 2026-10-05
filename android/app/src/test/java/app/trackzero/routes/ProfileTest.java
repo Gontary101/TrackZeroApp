@@ -34,9 +34,9 @@ public class ProfileTest
   }
 
   @Test
-  public void onlyRoadIsSwitchedOnSoFar()
+  public void roadAndGravelAreSwitchedOnSoFar()
   {
-    assertEquals(java.util.List.of(Profile.ROAD), Profile.available());
+    assertEquals(java.util.List.of(Profile.ROAD, Profile.GRAVEL), Profile.available());
   }
 
   /** The native router is given the ordinal: it must not move. */

@@ -77,6 +77,7 @@
 #include "3party/open-location-code/openlocationcode.h"
 
 #include <limits>
+#include <map>
 #include <memory>
 #include <string>
 #include <vector>
@@ -1044,21 +1045,20 @@ JNIEXPORT jintArray JNICALL Java_app_organicmaps_sdk_Framework_nativeRoadJunctio
   return out;
 }
 
-// TrackZero (FEAT-006): the surface of the closest road within radiusM of each point, as CoMaps' maps classify it:
-// -1 no map at the point, 0 no surface information (no road within the radius, or one without a psurface type),
-// 1 paved_good, 2 paved_bad, 3 unpaved_good, 4 unpaved_bad. Reads map data only: safe off the main thread.
-JNIEXPORT jintArray JNICALL Java_app_organicmaps_sdk_Framework_nativeRoadSurfaces(JNIEnv * env, jclass,
-                                                                                 jdoubleArray lats, jdoubleArray lons,
-                                                                                 jdouble radiusM)
+// TrackZero: for each point, a code for the closest road within radiusM: codeOf(that road), 0 with no road there,
+// -1 without a map at the point. The map index answers a query with whole cells, far larger than a point's radius (a
+// 30 m query read about 560 features). So consecutive points (samples along a route) are read together, a stretch of
+// up to 1 km at a time, and each takes the closest road from what was read. Reads map data only: safe off the main
+// thread. (C++ linkage: this file's JNI functions sit in an extern "C" block.)
+extern "C++"
 {
-  // The map index answers a query with whole cells, far larger than a sample's radius (a 30 m query read about 560
-  // features). So consecutive points (samples along a route) are read together, a stretch of up to this size at a
-  // time, and each takes the closest road from what was read.
+namespace
+{
+template <typename CodeOf>
+jintArray ClosestRoadCodes(JNIEnv * env, jdoubleArray lats, jdoubleArray lons, double radiusM, CodeOf && codeOf)
+{
   double constexpr kStretchM = 1000.0;
   size_t constexpr kStretchPoints = 32;
-  static uint32_t const kSurfaces[] = {
-      classif().GetTypeByPath({"psurface", "paved_good"}), classif().GetTypeByPath({"psurface", "paved_bad"}),
-      classif().GetTypeByPath({"psurface", "unpaved_good"}), classif().GetTypeByPath({"psurface", "unpaved_bad"})};
   jsize const n = env->GetArrayLength(lats);
   std::vector<jint> result(n, -1);
   std::vector<m2::PointD> points(n);
@@ -1105,7 +1105,7 @@ JNIEXPORT jintArray JNICALL Java_app_organicmaps_sdk_Framework_nativeRoadSurface
       ft.ParseGeometry(FeatureType::BEST_GEOMETRY);
       if (!ft.GetLimitRect(FeatureType::BEST_GEOMETRY).IsIntersect(box))
         return;
-      jint code = -1;  // Read when the road is the closest to some point.
+      jint code = -1;  // Worked out when the road is the closest to some point.
       for (jsize i = first; i < last; ++i)
       {
         double d2 = std::numeric_limits<double>::max();
@@ -1118,18 +1118,7 @@ JNIEXPORT jintArray JNICALL Java_app_organicmaps_sdk_Framework_nativeRoadSurface
         if (d > closestM[i - first])
           continue;
         if (code < 0)
-        {
-          code = 0;
-          feature::TypesHolder const types(ft);
-          for (int s = 0; s < 4; ++s)
-          {
-            if (types.Has(kSurfaces[s]))
-            {
-              code = s + 1;
-              break;
-            }
-          }
-        }
+          code = codeOf(feature::TypesHolder(ft));
         closestM[i - first] = d;
         codes[i - first] = code;
       }
@@ -1151,6 +1140,64 @@ JNIEXPORT jintArray JNICALL Java_app_organicmaps_sdk_Framework_nativeRoadSurface
   jintArray out = env->NewIntArray(n);
   env->SetIntArrayRegion(out, 0, n, result.data());
   return out;
+}
+}  // namespace
+}  // extern "C++"
+
+// TrackZero (FEAT-006): the surface of the closest road within radiusM of each point, as CoMaps' maps classify it:
+// -1 no map at the point, 0 no surface information (no road within the radius, or one without a psurface type),
+// 1 paved_good, 2 paved_bad, 3 unpaved_good, 4 unpaved_bad.
+JNIEXPORT jintArray JNICALL Java_app_organicmaps_sdk_Framework_nativeRoadSurfaces(JNIEnv * env, jclass,
+                                                                                 jdoubleArray lats, jdoubleArray lons,
+                                                                                 jdouble radiusM)
+{
+  static uint32_t const kSurfaces[] = {
+      classif().GetTypeByPath({"psurface", "paved_good"}), classif().GetTypeByPath({"psurface", "paved_bad"}),
+      classif().GetTypeByPath({"psurface", "unpaved_good"}), classif().GetTypeByPath({"psurface", "unpaved_bad"})};
+  return ClosestRoadCodes(env, lats, lons, radiusM, [](feature::TypesHolder const & types)
+  {
+    for (jint s = 0; s < 4; ++s)
+      if (types.Has(kSurfaces[s]))
+        return s + 1;
+    return 0;
+  });
+}
+
+// TrackZero (Phase 24, the profile comparison): the class of the closest road within radiusM of each point: -1 no
+// map, 0 no road, 1 motorway or trunk, 2 primary, 3 secondary, 4 tertiary, 5 minor road (unclassified, residential,
+// living street, service, road), 6 track, 7 path, cycleway, bridleway, footway, pedestrian street or steps.
+JNIEXPORT jintArray JNICALL Java_app_organicmaps_sdk_Framework_nativeRoadClasses(JNIEnv * env, jclass,
+                                                                                jdoubleArray lats, jdoubleArray lons,
+                                                                                jdouble radiusM)
+{
+  static std::map<uint32_t, jint> const kClasses = []
+  {
+    std::map<uint32_t, jint> m;
+    auto const add = [&m](jint code, std::initializer_list<char const *> names)
+    {
+      for (char const * name : names)
+        m[classif().GetTypeByPath({"highway", name})] = code;
+    };
+    add(1, {"motorway", "motorway_link", "trunk", "trunk_link"});
+    add(2, {"primary", "primary_link"});
+    add(3, {"secondary", "secondary_link"});
+    add(4, {"tertiary", "tertiary_link"});
+    add(5, {"unclassified", "residential", "living_street", "service", "road"});
+    add(6, {"track"});
+    add(7, {"path", "cycleway", "bridleway", "footway", "pedestrian", "steps"});
+    return m;
+  }();
+  return ClosestRoadCodes(env, lats, lons, radiusM, [](feature::TypesHolder const & types)
+  {
+    for (uint32_t t : types)
+    {
+      if (ftype::GetLevel(t) > 2)
+        ftype::TruncValue(t, 2);
+      if (auto const it = kClasses.find(t); it != kClasses.end())
+        return it->second;
+    }
+    return 0;
+  });
 }
 
 // TrackZero: name of the closest named peak or mountain pass within radiusM (a climb's summit), "" when none.

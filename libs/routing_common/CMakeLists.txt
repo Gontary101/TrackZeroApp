@@ -13,6 +13,8 @@ set(SRC
   num_mwm_id.hpp
   pedestrian_model.cpp
   pedestrian_model.hpp
+  tz_profile.cpp
+  tz_profile.hpp
   vehicle_model.cpp
   vehicle_model.hpp
 )

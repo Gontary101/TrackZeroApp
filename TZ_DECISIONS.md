@@ -593,3 +593,58 @@ The voice says "Wrong way" once per episode (a tone comes in Phase 32).
   thread: CoMaps' storage checks its thread, and the first build aborted reading it from the IO thread.
 - **Card.** The bar arrives after the card is drawn: the card grows over 180 ms (`TzMotion.GROW_MS`) and the route is
   framed again for the taller card, unless the rider has moved the map since.
+
+## D49 · Gravel profile and quieter roads (Phase 24, FEAT-003)
+`routing_common/tz_profile` holds the profile the next models are built for. `BicyclePath.cpp` sets it just before
+it constructs a router. `BicycleModel`'s constructor applies it on top of the speeds a country model passes, so
+country rules (no trunk in France, footway speeds…) stay. The factor tables are function-local statics, because the
+base model keeps a reference to them. The surface tables are namespace-scope `initializer_list`s like the stock
+one. A list returned from a function would dangle.
+
+**Final weights** (the plan's starting point, kept after the check below):
+
+| | Road | Gravel |
+|---|---|---|
+| Factor trunk (+link) | 0.6 | 0.45 |
+| Factor primary (+link) | 0.75 | 0.55 |
+| Factor secondary (+link) | 0.9 | 0.75 |
+| Factor tertiary (+link) | 1.0 | 0.9 |
+| Surface paved good / bad | 1.0 / 0.8 | 1.0 / 0.9 |
+| Surface unpaved good / bad | 0.6 / 0.2 | 1.0 / 0.35 |
+| `hwtag-nocycleway` | 0.95 (stock) | 1.0 |
+| Weight speed track, path, bridleway, unclassified (in / out of town, km/h) | stock | 14/16, 11/12, 8/9, 15/17 |
+| ETA speed track, path | stock | 14/15, 11/12 |
+
+**Check** (About › Compare profiles, `tools/trackzero/profile_compare.md`), ten trips on the Puy-de-Dôme map. Shares
+of the route's samples:
+
+| Trip | Road km · track % · prim+sec % · gravel % | Gravel km · track % · prim+sec % · gravel % · rough % |
+|---|---|---|
+| Clermont – Orcines | 10.6 · 0 · 16 · 0 | 7.3 · 24 · 11 · 3 · 0 |
+| Aubière – Lac d'Aydat | 20.9 · 22 · 27 · 1 | 19.7 · 14 · 21 · 1 · 0 |
+| Royat – Col de Ceyssat | 11.7 · 0 · 37 · 0 | same route |
+| Volvic – Pontgibaud | 28.2 · 2 · 4 · 0 | 21.6 · 28 · 10 · 14 · 0 |
+| Riom – Châtel-Guyon | 5.9 · 0 · 40 · 0 | same route |
+| Clermont – Gergovie | 12.7 · 0 · 47 · 0 | 11.1 · 27 · 13 · 1 · 4 |
+| Beaumont – St-Genès-Champanelle | 10.0 · 0 · 24 · 0 | 8.4 · 25 · 1 · 5 · 0 |
+| Thiers – Courpière | 14.4 · 0 · 4 · 0 | same route |
+| Issoire – Saint-Nectaire | 25.7 · 2 · 25 · 0 | 25.4 · 33 · 7 · 14 · 0 |
+| Le Mont-Dore – La Bourboule | 5.8 · 0 · 93 · 0 | 5.8 · 0 · 66 · 0 · 0 (26 % path) |
+
+Result against the plan's pass:
+- Where tracks exist, Gravel takes them (24–33 % track against 0–2 %). It has more gravel surface where the tracks
+  are tagged (up to 14 %; most tracks here have no surface tag, so "no data" grows too). Primary and secondary share
+  is lower on every differing trip but Volvic–Pontgibaud (10 % against 4 %), where Gravel swaps 65 points of tertiary
+  for track and minor roads.
+- Rough: at most 4 %.
+- Length: no Gravel route is longer than Road's; most are shorter, because Road's detours around primaries are not
+  needed on tracks.
+- Trunk: none in any Road route.
+- Three trips give the same route with both profiles: there is no other way.
+
+So the starting numbers are kept. **Contraflow** (24.5): Rue Rameau, Clermont-Ferrand (one-way westwards,
+`oneway:bicycle=no`), routed eastwards against the one-way. Both profiles ride the street itself (0.3 km, no detour):
+`hwtag-bidir_bicycle` is honoured as before.
+
+**Limit.** On long routes across map regions the router first uses crossings between regions computed in advance
+with the stock weights, so near region borders the profile applies a little less strictly.

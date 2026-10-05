@@ -11,6 +11,7 @@
 #include "routing/router_delegate.hpp"
 #include "routing/routing_callbacks.hpp"
 #include "routing_common/num_mwm_id.hpp"
+#include "routing_common/tz_profile.hpp"
 
 #include "storage/country_info_getter.hpp"
 #include "storage/routing_helpers.hpp"
@@ -59,8 +60,10 @@ routing::IndexRouter & Router(Framework & f, int profile)
   { numMwmIds->RegisterFile(country.GetFile()); });
 
   static traffic::TrafficCache const kNoTraffic;
-  // Every profile rides the bicycle router for now; Gravel's weights (Phase 24) and the pedestrian router for Walk and
-  // Hike (Phases 25, 26) come with those profiles.
+  // The models are built for the profile set now (Road: quieter roads; Gravel: minor roads, gravel and easy tracks;
+  // Phase 24) and never change: hence a new router for another profile. Walk and Hike get the pedestrian router in
+  // Phases 25 and 26; until then they ride the bicycle one.
+  routing::SetTzProfile(static_cast<routing::TzProfile>(profile));
   g_router = std::make_unique<routing::IndexRouter>(
       routing::VehicleType::Bicycle, true /* loadAltitudes */,
       [&storage](std::string const & id) { return storage.GetParentIdFor(id); },

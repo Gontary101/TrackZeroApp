@@ -115,6 +115,12 @@
         style="@style/TzListRow"
         app:tzIcon="@drawable/ic_tz_contrast"
         app:tzTitle="@string/tz_about_line_style" />
+
+      <app.trackzero.ui.TzListRow
+        android:id="@+id/tz_about_compare"
+        style="@style/TzListRow"
+        app:tzIcon="@drawable/ic_tz_gravel"
+        app:tzTitle="@string/tz_about_compare" />
     </LinearLayout>
 
     <TextView

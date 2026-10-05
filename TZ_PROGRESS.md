@@ -30,6 +30,11 @@ Collected from the v2 phases; each says what to do, what to look at and what cou
   installing: the surface bar should appear within about a second, and at once the next time. Do the paved, gravel
   and rough parts match what you know of the route? "No data" is roads the map has no surface for. Pass: quick, and
   plausible.
+- **N24 · Gravel (FEAT-003, Phase 24).** On a route preview (B5), choose Gravel in the profile pill. Ride a short
+  route you know that has gravel tracks nearby, starting a little away from its start, so a leg to the start is worked
+  out. Does the leg take quiet roads and easy tracks rather than main roads? Leave the route on purpose: does the way
+  back avoid main roads too? Pass: the legs look like what you would choose on a gravel bike, and no rough or
+  technical ground unless there is no other way.
 - **N18 · Immersive ride (FEAT-001, Phase 18).** On a ride, no status bar or navigation bar on all three pages and with
   the controls open. Swipe from the top or bottom edge: the bars appear briefly over the ride and nothing moves. Tap the
   handle 10 times: it opens the controls every time. A quick upward swipe from just above the handle opens them too.
@@ -477,4 +482,22 @@ it led to).
   main thread before the work is queued.
 - Tests: `SurfaceProfileTest` (9), `RouteGeometryTest` (format 3 round trip, version 2 read). 216 tests pass.
 - Smoke test: all steps pass, no crashes.
+
+## Phase 24 — Gravel profile and quieter roads (FEAT-003)
+
+- `libs/routing_common/tz_profile.{hpp,cpp}` (`SetTzProfile` / `GetTzProfile`, atomic); `BicycleModel` builds its
+  speeds, factors and surfaces for the profile, on top of the country model's own; `BicyclePath.cpp` sets the profile
+  before it builds a router. Road: quieter roads; Gravel: minor roads, gravel and easy tracks (D49, final table).
+- Gravel switched on (`Profile.available()`): the profile sheet has two rows (`shots/N2.png`).
+- Check with data: About › hidden tools › **Compare profiles** (`routes/ProfileCompare`, `tools/trackzero/
+  profile_compare.md`), ten trips with both profiles plus the contraflow trip. `Framework.nativeRoadClasses` gives the
+  road-class shares; it and `nativeRoadSurfaces` now share one batched lookup. Result and pass in D49: passes with the
+  plan's starting numbers; contraflow street ridden against its one-way.
+- Idle check again with Gravel selected and no ride: "router none".
+- Smoke test with Gravel selected (both rides started with `profile=gravel`): all steps pass, no crashes. The
+  emulator was set back to Road afterwards.
+- Seen once, not reproduced: right after the comparison run (minutes of router work), one B5 opened at zoom 16 near
+  the start without the line; reopening it showed it framed and drawn. Emulator engine lag (D43) is the likely
+  cause; noted for the phone check.
+- 216 tests pass (`ProfileTest` updated for two profiles).
 

@@ -117,6 +117,8 @@ _No bugs marked as fixed yet._
   under the island on every page. Field check: NEEDS OWNER N18 (handle part).
 - **FEAT-005** — Phase 20. Research in `TZ_RESEARCH_ROUTE_VISIBILITY.md`; 8dp line with a black casing (D45).
   Field check: NEEDS OWNER N20 (choose among four candidates).
+- **FEAT-003** — Phase 24. Gravel profile (minor roads, gravel, easy tracks; rough avoided) and quieter roads for
+  Road, checked on ten trips (D49). Field check: NEEDS OWNER N24.
 - **FEAT-006** — Phase 23. Surface bar and legend on the route preview, read from the downloaded maps and cached
   (D48). Field check: NEEDS OWNER N23.
 - **BUG-002** — Phase 21. Direction chevrons inside the line, and a wrong-way warning (R3W) when the route is ridden
