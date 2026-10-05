@@ -111,3 +111,5 @@ _No bugs marked as fixed yet._
 - **BUG-004** — Phase 17, commit 459a123. Causes found from traces and fixed at the source (D42); emulator check 59/60
   cold starts across mobile data / Wi-Fi / no network (the miss: emulator engine latency, passed with a longer window).
   Field check: NEEDS OWNER N17 in `TZ_PROGRESS.md`.
+- **FEAT-001** — Phase 18. Bars hidden on the ride, back elsewhere; touch targets above the gesture strip (D43).
+  Field check: NEEDS OWNER N18.

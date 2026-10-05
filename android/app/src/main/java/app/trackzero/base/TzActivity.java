@@ -14,6 +14,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.view.MotionEvent;
+import android.view.WindowManager;
 import android.widget.Toast;
 import androidx.activity.EdgeToEdge;
 import androidx.activity.SystemBarStyle;
@@ -128,6 +129,13 @@ public class TzActivity extends BaseMwmFragmentActivity
   {
     // Transparent bars with light icons over the black map.
     EdgeToEdge.enable(this, SystemBarStyle.dark(Color.TRANSPARENT), SystemBarStyle.dark(Color.TRANSPARENT));
+    // The map and the immersive ride reach into a camera cutout at the top; TrackZero content keeps clear of it.
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P)
+    {
+      final WindowManager.LayoutParams lp = getWindow().getAttributes();
+      lp.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
+      getWindow().setAttributes(lp);
+    }
   }
 
   @Override

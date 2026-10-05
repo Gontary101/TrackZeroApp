@@ -8,7 +8,6 @@ import android.widget.Toast;
 import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.Fragment;
@@ -70,6 +69,7 @@ public final class TzNavigator
   private static Screen sCurrent = Screen.MAP;
   private static int sTopInset;
   private static int sBottomInset;
+  private static int sGestureInset;
 
   private static final OnBackPressedCallback sBack = new OnBackPressedCallback(false) {
     @Override
@@ -124,9 +124,14 @@ public final class TzNavigator
     sIsland = island;
 
     ViewCompat.setOnApplyWindowInsetsListener(root, (v, windowInsets) -> {
-      final Insets bars = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars());
-      sTopInset = bars.top;
-      sBottomInset = bars.bottom;
+      final int types = WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout();
+      // The top whether the status bar shows or not: the immersive ride must not move when a swipe reveals it.
+      final int top = windowInsets.getInsetsIgnoringVisibility(types).top;
+      final int bottom = windowInsets.getInsets(types).bottom;
+      sTopInset = top;
+      sBottomInset = bottom;
+      sGestureInset = Math.max(windowInsets.getInsets(WindowInsetsCompat.Type.mandatorySystemGestures()).bottom,
+                               windowInsets.getInsetsIgnoringVisibility(WindowInsetsCompat.Type.navigationBars()).bottom);
       applyInsets();
       return windowInsets;
     });
@@ -186,6 +191,15 @@ public final class TzNavigator
   }
 
   /** Navigation bar / gesture area height in px; screens place bottom content above it. */
+  /**
+   * The bottom strip the system keeps for its gestures, whether the navigation bar shows or not. With the bars hidden
+   * (the immersive ride) touches there do not reliably reach the app (D43): what the rider touches stays above it.
+   */
+  public static int gestureInset()
+  {
+    return sGestureInset;
+  }
+
   public static int bottomInset()
   {
     return sBottomInset;

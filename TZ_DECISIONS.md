@@ -475,3 +475,16 @@ after the preview appears, GPS moving): 3 of 3 starts failed before the fix. The
   overtake the visible area, so the rider was placed in the preview's area. The order is kept (the camera follows
   the area in the queue); the start check measures correctness with a longer window and the latency is a phone check
   (NEEDS OWNER N17).
+
+## D43 · Immersive ride: touch targets stay above the system's gesture strip (Phase 18)
+The plan sets the ride's bottom inset to 0 once the bars are hidden. Tested on the emulator (gesture and 3-button
+navigation): with the bars hidden, touches in the bottom strip the system keeps for its gestures
+(`mandatorySystemGestures`, 48dp here) are not reliably delivered. 4 of 4 taps on the page handle there were lost, and
+the first hold on HOLD TO END did nothing. So the map and the pages still run to the bottom edge, but what the rider
+touches (handle, RESUME, the controls sheet) sits above that strip (`TzNavigator.gestureInset()`: the larger of the
+mandatory gesture inset and the navigation bar's height, read whether the bar shows or not). The top uses the status bar
+height whether it shows or not, so a swipe that reveals the bars moves nothing.
+
+Emulator note: the debug engine (AddressSanitizer, no optimisation) falls far behind on this emulator. Route line
+changes were applied up to a minute late after an off-route detour, which looked like a line left on B1 after the ride.
+The trace shows TrackZero's removals were sent in order; it is lag, not a lost line. Not chased further. Phone check N18.

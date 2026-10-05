@@ -34,21 +34,21 @@ tap 338 2200
 tap 540 "${CARD_Y:-1064}" 3
 tap 540 2160 5
 "$here/measure.sh" "R2 route ride (map page)" $win "$pkg"
-adb shell input swipe 1000 1300 80 1300 120; sleep 2
+adb shell input swipe 880 1300 200 1300 120; sleep 2
 "$here/measure.sh" "R4 speed page" $win "$pkg"
-adb shell input swipe 1000 1300 80 1300 120; sleep 2
+adb shell input swipe 880 1300 200 1300 120; sleep 2
 "$here/measure.sh" "R5 climb page" $win "$pkg"
-adb shell input swipe 80 1300 1000 1300 120; sleep 2
-adb shell input swipe 80 1300 1000 1300 120; sleep 2
-adb shell input tap 540 2290; sleep 2
+adb shell input swipe 200 1300 880 1300 120; sleep 2
+adb shell input swipe 200 1300 880 1300 120; sleep 2
+adb shell input tap 540 "${HANDLE_Y:-2208}"; sleep 2
 "$here/measure.sh" "R6 controls open (over the map page)" $win "$pkg"
 adb shell input keyevent KEYCODE_BACK; sleep 2
 adb shell input keyevent KEYCODE_SLEEP; sleep 2
 "$here/measure.sh" "Screen off (ride recording)" $win "$pkg"
 adb shell input keyevent KEYCODE_WAKEUP; sleep 2
 # End and save the ride (R6 > hold END > R8 > DONE) so the next run starts clean.
-adb shell input tap 540 2290; sleep 2
-adb shell input swipe 540 2214 541 2214 2600; sleep 4
+adb shell input tap 540 "${HANDLE_Y:-2208}"; sleep 2
+adb shell input swipe 540 "${END_Y:-2151}" 540 "${END_Y:-2151}" 2600; sleep 4
 tap 798 2214
 
 echo "## Battery stats (since the reset)"

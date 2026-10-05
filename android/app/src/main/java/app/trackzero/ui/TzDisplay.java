@@ -7,8 +7,11 @@ import android.view.Window;
 import android.view.WindowManager;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsCompat;
+import androidx.core.view.WindowInsetsControllerCompat;
 
-/** The display's refresh rate. */
+/** The display's refresh rate and system bars. */
 public final class TzDisplay
 {
   /** The lowest rate that still looks smooth. */
@@ -33,6 +36,25 @@ public final class TzDisplay
       return;
     lp.preferredDisplayModeId = id;
     window.setAttributes(lp);
+  }
+
+  /**
+   * The ride screen shows no status bar and no navigation bar (FEAT-001). A swipe from an edge shows them for a moment
+   * over the screen; they hide again by themselves. System gestures keep working.
+   */
+  public static void setImmersive(@NonNull Activity activity, boolean on)
+  {
+    final Window window = activity.getWindow();
+    final WindowInsetsControllerCompat c = WindowCompat.getInsetsController(window, window.getDecorView());
+    if (on)
+    {
+      c.setSystemBarsBehavior(WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
+      c.hide(WindowInsetsCompat.Type.systemBars());
+    }
+    else
+    {
+      c.show(WindowInsetsCompat.Type.systemBars());
+    }
   }
 
   @NonNull

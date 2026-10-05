@@ -17,6 +17,11 @@ Collected from the v2 phases; each says what to do, what to look at and what cou
   two thirds of the screen height? Pass: every start shows the rider and the line correctly from the first second (or
   from the first GPS position, indoors), no jumps, no zoom in/out; heading-up within about a second. If one fails:
   About › tap the version 7 times › Share trace, and send the file.
+- **N18 · Immersive ride (FEAT-001, Phase 18).** On a ride, no status bar or navigation bar on all three pages and with
+  the controls open. Swipe from the top or bottom edge: the bars appear briefly over the ride and nothing moves. Tap the
+  handle 10 times: it opens the controls every time. The first hold on HOLD TO END works. A camera hole does not cover
+  the turn card. After a ride with an off-route detour, B1 shows no leftover route line. Leave the ride (summary, Home
+  and back): the bars are back outside the ride. Pass: all of these.
 
 ## Phase 0 — Recon and baseline build
 
@@ -345,3 +350,19 @@ it led to).
   18. The final version sends zoom levels, which cannot add up.
 - Tests: `FollowRequestTest` (6), `RideZoomTest` (6), `TzRouteLayerTest` (4); 185 JVM tests pass.
 - Smoke test (Appendix D): all steps pass, no crash. The script's page swipes now wait 3 s (one was dropped at 2 s).
+
+## Phase 18 — Immersive ride (FEAT-001)
+
+- `TzDisplay.setImmersive`: bars hidden while the ride screen is started, shown again when it stops (summary, other
+  apps, background). Swipe from an edge shows them for a moment (`BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE`).
+- `TzActivity`: `LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES`. `TzNavigator`: insets `systemBars | displayCutout`, the
+  top read ignoring visibility (steady when the bars are revealed); also fixed an early return I had added there, which
+  left the island under the 3-button bar after a navigation-mode change.
+- Deviation (D43): the ride's touch targets sit above the system gesture strip, where touches are not reliably delivered
+  with the bars hidden; the map and pages reach the edge.
+- Checked on the emulator, gesture and 3-button navigation: no bars on R2, R4, R5 and the open sheet; a top-edge swipe
+  reveals the status bar without moving the ride; R8 and B1 show the bars; handle tap 4/4; END hold works first time.
+  Android shows its own one-time "Viewing full screen" hint the first time.
+- Smoke test passes. The scripts' touch points are now variables, and page swipes start away from the screen edges:
+  in immersive mode an edge swipe reveals the bars instead of reaching the pager.
+- Time lost on an emulator artifact (D43 note): a route line removed about a minute late by the slow debug engine.

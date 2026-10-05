@@ -321,6 +321,7 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
     mBound = requireContext().bindService(new Intent(requireContext(), TzRideService.class), mConnection, 0);
     applyKeepAwake();
     TzDisplay.limitRefreshRate(requireActivity(), true);
+    TzDisplay.setImmersive(requireActivity(), true);
     setPage(mPager.getCurrentItem());
     mHandler.post(mTick);
   }
@@ -332,6 +333,7 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
     mHandler.removeCallbacks(mTick);
     requireActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
     TzDisplay.limitRefreshRate(requireActivity(), false);
+    TzDisplay.setImmersive(requireActivity(), false);
     if (mService != null)
       mService.removeListener(this);
     if (mBound)
@@ -361,8 +363,13 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
   }
 
   @Override
-  public void onInsets(int top, int bottom)
+  public void onInsets(int top, int navigationBar)
   {
+    // Immersive (FEAT-001): the map and the pages reach the bottom edge, and bars shown for a moment by a swipe go over
+    // the ride, which does not move. What the rider touches (handle, RESUME, the sheet) stays above the system's
+    // gesture strip, where touches are not reliably delivered with the bars hidden (D43). The top keeps the status
+    // bar's height whether it shows or not: clear of a camera hole, and steady.
+    final int bottom = TzNavigator.gestureInset();
     mTopInset = top;
     mBottomInset = bottom;
     final int handle = getResources().getDimensionPixelSize(R.dimen.tz_handle_h);

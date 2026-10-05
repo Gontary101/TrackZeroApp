@@ -59,8 +59,8 @@ for state in $states; do
     echo "$name $(head -1 "$out/$name.result") $(tail -n +2 "$out/$name.result" | tr '\n' ' ')"
     kill "$feeder" 2> /dev/null; feeder=
     # End and save the ride: the handle opens the sheet, hold END, DONE.
-    tap 540 2290 2
-    adb shell input swipe 540 2214 541 2214 2600; sleep 4
+    tap 540 "${HANDLE_Y:-2208}" 2
+    adb shell input swipe 540 "${END_Y:-2151}" 540 "${END_Y:-2151}" 2600; sleep 4
     tap 798 2214 1
   done
 done

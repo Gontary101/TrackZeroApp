@@ -10,13 +10,17 @@ out=${1:?out dir}
 gpx=${2:-$HOME/Downloads/GPS_Routes/Aubière - Clermont-Ferrand (6.6km).gpx}
 pkg=${PKG:-app.trackzero.debug}
 card_y=${CARD_Y:-1064}
+# The ride's touch points (gesture navigation; D43 keeps them above the system's gesture strip).
+handle_y=${HANDLE_Y:-2208}
+pause_y=${PAUSE_Y:-1951}
+end_y=${END_Y:-2151}
 mkdir -p "$out"
 n=0
 shot() { n=$((n + 1)); adb exec-out screencap -p > "$out/$(printf %02d $n)_$1.png"; echo "  shot $(printf %02d $n)_$1"; }
 tap() { adb shell input tap "$1" "$2"; sleep "${3:-2}"; }
 island() { case $1 in map) tap 148 2200;; routes) tap 338 2200;; ride) tap 540 2200 4;; search) tap 740 2200;; more) tap 930 2200;; esac; }
-sheet() { adb shell input tap 540 2290; sleep 2; }
-hold_end() { adb shell input swipe 540 2214 541 2214 2600; sleep 4; }
+sheet() { adb shell input tap 540 "$handle_y"; sleep 2; }
+hold_end() { adb shell input swipe 540 "$end_y" 540 "$end_y" 2600; sleep 4; }
 feeder=
 feed() { # feed <start m> <offset m>
   [ -n "$feeder" ] && kill "$feeder" 2> /dev/null
@@ -47,18 +51,18 @@ feed 0 0
 tap 540 2160 1; shot R2_1s
 sleep 4; shot R2_5s
 echo "5. pages"
-adb shell input swipe 1000 1300 80 1300 120; sleep 2; shot R4
-adb shell input swipe 1000 1300 80 1300 120; sleep 2; shot R5
-adb shell input swipe 80 1300 1000 1300 120; sleep 3
-adb shell input swipe 80 1300 1000 1300 120; sleep 3; shot R2_back
+adb shell input swipe 880 1300 200 1300 120; sleep 2; shot R4
+adb shell input swipe 880 1300 200 1300 120; sleep 2; shot R5
+adb shell input swipe 200 1300 880 1300 120; sleep 3
+adb shell input swipe 200 1300 880 1300 120; sleep 3; shot R2_back
 echo "6. controls sheet"
-tap 540 2290; shot R6_tap  # the handle opens the sheet
+tap 540 "$handle_y"; shot R6_tap  # the handle opens the sheet
 adb shell input keyevent KEYCODE_BACK; sleep 2; shot R2_closed
-adb shell input swipe 540 2230 540 900 400; sleep 2; shot R6_swipe
+adb shell input swipe 540 "$handle_y" 540 900 400; sleep 2; shot R6_swipe
 adb shell input keyevent KEYCODE_BACK; sleep 1
 echo "7. pause / resume"
-sheet; tap 540 2014 3; shot R7
-sheet; tap 540 2014 3; shot R2_resumed
+sheet; tap 540 "$pause_y" 3; shot R7
+sheet; tap 540 "$pause_y" 3; shot R2_resumed
 echo "8. off route 80 m and back"
 feed "$(where)" 80; sleep 9; shot R3; sleep 8; shot R3_leg
 feed "$(where)" 0; sleep 15; shot R2_back_on_route
