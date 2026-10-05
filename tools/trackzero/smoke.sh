@@ -11,7 +11,7 @@ gpx=${2:-$HOME/Downloads/GPS_Routes/Aubière - Clermont-Ferrand (6.6km).gpx}
 pkg=${PKG:-app.trackzero.debug}
 card_y=${CARD_Y:-1064}
 # The ride's touch points (gesture navigation; D43 keeps them above the system's gesture strip).
-handle_y=${HANDLE_Y:-2208}
+handle_y=${HANDLE_Y:-2229}
 pause_y=${PAUSE_Y:-1951}
 end_y=${END_Y:-2151}
 mkdir -p "$out"
@@ -51,10 +51,10 @@ feed 0 0
 tap 540 2160 1; shot R2_1s
 sleep 4; shot R2_5s
 echo "5. pages"
-adb shell input swipe 880 1300 200 1300 120; sleep 2; shot R4
-adb shell input swipe 880 1300 200 1300 120; sleep 2; shot R5
-adb shell input swipe 200 1300 880 1300 120; sleep 3
-adb shell input swipe 200 1300 880 1300 120; sleep 3; shot R2_back
+adb shell input swipe 880 1300 200 1300 300; sleep 2; shot R4
+adb shell input swipe 880 1300 200 1300 300; sleep 2; shot R5
+adb shell input swipe 200 1300 880 1300 300; sleep 3
+adb shell input swipe 200 1300 880 1300 300; sleep 3; shot R2_back
 echo "6. controls sheet"
 tap 540 "$handle_y"; shot R6_tap  # the handle opens the sheet
 adb shell input keyevent KEYCODE_BACK; sleep 2; shot R2_closed
@@ -74,7 +74,7 @@ echo "   feeder moved $d0 -> $(where) m"
 echo "10. end, export, done"
 sheet; hold_end; shot R8
 tap 283 2214 3; shot share_sheet
-adb shell input keyevent KEYCODE_BACK; sleep 2
+adb shell input keyevent KEYCODE_BACK; sleep 3  # the chooser takes a moment to go
 tap 798 2214; shot B1_after_ride
 kill "$feeder" 2> /dev/null; feeder=
 echo "11. free ride"

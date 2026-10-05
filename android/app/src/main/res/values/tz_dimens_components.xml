@@ -27,6 +27,7 @@
   <dimen name="tz_dot_gap">6dp</dimen>
   <dimen name="tz_grabber_w">36dp</dimen>
   <dimen name="tz_grabber_h">4dp</dimen>
+  <dimen name="tz_handle_row_gap">6dp</dimen>  <!-- grabber to dots (Phase 19) -->
   <dimen name="tz_then_icon">20dp</dimen>
   <dimen name="tz_then_row_h">24dp</dimen>
   <dimen name="tz_button_icon">22dp</dimen>
@@ -99,7 +100,7 @@
   <dimen name="tz_ride_cell_pad_h">20dp</dimen>
   <dimen name="tz_ride_cell_gap">10dp</dimen>
   <dimen name="tz_ride_pill_pad">16dp</dimen>
-  <dimen name="tz_ride_above_handle">8dp</dimen>
+  <dimen name="tz_ride_above_handle">4dp</dimen>
   <dimen name="tz_ride_resume_above_handle">12dp</dimen>
   <dimen name="tz_climb_icon">30dp</dimen>
   <dimen name="tz_climb_pill_h">28dp</dimen>

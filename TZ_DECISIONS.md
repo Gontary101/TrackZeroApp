@@ -488,3 +488,15 @@ height whether it shows or not, so a swipe that reveals the bars moves nothing.
 Emulator note: the debug engine (AddressSanitizer, no optimisation) falls far behind on this emulator. Route line
 changes were applied up to a minute late after an off-route detour, which looked like a line left on B1 after the ride.
 The trace shows TrackZero's removals were sent in order; it is lag, not a lost line. Not chased further. Phone check N18.
+
+## D44 · BUG-003: Material's sheet moved the handle into the island (Phase 19)
+Measured on the emulator (view bounds from `dumpsys activity top`): the controls sheet's top sat 10 px above the
+peek height TrackZero set. Material's `BottomSheetBehavior` raises the peek height to at least the system's mandatory
+gesture inset plus 48dp unless `gestureInsetBottomIgnored` is set. TrackZero placed the stats island from its own peek
+(handle + navigation bar inset), so on a gesture-navigation phone (mandatory inset about 48dp) the handle was pushed
+about 70 px up into the island. The bind path (pages bound before the first insets) was not it: `onInsets` laid them
+out again. Fix: the sheet ignores that adjustment, and one function (`applyBottomLayout`, arithmetic in
+`ui/RideBottomLayout`) places the handle, islands, RESUME, the speed page and the sheet's content from one base. It runs
+on insets, on page bind and on resize. The base is the gesture strip of D43, not 0. Handle 34dp, 4dp to the island,
+grabber-to-dots gap 6dp. Also new (Flow board): a fast upward swipe starting in the bottom 120dp opens the sheet. It is
+read from the activity's touch stream, so the pager keeps its horizontal swipes.

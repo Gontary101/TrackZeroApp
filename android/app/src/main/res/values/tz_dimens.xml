@@ -22,7 +22,7 @@
   <dimen name="tz_island_h">72dp</dimen>  <dimen name="tz_island_pad">6dp</dimen>
   <dimen name="tz_island_slot_h">60dp</dimen> <dimen name="tz_island_ride_w">76dp</dimen>
   <dimen name="tz_stats_island_h">88dp</dimen>
-  <dimen name="tz_handle_h">44dp</dimen>
+  <dimen name="tz_handle_h">34dp</dimen>
   <dimen name="tz_map_btn">56dp</dimen>
   <dimen name="tz_maneuver_well">88dp</dimen> <dimen name="tz_maneuver_glyph">56dp</dimen>
   <dimen name="tz_route_card_h">104dp</dimen> <dimen name="tz_silhouette">80dp</dimen>

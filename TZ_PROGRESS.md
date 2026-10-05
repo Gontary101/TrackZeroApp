@@ -19,7 +19,8 @@ Collected from the v2 phases; each says what to do, what to look at and what cou
   About › tap the version 7 times › Share trace, and send the file.
 - **N18 · Immersive ride (FEAT-001, Phase 18).** On a ride, no status bar or navigation bar on all three pages and with
   the controls open. Swipe from the top or bottom edge: the bars appear briefly over the ride and nothing moves. Tap the
-  handle 10 times: it opens the controls every time. The first hold on HOLD TO END works. A camera hole does not cover
+  handle 10 times: it opens the controls every time. A quick upward swipe from just above the handle opens them too.
+  The handle sits under the stats island with a small gap, never overlapping (BUG-003), on R1–R7. The first hold on HOLD TO END works. A camera hole does not cover
   the turn card. After a ride with an off-route detour, B1 shows no leftover route line. Leave the ride (summary, Home
   and back): the bars are back outside the ride. Pass: all of these.
 
@@ -366,3 +367,19 @@ it led to).
 - Smoke test passes. The scripts' touch points are now variables, and page swipes start away from the screen edges:
   in immersive mode an edge swipe reveals the bars instead of reaching the pager.
 - Time lost on an emulator artifact (D43 note): a route line removed about a minute late by the slow debug engine.
+
+## Phase 19 — Ride handle at the bottom edge (BUG-003)
+
+- Cause (D44): Material's bottom sheet raised its own peek height to the gesture inset + 48dp, while the islands
+  were placed from TrackZero's peek. Measured 10 px of it on the emulator; about 70 px on a gesture-navigation phone
+  with the old layout.
+- `applyBottomLayout()` / `RideBottomLayout`: one base for the handle, islands, RESUME, page padding and sheet content;
+  called from insets, page bind and resize; `setGestureInsetBottomIgnored(true)`. Handle 34dp, island 4dp above it,
+  grabber-to-dots 6dp. Fast swipe up from the bottom 120dp opens the sheet.
+- Checked: island bottom 2174 px, sheet top 2185 px (4dp); gesture and 3-button navigation; R7 with RESUME;
+  360 × 640 dp at the largest font: handle below the island, nothing overlaps.
+- **Fixed on the way:** a configuration change (display size, font) crashed the ride screen: `fitGrid`, posted from
+  the layout pass, ran after the fragment had detached. Both posted fit methods now check `isAdded()`.
+- Tests: `RideBottomLayoutTest` (2). Smoke test: steps 1–21 pass; the run then lost its way in Android's share chooser
+  (script: Back now waits 3 s). Page swipes in the scripts are 300 ms (adb's 120 ms swipe sends too few move events).
+- `shots/R1`–`R7.png` updated.

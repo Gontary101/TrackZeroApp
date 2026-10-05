@@ -14,8 +14,10 @@ import android.os.Looper;
 import android.os.SystemClock;
 import android.text.format.DateFormat;
 import android.util.TypedValue;
+import android.view.GestureDetector;
 import android.view.HapticFeedbackConstants;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
@@ -48,6 +50,7 @@ import app.trackzero.ride.TzRideService;
 import app.trackzero.routes.Route;
 import app.trackzero.routes.RouteStore;
 import app.trackzero.ui.TzChip;
+import app.trackzero.ui.RideBottomLayout;
 import app.trackzero.ui.TzDisplay;
 import app.trackzero.ui.TzElevationProfileView;
 import app.trackzero.ui.TzHoldButton;
@@ -74,6 +77,10 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
   private static final int PAGE_SPEED = 1;
   private static final int PAGE_CLIMB = 2;
   private static final long REFRESH_MS = 1000;
+  /** An upward swipe starting this close to the bottom opens the controls... */
+  private static final float SWIPE_UP_ZONE_DP = 120;
+  /** ...when it is at least this fast (dp per second). */
+  private static final float SWIPE_UP_MIN_DPS = 1000;
   /** A fix rendered this close to a tick makes the tick unnecessary. */
   private static final long TICK_SLACK_MS = 100;
   /** The rider arrow sits at 67 % of the screen height (R1 note). */
@@ -191,6 +198,38 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
     }
   };
 
+  /**
+   * A quick upward swipe that starts near the bottom of a ride page opens the controls (Flow board), like dragging the
+   * handle. Seen before normal dispatch, so the pager keeps its horizontal swipes and nothing is intercepted.
+   */
+  private final TzMap.TouchObserver mSwipeUp = new TzMap.TouchObserver() {
+    @Nullable
+    private GestureDetector mDetector;
+
+    @Override
+    public void onTouch(@NonNull MotionEvent e)
+    {
+      if (mDetector == null)
+        mDetector = new GestureDetector(requireContext(), new GestureDetector.SimpleOnGestureListener() {
+          @Override
+          public boolean onFling(@Nullable MotionEvent down, @NonNull MotionEvent up, float vx, float vy)
+          {
+            final View root = getView();
+            if (down == null || root == null || mSheetBehavior.getState() != BottomSheetBehavior.STATE_COLLAPSED)
+              return false;
+            final float dp = getResources().getDisplayMetrics().density;
+            final boolean fromBottom = down.getY() >= root.getHeight() - SWIPE_UP_ZONE_DP * dp;
+            final boolean upward = vy < -SWIPE_UP_MIN_DPS * dp && Math.abs(vy) > 2 * Math.abs(vx);
+            if (!fromBottom || !upward)
+              return false;
+            mSheetBehavior.setState(BottomSheetBehavior.STATE_EXPANDED);
+            return true;
+          }
+        });
+      mDetector.onTouchEvent(e);
+    }
+  };
+
   @Nullable
   @Override
   public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
@@ -260,7 +299,10 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
     // Keep the rider at 67 % of the height whatever the screen size.
     view.addOnLayoutChangeListener((v, l, t, r, b, ol, ot, or, ob) -> {
       if (b - t != ob - ot)
+      {
+        applyBottomLayout();
         applyVisibleArea();
+      }
     });
     super.onViewCreated(view, savedInstanceState);
   }
@@ -268,6 +310,9 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
   private void setUpSheet()
   {
     mSheetBehavior = BottomSheetBehavior.from(mSheet);
+    // The peek height is ours (applyBottomLayout): by default the behaviour raises it to the system gesture strip
+    // plus 48dp, which put the handle into the stats island on gesture-navigation phones (BUG-003, D44).
+    mSheetBehavior.setGestureInsetBottomIgnored(true);
     mSheetBehavior.setHideable(false);
     mSheetBehavior.setSkipCollapsed(false);
     mSheetBehavior.setFitToContents(true);
@@ -324,12 +369,14 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
     TzDisplay.setImmersive(requireActivity(), true);
     setPage(mPager.getCurrentItem());
     mHandler.post(mTick);
+    TzMap.addTouchObserver(mSwipeUp);
   }
 
   @Override
   public void onStop()
   {
     super.onStop();
+    TzMap.removeTouchObserver(mSwipeUp);
     mHandler.removeCallbacks(mTick);
     requireActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
     TzDisplay.limitRefreshRate(requireActivity(), false);
@@ -369,51 +416,59 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
     // the ride, which does not move. What the rider touches (handle, RESUME, the sheet) stays above the system's
     // gesture strip, where touches are not reliably delivered with the bars hidden (D43). The top keeps the status
     // bar's height whether it shows or not: clear of a camera hole, and steady.
-    final int bottom = TzNavigator.gestureInset();
     mTopInset = top;
-    mBottomInset = bottom;
-    final int handle = getResources().getDimensionPixelSize(R.dimen.tz_handle_h);
-    mSheetBehavior.setPeekHeight(handle + bottom);
-    mControls.setPadding(mControls.getPaddingLeft(), mControls.getPaddingTop(), mControls.getPaddingRight(),
-                         bottom + getResources().getDimensionPixelSize(R.dimen.tz_space_16));
-    final FrameLayout.LayoutParams rlp = (FrameLayout.LayoutParams) mResume.getLayoutParams();
-    rlp.bottomMargin = bottom + handle + getResources().getDimensionPixelSize(R.dimen.tz_ride_resume_above_handle);
-    mResume.setLayoutParams(rlp);
-    layoutPages();
+    mBottomInset = TzNavigator.gestureInset();
+    applyBottomLayout();
     applyVisibleArea();
   }
 
-  /** Puts page content under the status bar and above the handle; pages may be created after the insets. */
-  private void layoutPages()
+  /**
+   * The one place the ride's bottom is laid out (BUG-003): the handle, the islands, RESUME, the speed page and the
+   * sheet's content, all from the same base. Runs on insets, when a page is bound and when the screen is resized.
+   */
+  private void applyBottomLayout()
   {
-    final int handle = getResources().getDimensionPixelSize(R.dimen.tz_handle_h);
+    final RideBottomLayout b = new RideBottomLayout(
+        mBottomInset, getResources().getDimensionPixelSize(R.dimen.tz_handle_h),
+        getResources().getDimensionPixelSize(R.dimen.tz_ride_above_handle),
+        getResources().getDimensionPixelSize(R.dimen.tz_ride_resume_above_handle),
+        getResources().getDimensionPixelSize(R.dimen.tz_space_16));
+    mSheetBehavior.setPeekHeight(b.peek);
+    mControls.setPadding(mControls.getPaddingLeft(), mControls.getPaddingTop(), mControls.getPaddingRight(),
+                         b.controlsPadding);
+    setBottomMargin(mResume, b.resumeMargin);
     final int top = mTopInset + getResources().getDimensionPixelSize(R.dimen.tz_top_inset_extra);
     if (mMapTop != null)
     {
       setTopMargin(mMapTop, top);
       setTopMargin(mTurn, top);
-      final FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams) mStats.getLayoutParams();
-      lp.bottomMargin = mBottomInset + handle + getResources().getDimensionPixelSize(R.dimen.tz_ride_above_handle);
-      mStats.setLayoutParams(lp);
+      setBottomMargin(mStats, b.islandMargin);
       // The engine's ruler and its OSM attribution go above the island instead of under the handle.
       TzMap.setRulerPosition(getResources().getDimensionPixelSize(R.dimen.tz_gutter),
-                             lp.bottomMargin + getResources().getDimensionPixelSize(R.dimen.tz_stats_island_h)
+                             b.islandMargin + getResources().getDimensionPixelSize(R.dimen.tz_stats_island_h)
                                  + getResources().getDimensionPixelSize(R.dimen.tz_space_12));
     }
     if (mSpeedHeader != null)
     {
       setTopMargin(mSpeedHeader, top);
       final View page = (View) mSpeedHeader.getParent();
-      page.setPadding(0, 0, 0, mBottomInset + handle);
+      page.setPadding(0, 0, 0, b.pagePadding);
       page.post(this::fitGrid);
     }
     if (mClimbContent != null)
     {
       setTopMargin(mClimbContent, top);
-      final FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams) mClimbStats.getLayoutParams();
-      lp.bottomMargin = mBottomInset + handle + getResources().getDimensionPixelSize(R.dimen.tz_ride_above_handle);
-      mClimbStats.setLayoutParams(lp);
+      setBottomMargin(mClimbStats, b.islandMargin);
     }
+  }
+
+  private static void setBottomMargin(@NonNull View v, int px)
+  {
+    final FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams) v.getLayoutParams();
+    if (lp.bottomMargin == px)
+      return;
+    lp.bottomMargin = px;
+    v.setLayoutParams(lp);
   }
 
   /**
@@ -425,7 +480,8 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
    */
   private void fitGrid()
   {
-    if (mGrid == null || mHero == null || mHeroUnit == null || mCells == null)
+    // Posted: the screen may have gone in between (a configuration change recreates it).
+    if (!isAdded() || mGrid == null || mHero == null || mHeroUnit == null || mCells == null)
       return;
     final View page = (View) mGrid.getParent();
     final View heroBox = (View) mHero.getParent();
@@ -490,7 +546,7 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
   /** R5: the profile is 230dp (board) unless that would run under the island on a short screen. */
   private void fitProfile()
   {
-    if (mProfile == null || mClimbContent == null || mClimbStats == null || mClimbStats.getTop() == 0)
+    if (!isAdded() || mProfile == null || mClimbContent == null || mClimbStats == null || mClimbStats.getTop() == 0)
       return;
     final int board = getResources().getDimensionPixelSize(R.dimen.tz_climb_profile_h);
     final int overlap = mClimbContent.getBottom() + getResources().getDimensionPixelSize(R.dimen.tz_space_16)
@@ -1061,7 +1117,7 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
       mRangeFrom = mRangeTo = Double.NaN;
     }
     }
-    layoutPages();
+    applyBottomLayout();
     render();
   }
 }

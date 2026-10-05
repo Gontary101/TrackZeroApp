@@ -113,3 +113,5 @@ _No bugs marked as fixed yet._
   Field check: NEEDS OWNER N17 in `TZ_PROGRESS.md`.
 - **FEAT-001** — Phase 18. Bars hidden on the ride, back elsewhere; touch targets above the gesture strip (D43).
   Field check: NEEDS OWNER N18.
+- **BUG-003** — Phase 19. Material's sheet moved the handle up into the island (D44); one bottom layout now, handle
+  under the island on every page. Field check: NEEDS OWNER N18 (handle part).

@@ -45,7 +45,7 @@ public class TzPageHandle extends View
     mDotSize = getResources().getDimension(R.dimen.tz_dot);
     mActiveW = getResources().getDimension(R.dimen.tz_dot_active_w);
     mDotGap = getResources().getDimension(R.dimen.tz_dot_gap);
-    mRowGap = getResources().getDimension(R.dimen.tz_space_8);
+    mRowGap = getResources().getDimension(R.dimen.tz_handle_row_gap);
     mWeights[0] = 1f;
     updateDescription();
   }
