@@ -31,6 +31,7 @@ import app.trackzero.follow.RoutedPath;
 import app.trackzero.format.TzFormat;
 import app.trackzero.geo.Geo;
 import app.trackzero.ride.TzRide;
+import app.trackzero.routes.Profile;
 import app.trackzero.routes.Route;
 import app.trackzero.routes.RouteGeometry;
 import app.trackzero.routes.RouteStats;
@@ -38,13 +39,16 @@ import app.trackzero.routes.RouteStore;
 import app.trackzero.ui.TzElevationProfileView;
 import app.trackzero.ui.TzMetricView;
 import app.trackzero.ui.TzMotion;
+import app.trackzero.ui.TzProfilePill;
 import java.util.Locale;
 
 /**
  * B5 · Route preview and B6 · panning: the route on the map, its card, START RIDE. A route of the library, or the
- * bike route to a place found in search (Phase 15: worked out from the rider's position).
+ * bike route to a place found in search (Phase 15: worked out from the rider's position). The profile pill (Phase 22)
+ * sets the ride's profile: the path to a place is worked out again for it.
  */
-public class TzPreviewScreen extends TzScreen implements TzMap.TouchObserver, TzLocation.Listener
+public class TzPreviewScreen extends TzScreen
+    implements TzMap.TouchObserver, TzLocation.Listener, TzProfileSheet.Listener
 {
   /** A place instead of a route of the library: its name and where it is. */
   public static final String ARG_PLACE_NAME = "placeName";
@@ -77,6 +81,11 @@ public class TzPreviewScreen extends TzScreen implements TzMap.TouchObserver, Tz
   private View mPeek;
   @Nullable
   private ImageButton mStar;
+  @Nullable
+  private TzProfilePill mPill;
+  /** The profile of the path shown (or being worked out). */
+  @NonNull
+  private Profile mProfile = Profile.ROAD;
   private int mBottomMargin;
   private boolean mFavorite;
 
@@ -106,6 +115,10 @@ public class TzPreviewScreen extends TzScreen implements TzMap.TouchObserver, Tz
     mFull = view.findViewById(R.id.tz_preview_full);
     mPeek = view.findViewById(R.id.tz_preview_peek);
     mStar = view.findViewById(R.id.tz_preview_star);
+    mPill = view.findViewById(R.id.tz_preview_profile_pill);
+    mProfile = TzPrefs.profile(requireContext());
+    mPill.setProfile(mProfile);
+    mPill.setListener(v -> TzProfileSheet.show(this));
     view.findViewById(R.id.tz_preview_back).setOnClickListener(v -> back());
     mPeek.setOnClickListener(v -> setCollapsed(false));
     mStar.setOnClickListener(v -> {
@@ -218,18 +231,19 @@ public class TzPreviewScreen extends TzScreen implements TzMap.TouchObserver, Tz
     mRouting = true;
     TzLocation.removeListener(requireContext(), this);
     bindPlace(getString(R.string.tz_preview_finding));
-    TzRouter.route(here.getLatitude(), here.getLongitude(), mPlaceLat, mPlaceLon,
+    TzRouter.route(here.getLatitude(), here.getLongitude(), mPlaceLat, mPlaceLon, mProfile,
                    here.hasBearing() ? here.getBearing() : Double.NaN, this::onPlacePath);
   }
 
-  private void onPlacePath(@Nullable RoutedPath path, boolean mapMissing)
+  private void onPlacePath(@Nullable RoutedPath path, @NonNull TzRouter.Reason reason)
   {
     mRouting = false;
     if (getView() == null)
       return;
     if (path == null)
     {
-      bindPlace(getString(mapMissing ? R.string.tz_preview_no_map : R.string.tz_preview_no_route));
+      bindPlace(getString(reason == TzRouter.Reason.NO_MAP ? R.string.tz_preview_no_map
+                                                           : R.string.tz_preview_no_route));
       return;
     }
     mPath = path;
@@ -238,6 +252,30 @@ public class TzPreviewScreen extends TzScreen implements TzMap.TouchObserver, Tz
     TzRouteLayer.showPath(this, line.lats(), line.lons(), false);
     mBox = extent(line.lats(), line.lons());
     frameRoute();
+  }
+
+  @Override
+  public void onProfileChosen(@NonNull Profile profile)
+  {
+    if (profile == mProfile || getView() == null)
+      return;
+    mProfile = profile;
+    if (mPill != null)
+      mPill.setProfile(profile);
+    // A track is followed whatever the profile (it decides the legs and detours of the ride). The path to a place is
+    // the profile's own: work it out again, dropping the one in flight.
+    if (mPlaceName == null)
+      return;
+    TzRouter.cancel();
+    mRouting = false;
+    mPath = null;
+    TzRouteLayer.hide(this);
+    bindPlace(getString(R.string.tz_preview_finding));
+    final Location here = TzLocation.last(requireContext());
+    if (here != null)
+      onLocation(here);
+    else
+      TzLocation.addListener(requireContext(), this);
   }
 
   /** The card of a ride to a place: what is happening (or the way there), the place, the path's numbers. */

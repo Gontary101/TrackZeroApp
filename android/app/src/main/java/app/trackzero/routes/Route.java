@@ -1,6 +1,7 @@
 package app.trackzero.routes;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -29,11 +30,22 @@ public final class Route
   public final double[] silLat;
   @NonNull
   public final double[] silLon;
+  /** The profile a planned or proposed route was made for (Phase 22); null for an imported GPX. */
+  @Nullable
+  public final Profile profile;
 
   Route(@NonNull String id, @NonNull String name, @NonNull String file, double distanceM, double gainM, double highM,
         @NonNull RouteStats.Kind kind, boolean favorite, long importedAt, long lastRiddenAt, @NonNull double[] silLat,
         @NonNull double[] silLon)
   {
+    this(id, name, file, distanceM, gainM, highM, kind, favorite, importedAt, lastRiddenAt, silLat, silLon, null);
+  }
+
+  Route(@NonNull String id, @NonNull String name, @NonNull String file, double distanceM, double gainM, double highM,
+        @NonNull RouteStats.Kind kind, boolean favorite, long importedAt, long lastRiddenAt, @NonNull double[] silLat,
+        @NonNull double[] silLon, @Nullable Profile profile)
+  {
+    this.profile = profile;
     this.id = id;
     this.name = name;
     this.file = file;
@@ -56,19 +68,21 @@ public final class Route
   @NonNull
   Route withFavorite(boolean f)
   {
-    return new Route(id, name, file, distanceM, gainM, highM, kind, f, importedAt, lastRiddenAt, silLat, silLon);
+    return new Route(id, name, file, distanceM, gainM, highM, kind, f, importedAt, lastRiddenAt, silLat, silLon,
+                     profile);
   }
 
   @NonNull
   Route withName(@NonNull String n)
   {
-    return new Route(id, n, file, distanceM, gainM, highM, kind, favorite, importedAt, lastRiddenAt, silLat, silLon);
+    return new Route(id, n, file, distanceM, gainM, highM, kind, favorite, importedAt, lastRiddenAt, silLat, silLon,
+                     profile);
   }
 
   @NonNull
   Route withLastRiddenAt(long t)
   {
-    return new Route(id, name, file, distanceM, gainM, highM, kind, favorite, importedAt, t, silLat, silLon);
+    return new Route(id, name, file, distanceM, gainM, highM, kind, favorite, importedAt, t, silLat, silLon, profile);
   }
 
   @NonNull
@@ -80,7 +94,7 @@ public final class Route
       sil.put(round5(silLat[i]));
       sil.put(round5(silLon[i]));
     }
-    return new JSONObject()
+    final JSONObject o = new JSONObject()
         .put("id", id)
         .put("name", name)
         .put("file", file)
@@ -93,6 +107,9 @@ public final class Route
         .put("importedAt", importedAt)
         .put("lastRiddenAt", lastRiddenAt)
         .put("sil", sil);
+    if (profile != null)
+      o.put("profile", profile.id);
+    return o;
   }
 
   @NonNull
@@ -111,7 +128,8 @@ public final class Route
     return new Route(o.getString("id"), o.getString("name"), o.getString("file"), o.getDouble("distanceM"),
                      ele ? o.getDouble("gainM") : Double.NaN, ele ? o.getDouble("highM") : Double.NaN,
                      RouteStats.Kind.valueOf(o.getString("kind")), o.getBoolean("favorite"), o.getLong("importedAt"),
-                     o.getLong("lastRiddenAt"), lat, lon);
+                     o.getLong("lastRiddenAt"), lat, lon,
+                     o.has("profile") ? Profile.of(o.getString("profile")) : null);
   }
 
   private static double round5(double v)

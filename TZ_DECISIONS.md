@@ -552,3 +552,25 @@ Cost: R2 82 % CPU and 125 frames in 2 min, against the Phase 16 baseline of 90 %
 The line is not dimmed (the rider is on it; the chevrons show the way), the ETA shows `--:--`, and a buzz marks the
 start as for off route. Guide treats wrong way as on the route: no leg is asked for and a leg is dropped as before.
 The voice says "Wrong way" once per episode (a tone comes in Phase 32).
+
+## D47 · Navigation profiles: the shared foundation (Phase 22)
+`routes/Profile` (Road, Gravel, Walk, Hike; `available()` = Road only for now) goes everywhere a path is asked for.
+- **One router at a time.** `BicyclePath.nativeBuild(lat[], lon[], profile, …)` keeps one `IndexRouter` and the
+  profile it was built for. A path for another profile frees it first. All four profiles build the bicycle router
+  until Phases 24–26 give them their own weights and the pedestrian router. `nativeRelease` as before. The idle check
+  reads `nativeLoadedProfile()` through the debug-only `TzRideDebugActivity` ("router none").
+- **Why no path.** `TzRouter.Callback.onPath(path, Reason)` replaces the `mapMissing` flag: OK, NO_MAP (incl.
+  NeedMoreMaps, FileTooOld), NO_WAY (RouteNotFound, its redress variant, IntermediatePointNotFound), NO_START,
+  NO_END, CANCELLED, ERROR (the rest, or no engine). The mapping lives in `Reason.of`, so it is testable without
+  `TzRouter`'s main-thread Handler.
+- **The ride keeps its profile.** It is a journal record `F,{id}` right after the header, not a sixth header field:
+  the header's last field is the free-text name, and older journals (no `F`) restore as Road. `rides.json` gets
+  `"profile"`; `routes.json` gets an optional `"profile"` (planned and proposed routes, Phase 28). Missing = Road.
+- **Where the profile comes from.** The pill saves the choice to `TzPrefs.profile()` at once. START and a free ride
+  both read it. `Guide.Paths` has no profile parameter: the service's implementation asks the ride's session. That
+  is the same thing with one fewer argument through the pure guide.
+- **Preview.** For a track, changing the profile changes nothing visible yet: legs, detours and time estimates follow it
+  on the ride. For a place, the path is worked out again (the request in flight is cancelled first).
+- **Tests.** Local unit tests have no real `org.json` (Android's stub), and adding a test library is against the
+  no-new-libraries rule. So the JSON fields are one call each to `Profile.of`, which `ProfileTest` covers, and the
+  journal round trip is tested in `RideSessionTest`.

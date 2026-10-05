@@ -2,6 +2,7 @@ package app.trackzero.ride;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import app.trackzero.routes.Profile;
 import java.util.Locale;
 
 /**
@@ -9,6 +10,7 @@ import java.util.Locale;
  * one record per line.
  * <pre>
  * H,1,{startedAt},{routeId or -},{name}     header, first line
+ * F,{profile id}                            the ride's profile (after the header; none: road, Phase 22)
  * D,{lat},{lon}                             a ride to a place: where to (after the header)
  * S                                         the next point starts a new segment
  * P,{time},{lat},{lon},{alt or NaN}         a recorded point
@@ -35,10 +37,13 @@ public final class RideJournal
     /** A ride to a place: where to; NaN otherwise. */
     public final double placeLat;
     public final double placeLon;
+    @NonNull
+    public final Profile profile;
 
     Content(long startedAt, @Nullable String routeId, @NonNull String name, @NonNull RideTrack track,
-            @NonNull RideStats.Snapshot totals, double placeLat, double placeLon)
+            @NonNull RideStats.Snapshot totals, double placeLat, double placeLon, @NonNull Profile profile)
     {
+      this.profile = profile;
       this.startedAt = startedAt;
       this.routeId = routeId;
       this.name = name;
@@ -56,6 +61,11 @@ public final class RideJournal
     out.append("H,").append(VERSION).append(',').append(startedAt).append(',')
         .append(routeId == null ? "-" : routeId).append(',')
         .append(name.replace('\n', ' ').replace('\r', ' ')).append('\n');
+  }
+
+  static void profile(@NonNull StringBuilder out, @NonNull Profile p)
+  {
+    out.append("F,").append(p.id).append('\n');
   }
 
   static void place(@NonNull StringBuilder out, double lat, double lon)
@@ -105,6 +115,7 @@ public final class RideJournal
     RideStats.Snapshot totals = new RideStats.Snapshot(0, 0, 0, 0, 0);
     double placeLat = Double.NaN;
     double placeLon = Double.NaN;
+    Profile profile = Profile.ROAD;
     for (int i = 1; i < lines.length; i++)
     {
       final String[] f = lines[i].split(",");
@@ -113,6 +124,11 @@ public final class RideJournal
         switch (f[0])
         {
         case "S" -> track.breakSegment();
+        case "F" ->
+        {
+          if (f.length == 2)
+            profile = Profile.of(f[1]);
+        }
         case "D" ->
         {
           if (f.length == 3)
@@ -141,6 +157,6 @@ public final class RideJournal
         // A record cut short by a crash: the rest of the journal is still good.
       }
     }
-    return new Content(startedAt, routeId, h[4], track, totals, placeLat, placeLon);
+    return new Content(startedAt, routeId, h[4], track, totals, placeLat, placeLon, profile);
   }
 }

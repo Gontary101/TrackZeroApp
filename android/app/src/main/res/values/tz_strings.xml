@@ -265,4 +265,18 @@
   <string name="tz_maps_delete">Delete</string>
   <string name="tz_maps_update_action">Update</string>
   <string name="tz_maps_no_space">Not enough free space on this phone for this map.</string>
+
+  <!-- Profiles (Phase 22, board N2) -->
+  <string name="tz_profile_title">PROFILE</string>
+  <string name="tz_profile_road">Road</string>
+  <string name="tz_profile_road_desc">Paved roads, quiet where possible</string>
+  <string name="tz_profile_gravel">Gravel</string>
+  <string name="tz_profile_gravel_desc">Quiet roads, gravel, easy tracks</string>
+  <string name="tz_profile_walk">Walk</string>
+  <string name="tz_profile_walk_desc">Footpaths and sidewalks</string>
+  <string name="tz_profile_hike">Hike</string>
+  <string name="tz_profile_hike_desc">Trails first. Check conditions yourself</string>
+  <string name="tz_profile_note">Used for the route to the start, detours and time estimates. Only this profile runs.</string>
+  <string name="tz_cd_profile">Profile: %1$s. Change</string>
+
 </resources>

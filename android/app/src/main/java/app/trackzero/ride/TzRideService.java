@@ -45,6 +45,7 @@ import app.trackzero.follow.RoutedPath;
 import app.trackzero.format.TzFormat;
 import app.trackzero.geo.Geo;
 import app.trackzero.routes.GpxTrack;
+import app.trackzero.routes.Profile;
 import app.trackzero.routes.RouteGeometry;
 import app.trackzero.routes.RouteStore;
 import java.util.List;
@@ -69,6 +70,7 @@ public final class TzRideService extends Service
   private static final String EXTRA_NAME = "name";
   private static final String EXTRA_PLACE_LAT = "placeLat";
   private static final String EXTRA_PLACE_LON = "placeLon";
+  private static final String EXTRA_PROFILE = "profile";
   private static final long JOURNAL_FLUSH_MS = 30_000;
   private static final long NOTIFICATION_UPDATE_MS = 10_000;
   /** Screen off and nothing to say: fixes come in batches this far apart, so the phone sleeps between them. */
@@ -149,21 +151,24 @@ public final class TzRideService extends Service
   }
 
   /** Starts recording a ride; {@code routeId} is null for a free ride. */
-  public static void start(@NonNull Context context, @Nullable String routeId, @NonNull String name)
+  public static void start(@NonNull Context context, @Nullable String routeId, @NonNull String name,
+                           @NonNull Profile profile)
   {
     final Intent i = new Intent(context, TzRideService.class).setAction(ACTION_START)
                          .putExtra(EXTRA_ROUTE_ID, routeId)
-                         .putExtra(EXTRA_NAME, name);
+                         .putExtra(EXTRA_NAME, name)
+                         .putExtra(EXTRA_PROFILE, profile.id);
     ContextCompat.startForegroundService(context, i);
   }
 
   /** Starts a ride to a place along {@code path} (the one previewed), worked out again if the rider leaves it. */
   public static void startTo(@NonNull Context context, @NonNull String name, double lat, double lon,
-                             @NonNull RoutedPath path)
+                             @NonNull RoutedPath path, @NonNull Profile profile)
   {
     sPreviewedPath = path;
     final Intent i = new Intent(context, TzRideService.class).setAction(ACTION_START)
                          .putExtra(EXTRA_NAME, name)
+                         .putExtra(EXTRA_PROFILE, profile.id)
                          .putExtra(EXTRA_PLACE_LAT, lat)
                          .putExtra(EXTRA_PLACE_LON, lon);
     ContextCompat.startForegroundService(context, i);
@@ -212,7 +217,8 @@ public final class TzRideService extends Service
       if (mSession == null)
         startSession(intent.getStringExtra(EXTRA_ROUTE_ID), intent.getStringExtra(EXTRA_NAME),
                      intent.getDoubleExtra(EXTRA_PLACE_LAT, Double.NaN),
-                     intent.getDoubleExtra(EXTRA_PLACE_LON, Double.NaN));
+                     intent.getDoubleExtra(EXTRA_PLACE_LON, Double.NaN),
+                     Profile.of(intent.getStringExtra(EXTRA_PROFILE)));
     }
     else if (ACTION_TOGGLE.equals(action))
     {
@@ -333,7 +339,7 @@ public final class TzRideService extends Service
     changed();
     final RideStore.Finished finished = new RideStore.Finished(s.routeId(), s.name(), s.startedAt(),
                                                                System.currentTimeMillis(), s.track().segments(),
-                                                               totals);
+                                                               totals, s.profile());
     RideStore.get(this).save(finished, ride -> {
       if (ride == null)
         Log.e(TAG, "Ride not saved; its journal is kept");
@@ -345,17 +351,19 @@ public final class TzRideService extends Service
 
   // ---- Internals ----
 
-  private void startSession(@Nullable String routeId, @Nullable String name, double placeLat, double placeLon)
+  private void startSession(@Nullable String routeId, @Nullable String name, double placeLat, double placeLon,
+                            @NonNull Profile profile)
   {
     final long now = SystemClock.elapsedRealtime();
     if (TzTrace.on())
-      TzTrace.log("ride", "startSession route=" + routeId + (Double.isNaN(placeLat) ? "" : " place=" + TzTrace.ll(placeLat, placeLon)));
+      TzTrace.log("ride", "startSession route=" + routeId + " profile=" + profile.id
+                          + (Double.isNaN(placeLat) ? "" : " place=" + TzTrace.ll(placeLat, placeLon)));
     mSession = new RideSession(TzPrefs.autoPause(this));
     sRiding = true;
     if (Double.isNaN(placeLat))
-      mSession.start(System.currentTimeMillis(), now, routeId, name == null ? "" : name);
+      mSession.start(System.currentTimeMillis(), now, routeId, name == null ? "" : name, profile);
     else
-      mSession.startTo(System.currentTimeMillis(), now, name == null ? "" : name, placeLat, placeLon);
+      mSession.startTo(System.currentTimeMillis(), now, name == null ? "" : name, placeLat, placeLon, profile);
     RideStore.get(this).startJournal(mSession.drainJournal(now));
     mLastFlushMs = now;
     updateSources();
@@ -564,13 +572,15 @@ public final class TzRideService extends Service
     return s.isEmpty() ? null : s;
   }
 
-  /** Paths for the guide, from CoMaps' bicycle router; answers for a guide since replaced are dropped. */
+  /** Paths for the guide, from CoMaps' router for the ride's profile; answers for a guide since replaced are dropped. */
   private final Guide.Paths mPaths = new Guide.Paths() {
     @Override
     public void request(double fromLat, double fromLon, double toLat, double toLon, double bearingDeg)
     {
       final Guide g = mGuide;
-      TzRouter.route(fromLat, fromLon, toLat, toLon, bearingDeg, (path, mapMissing) -> {
+      final RideSession s = mSession;
+      final Profile profile = s == null ? Profile.ROAD : s.profile();
+      TzRouter.route(fromLat, fromLon, toLat, toLon, profile, bearingDeg, (path, reason) -> {
         if (g == null || mGuide != g)
           return;
         g.onPath(path);

@@ -81,6 +81,25 @@
     <item name="android:minHeight">@dimen/tz_button_resume_h</item>
   </style>
 
+  <!-- ProfilePill label: 13sp Bold, 1.6dp tracking, caps -->
+  <style name="TzText.ProfilePill">
+    <item name="android:fontFamily">@font/barlow_bold</item>
+    <item name="android:textSize">@dimen/tz_text_13</item>
+    <item name="android:letterSpacing">0.123</item>
+    <item name="android:textAllCaps">true</item>
+  </style>
+
+  <!-- Modal sheets (ProfileSheet): the sheet draws its own surface1 background with 32dp top corners -->
+  <style name="ThemeOverlay.TrackZero.BottomSheet" parent="ThemeOverlay.MaterialComponents.BottomSheetDialog">
+    <item name="bottomSheetStyle">@style/TzBottomSheet</item>
+    <item name="android:navigationBarColor">@color/tz_surface1</item>
+    <item name="elevationOverlayEnabled">false</item>
+  </style>
+  <style name="TzBottomSheet" parent="Widget.MaterialComponents.BottomSheet.Modal">
+    <item name="android:background">@android:color/transparent</item>
+    <item name="backgroundTint">@android:color/transparent</item>
+  </style>
+
   <!-- Toggle / list rows -->
   <style name="TzText.RowTitle">
     <item name="android:fontFamily">@font/barlow_semibold</item>

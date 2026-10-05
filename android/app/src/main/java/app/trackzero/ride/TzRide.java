@@ -6,6 +6,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import app.organicmaps.R;
 import app.trackzero.TzNavigator;
+import app.trackzero.TzPrefs;
 import app.trackzero.base.TzBase;
 import app.trackzero.base.TzRouteLayer;
 import app.trackzero.follow.RoutedPath;
@@ -18,7 +19,10 @@ public final class TzRide
 {
   private TzRide() {}
 
-  /** Asks for location if needed, starts recording ({@code route} null = free ride) and shows the ride screen. */
+  /**
+   * Asks for location if needed, starts recording ({@code route} null = free ride) and shows the ride screen. The
+   * ride's profile is the one chosen last ({@link TzPrefs#profile}): on the preview, or before for a free ride.
+   */
   public static void start(@NonNull Activity activity, @Nullable Route route)
   {
     start(activity, route, null);
@@ -34,7 +38,7 @@ public final class TzRide
                             ? route.name
                             : activity.getString(R.string.tz_free_ride_name,
                                                  DateFormat.getDateInstance(DateFormat.MEDIUM).format(new Date()));
-      TzRideService.start(activity, route == null ? null : route.id, name);
+      TzRideService.start(activity, route == null ? null : route.id, name, TzPrefs.profile(activity));
       TzNavigator.show(TzNavigator.Screen.RIDE, null);
     });
   }
@@ -45,7 +49,7 @@ public final class TzRide
   {
     TzBase.requestRidePermissions(activity, () -> {
       TzRouteLayer.transfer(lineOwner, TzRouteLayer.RIDE_START);
-      TzRideService.startTo(activity, name, lat, lon, path);
+      TzRideService.startTo(activity, name, lat, lon, path, TzPrefs.profile(activity));
       TzNavigator.show(TzNavigator.Screen.RIDE, null);
     });
   }

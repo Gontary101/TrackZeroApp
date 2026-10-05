@@ -54,3 +54,26 @@ the map rows only for large changes, or take the mean of several runs.
   (1 s). Phase 17 (H1) addresses the first.
 - The compass (rotation vector) is registered on B1 and toggles on and off: the emulator replays its last fix with a
   speed around the 3–4 m/s threshold of the compass sleep (D38). Not seen on a real ride; noted for Phase 38.
+
+## Later runs (same conditions, `tools/trackzero/baseline_run.sh`)
+
+CPU % of a core / frames drawn by views / threads, 2 minutes each. Location requests, sensors and wake locks were the
+same in every run: one ride GPS request at 1 s (the map's own request is gone since Phase 17), the barometer, and
+`SCREEN_BRIGHT_WAKE_LOCK` held for the app by the window manager.
+
+| Screen | Phase 16 | Phase 21 (chevrons) | Phase 22 (profiles, Road) |
+|---|---|---|---|
+| B1 idle | 64.4 / 77 / 46 | 87.2 / 73 / 45 | 66.3 / 73 / 45 |
+| R2 | 89.5 / 130 / 52 | 82.3 / 125 / 52 | 83.4 / 131 / 52 |
+| R4 | 5.2 / 1265 / 52 | 5.9 / 1279 / 52 | 5.6 / 1262 / 52 |
+| R5 | 1.8 / 128 / 55 | 2.5 / 130 / 54 | 2.6 / 128 / 54 |
+| R6 over R2 | 81.9 / 125 / 58 | 81.8 / 134 / 60 | 86.0 / 132 / 60 |
+| Screen off | 0.1 / 0 / 58 | 0.2 / 0 / 60 | 0.2 / 0 / 60 |
+
+Full outputs: `shots/baseline/phase21_chevrons.md`, `shots/baseline/phase22_profiles.md`. The map rows stay inside
+the noise band above. R5 and screen-off are within a point.
+
+**Nothing idle (Phase 22.4).** On B1, after a GPX preview and again after the whole smoke test (two rides and a place
+preview), `BicyclePath.nativeLoadedProfile()` reads -1 (debug `TzRideDebugActivity`: "router none") and the app has
+no `TzRouter` thread (`ps -T`). The router and its road graphs exist only between a path request and the end of the
+ride or the preview that asked for it.

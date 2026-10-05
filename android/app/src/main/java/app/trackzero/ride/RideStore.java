@@ -6,6 +6,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import app.trackzero.TzIo;
 import app.trackzero.geo.DouglasPeucker;
+import app.trackzero.routes.Profile;
 import app.trackzero.routes.RouteStore;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -43,10 +44,14 @@ public final class RideStore
     final List<List<RideTrack.Point>> segments;
     @NonNull
     final RideStats.Snapshot totals;
+    @NonNull
+    final Profile profile;
 
     Finished(@Nullable String routeId, @NonNull String name, long startedAt, long endedAt,
-             @NonNull List<List<RideTrack.Point>> segments, @NonNull RideStats.Snapshot totals)
+             @NonNull List<List<RideTrack.Point>> segments, @NonNull RideStats.Snapshot totals,
+             @NonNull Profile profile)
     {
+      this.profile = profile;
       this.routeId = routeId;
       this.name = name;
       this.startedAt = startedAt;
@@ -136,7 +141,7 @@ public final class RideStore
       final double avgKmh = movingS > 0 ? t.distanceM / movingS * 3.6 : 0;
       final double[][] sil = silhouette(f.segments);
       final Ride ride = new Ride(id, f.routeId, f.name, file, f.startedAt, f.endedAt, movingS, t.distanceM,
-                                 t.gainM, avgKmh, t.maxKmh, t.maxGradePct, sil[0], sil[1]);
+                                 t.gainM, avgKmh, t.maxKmh, t.maxGradePct, sil[0], sil[1], f.profile);
       rides().add(0, ride);
       saveIndex();
       //noinspection ResultOfMethodCallIgnored

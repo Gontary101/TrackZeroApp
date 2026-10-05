@@ -3,6 +3,7 @@ package app.trackzero.ride;
 import static app.trackzero.ride.RideFixes.at;
 import static org.junit.Assert.*;
 
+import app.trackzero.routes.Profile;
 import org.junit.Test;
 
 public class RideSessionTest
@@ -10,7 +11,7 @@ public class RideSessionTest
   private static RideSession started(boolean autoPause)
   {
     final RideSession s = new RideSession(autoPause);
-    s.start(1_780_000_000_000L, 0, "route-1", "Clermont, Loop");
+    s.start(1_780_000_000_000L, 0, "route-1", "Clermont, Loop", Profile.GRAVEL);
     return s;
   }
 
@@ -22,7 +23,7 @@ public class RideSessionTest
     s.onFix(at(0, 0, 400, 18));
     assertNull(s.lastFix());
 
-    s.start(1_780_000_000_000L, 0, null, "Free ride");
+    s.start(1_780_000_000_000L, 0, null, "Free ride", Profile.ROAD);
     assertEquals(RideSession.State.RECORDING, s.state());
     s.pause(10_000);
     assertEquals(RideSession.State.PAUSED, s.state());
@@ -120,9 +121,11 @@ public class RideSessionTest
     assertEquals("route-1", c.routeId);
     assertEquals("Clermont, Loop", c.name);
     assertEquals(1_780_000_000_000L, c.startedAt);
+    assertEquals(Profile.GRAVEL, c.profile);
 
     final RideSession r = RideSession.restore(c, true);
     assertEquals(RideSession.State.PAUSED, r.state());
+    assertEquals("A restored ride keeps its profile", Profile.GRAVEL, r.profile());
     assertEquals(s.stats().distanceM(), r.stats().distanceM(), 0.1);
     assertEquals(s.stats().movingMs(150_000), r.stats().movingMs(500_000));
     assertEquals(s.stats().gainM(), r.stats().gainM(), 0.1);
@@ -136,6 +139,27 @@ public class RideSessionTest
     r.onFix(at(601, 805, 420, 18));
     assertEquals(3, r.track().segments().size());
     assertEquals(s.stats().distanceM() + 5, r.stats().distanceM(), 0.1);
+  }
+
+  @Test
+  public void journalFromBeforeProfilesIsRoad()
+  {
+    final RideJournal.Content c = RideJournal.parse("H,1,1780000000000,-,Free ride\nP,1780000000000,45.0,3.0,400.0\n");
+    assertNotNull(c);
+    assertEquals(Profile.ROAD, c.profile);
+    assertEquals(1, c.track.pointCount());
+  }
+
+  @Test
+  public void rideToAPlaceKeepsItsProfileAndPlace()
+  {
+    final RideSession s = new RideSession(true);
+    s.startTo(1_780_000_000_000L, 0, "Café", 45.77, 3.08, Profile.GRAVEL);
+    final RideJournal.Content c = RideJournal.parse(s.drainJournal(0));
+    assertNotNull(c);
+    assertEquals(Profile.GRAVEL, c.profile);
+    assertEquals(45.77, c.placeLat, 1e-9);
+    assertEquals(3.08, c.placeLon, 1e-9);
   }
 
   @Test

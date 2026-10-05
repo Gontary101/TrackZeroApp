@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import androidx.annotation.NonNull;
 import app.trackzero.format.TzFormat;
+import app.trackzero.routes.Profile;
 
 /** TrackZero settings in SharedPreferences "tz_prefs" (plan §9.6, Phase 13). */
 public final class TzPrefs
@@ -16,6 +17,7 @@ public final class TzPrefs
   private static final String FIRST_CAMERA_DONE = "firstCameraDone";
   private static final String TRACE = "trace";
   private static final String LINE_STYLE = "lineStyle";
+  private static final String PROFILE = "profile";
 
   private TzPrefs() {}
 
@@ -92,6 +94,19 @@ public final class TzPrefs
   public static void setLineStyle(@NonNull Context c, int style)
   {
     prefs(c).edit().putInt(LINE_STYLE, style).apply();
+  }
+
+  /** The profile chosen last (Phase 22), the default for the next route and free ride; ROAD at first. */
+  @NonNull
+  public static Profile profile(@NonNull Context c)
+  {
+    final Profile p = Profile.of(prefs(c).getString(PROFILE, null));
+    return Profile.available().contains(p) ? p : Profile.ROAD;
+  }
+
+  public static void setProfile(@NonNull Context c, @NonNull Profile p)
+  {
+    prefs(c).edit().putString(PROFILE, p.id).apply();
   }
 
   /** The hidden tracing switch of release builds (About, Phase 16). */

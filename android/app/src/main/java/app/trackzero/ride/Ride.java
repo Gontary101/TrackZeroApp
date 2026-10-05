@@ -2,6 +2,7 @@ package app.trackzero.ride;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import app.trackzero.routes.Profile;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -31,11 +32,15 @@ public final class Ride
   public final double[] silLat;
   @NonNull
   public final double[] silLon;
+  /** How the rider got about (Phase 22); rides saved before then are ROAD. */
+  @NonNull
+  public final Profile profile;
 
   Ride(@NonNull String id, @Nullable String routeId, @NonNull String name, @NonNull String file, long startedAt,
        long endedAt, long movingS, double distanceM, double gainM, double avgKmh, double maxKmh, double maxGrade,
-       @NonNull double[] silLat, @NonNull double[] silLon)
+       @NonNull double[] silLat, @NonNull double[] silLon, @NonNull Profile profile)
   {
+    this.profile = profile;
     this.id = id;
     this.routeId = routeId;
     this.name = name;
@@ -74,7 +79,8 @@ public final class Ride
         .put("avgKmh", Math.round(avgKmh * 10) / 10.0)
         .put("maxKmh", Math.round(maxKmh * 10) / 10.0)
         .put("maxGrade", Math.round(maxGrade * 10) / 10.0)
-        .put("sil", sil);
+        .put("sil", sil)
+        .put("profile", profile.id);
   }
 
   @NonNull
@@ -92,6 +98,6 @@ public final class Ride
     return new Ride(o.getString("id"), o.isNull("routeId") ? null : o.getString("routeId"), o.getString("name"),
                     o.getString("file"), o.getLong("startedAt"), o.getLong("endedAt"), o.getLong("movingS"),
                     o.getDouble("distanceM"), o.getDouble("gainM"), o.getDouble("avgKmh"), o.getDouble("maxKmh"),
-                    o.getDouble("maxGrade"), lat, lon);
+                    o.getDouble("maxGrade"), lat, lon, Profile.of(o.optString("profile", null)));
   }
 }

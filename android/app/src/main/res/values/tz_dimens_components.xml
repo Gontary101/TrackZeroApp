@@ -131,4 +131,18 @@
   <!-- Offline maps -->
   <dimen name="tz_maps_header_h">64dp</dimen>
   <dimen name="tz_text_44">44sp</dimen>
+
+  <!-- ProfilePill (Components v2, Phase 22) -->
+  <dimen name="tz_profile_pill_h">44dp</dimen>
+  <dimen name="tz_profile_pill_pad_start">14dp</dimen>
+  <dimen name="tz_profile_pill_pad_end">12dp</dimen>
+  <dimen name="tz_profile_pill_gap">8dp</dimen>
+  <dimen name="tz_profile_pill_icon">20dp</dimen>
+  <dimen name="tz_profile_pill_chevron">16dp</dimen>
+  <!-- BigRow (ProfileSheet rows): min 72 high, pad 12 x 16, gap 14; selected = 28dp mint disc, others a 2dp ring -->
+  <dimen name="tz_big_row_pad_v">12dp</dimen>
+  <dimen name="tz_choice">28dp</dimen>
+  <dimen name="tz_choice_check">18dp</dimen>
+  <dimen name="tz_choice_ring">2dp</dimen>
+
 </resources>

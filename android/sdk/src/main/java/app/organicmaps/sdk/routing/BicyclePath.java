@@ -6,7 +6,7 @@ import androidx.annotation.Nullable;
 import androidx.annotation.WorkerThread;
 
 /**
- * TrackZero: a bicycle path between two points from CoMaps' router, without a routing session: nothing is drawn and
+ * TrackZero: a path through two or more points from CoMaps' router, without a routing session: nothing is drawn and
  * the map is left alone (the app follows the path itself). Immutable.
  */
 @Keep
@@ -20,6 +20,18 @@ public final class BicyclePath
   public static final int NEED_MORE_MAPS = 9;
   /** {@code RouterResultCode::RouteFileNotExist}: the start or the end has no map. */
   public static final int NO_MAP = 4;
+  /** {@code RouterResultCode::StartPointNotFound}: no road near the start. */
+  public static final int START_NOT_FOUND = 5;
+  /** {@code RouterResultCode::EndPointNotFound}: no road near the end. */
+  public static final int END_NOT_FOUND = 6;
+  /** {@code RouterResultCode::RouteNotFound}: no way between the points. */
+  public static final int ROUTE_NOT_FOUND = 8;
+  /** {@code RouterResultCode::FileTooOld}: a map is too old to route on. */
+  public static final int FILE_TOO_OLD = 11;
+  /** {@code RouterResultCode::IntermediatePointNotFound}: no road near a waypoint. */
+  public static final int INTERMEDIATE_NOT_FOUND = 12;
+  /** {@code RouterResultCode::RouteNotFoundRedressRouteError}: no way between the points. */
+  public static final int ROUTE_NOT_FOUND_REDRESS = 15;
 
   /** A {@code RouterResultCode}; the other fields are empty unless it is {@link #OK}. */
   public final int code;
@@ -57,15 +69,21 @@ public final class BicyclePath
   }
 
   /**
-   * Builds a path (blocking, seconds on a long one; the first one also loads the road graphs, kept for the next).
-   * Null when the map engine isn't running.
+   * Builds a path (blocking, seconds on a long one; the first one also loads the road graphs, kept for the next path
+   * of the same profile). Null when the map engine isn't running or there are fewer than two points.
    *
+   * @param lat        the start, any waypoints, the end
+   * @param profile    TrackZero's profile ordinal (Road, Gravel, Walk, Hike); another one than the last frees the
+   *                   router kept and builds this one's
    * @param bearingDeg the rider's heading, when {@code hasBearing}
    */
   @WorkerThread
   @Nullable
-  public static native BicyclePath nativeBuild(double fromLat, double fromLon, double toLat, double toLon,
+  public static native BicyclePath nativeBuild(@NonNull double[] lat, @NonNull double[] lon, int profile,
                                                boolean hasBearing, double bearingDeg);
+
+  /** The profile of the router kept between paths, -1 when none is (checks that nothing is loaded while idle). */
+  public static native int nativeLoadedProfile();
 
   /**
    * Frees the router kept between paths (its loaded road graphs). Call on the thread that builds paths, when no more

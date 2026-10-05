@@ -432,3 +432,25 @@ it led to).
   the ride. R3W shown and cleared as expected (`shots/R3W.png`); the emulator's fixed course of 0 limits where it can
   be checked (D46). A per-fix trace line (`ride follow along= course= v=`) shows the engine's view.
 - Smoke test: all steps pass, no crashes. `shots/B5.png`, `R2.png` (with chevrons), `R3W.png` updated.
+
+## Phase 22 — Navigation profiles: the shared foundation
+
+- `routes/Profile` (ROAD, GRAVEL, WALK, HIKE; only ROAD available), `TzPrefs.profile()` (default ROAD, falls back to
+  ROAD when the stored one is not available), `ui/TzProfiles` (label, description, icon from resources).
+- Router (D47): `BicyclePath.nativeBuild(lat[], lon[], profile, hasBearing, bearing)` with waypoints, one router at a
+  time remembered with its profile, `nativeLoadedProfile()`. `TzRouter.route(lat[], lon[], Profile, …)` plus a
+  two-point overload; `Callback.onPath(path, Reason)`.
+- The ride's profile: intent extra at START (from `TzPrefs`), `RideSession.profile()`, journal record `F,{id}` (a
+  restored ride keeps it), `Ride.profile` in `rides.json`, optional `Route.profile` in `routes.json`; the guide's paths
+  use it.
+- UI: `ui/TzProfilePill` (44dp, icon + label + chevron), `ui/TzBigRow` (the sheet's rows: 28dp mint check or 2dp
+  ring), `screens/TzProfileSheet` (BottomSheetDialogFragment, surface1, 32dp top corners, grabber, PROFILE, note).
+  B5: the pill between Back and the star, top-aligned with them; choosing a profile works the path to a place out again.
+- Idle check (22.4): on B1 after a GPX preview, and after the whole smoke test (rides and a place preview), the debug
+  activity reads "router none" and the app has no TzRouter thread.
+- Tests: `ProfileTest`, `TzRouterTest` (result codes → reasons, constants against CoMaps' enum), `RideSessionTest`
+  (profile through the journal; old journals are Road; ride to a place). 205 tests pass.
+- Baseline with a Road ride (`shots/baseline/phase22_profiles.md`, table in `TZ_BASELINE.md`): same threads,
+  location request and sensors as Phases 16 and 21; CPU within the emulator's noise (R2 83 %, Phase 16 90 %).
+- Smoke test: all steps pass, no crashes. In step 28 the place path came 6 s after opening (debug native on the
+  emulator: 2.1 s to load the road graph, 2.6 s to route), after the screenshot; the log shows it was found.

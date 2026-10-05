@@ -17,10 +17,17 @@
       style="@style/TzMapButton"
       android:contentDescription="@string/tz_cd_back_to_routes"
       android:src="@drawable/ic_tz_back" />
-    <Space
+    <!-- The profile pill between Back and the star (B5, Phase 22), top-aligned with them. -->
+    <FrameLayout
       android:layout_width="0dp"
-      android:layout_height="0dp"
-      android:layout_weight="1" />
+      android:layout_height="match_parent"
+      android:layout_weight="1">
+      <app.trackzero.ui.TzProfilePill
+        android:id="@+id/tz_preview_profile_pill"
+        android:layout_width="wrap_content"
+        android:layout_height="@dimen/tz_profile_pill_h"
+        android:layout_gravity="top|center_horizontal" />
+    </FrameLayout>
     <ImageButton
       android:id="@+id/tz_preview_star"
       style="@style/TzMapButton" />

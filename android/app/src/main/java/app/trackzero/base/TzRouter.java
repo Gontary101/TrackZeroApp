@@ -13,28 +13,59 @@ import app.trackzero.follow.FollowRoute;
 import app.trackzero.follow.Maneuver;
 import app.trackzero.follow.RouteManeuver;
 import app.trackzero.follow.RoutedPath;
+import app.trackzero.routes.Profile;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
- * Bicycle paths from CoMaps' router (Phase 15): to the start of a track, back onto it, or to a place. One at a time
- * on their own thread, at background priority; a new request cancels the one before. Answers arrive on the main
- * thread.
+ * Paths from CoMaps' router (Phase 15) for a profile (Phase 22): to the start of a track, back onto it, or to a place,
+ * through waypoints if any. One at a time on their own thread, at background priority; a new request cancels the one
+ * before. Answers arrive on the main thread.
  */
 public final class TzRouter
 {
   private static final String TAG = "TzRouter";
 
+  /** Why there is a path or not. */
+  public enum Reason
+  {
+    OK,
+    /** A map on the way is not on the phone (or too old to route on). */
+    NO_MAP,
+    /** No way between the points (or to a waypoint). */
+    NO_WAY,
+    /** No road near the start. */
+    NO_START,
+    /** No road near the end. */
+    NO_END,
+    CANCELLED,
+    /** Anything else, or the map engine not running. */
+    ERROR;
+
+    /** CoMaps' {@code RouterResultCode} as a reason. */
+    @NonNull
+    static Reason of(int code)
+    {
+      return switch (code)
+      {
+        case BicyclePath.OK -> OK;
+        case BicyclePath.CANCELLED -> CANCELLED;
+        case BicyclePath.NO_MAP, BicyclePath.NEED_MORE_MAPS, BicyclePath.FILE_TOO_OLD -> NO_MAP;
+        case BicyclePath.ROUTE_NOT_FOUND, BicyclePath.ROUTE_NOT_FOUND_REDRESS, BicyclePath.INTERMEDIATE_NOT_FOUND ->
+          NO_WAY;
+        case BicyclePath.START_NOT_FOUND -> NO_START;
+        case BicyclePath.END_NOT_FOUND -> NO_END;
+        default -> ERROR;
+      };
+    }
+  }
+
   public interface Callback
   {
-    /**
-     * The path, or null: no map on the way, no way there, or the maps are not loaded.
-     *
-     * @param mapMissing no path because a map on the way is not on the phone
-     */
-    void onPath(@Nullable RoutedPath path, boolean mapMissing);
+    /** The path, or null with the reason there is none. */
+    void onPath(@Nullable RoutedPath path, @NonNull Reason reason);
   }
 
   private static final ExecutorService EXECUTOR = Executors.newSingleThreadExecutor(r -> new Thread(() -> {
@@ -47,26 +78,37 @@ public final class TzRouter
 
   private TzRouter() {}
 
-  /** @param bearingDeg the rider's heading (picks the road they are on), NaN when unknown */
-  public static void route(double fromLat, double fromLon, double toLat, double toLon, double bearingDeg,
+  /** From one point to another; see {@link #route(double[], double[], Profile, double, Callback)}. */
+  public static void route(double fromLat, double fromLon, double toLat, double toLon, @NonNull Profile profile,
+                           double bearingDeg, @NonNull Callback callback)
+  {
+    route(new double[] {fromLat, toLat}, new double[] {fromLon, toLon}, profile, bearingDeg, callback);
+  }
+
+  /**
+   * @param lat        the start, any waypoints, the end (two or more points)
+   * @param bearingDeg the rider's heading (picks the road they are on), NaN when unknown
+   */
+  public static void route(@NonNull double[] lat, @NonNull double[] lon, @NonNull Profile profile, double bearingDeg,
                            @NonNull Callback callback)
   {
     final int request = ++sRequest;
     // Stops the path being worked out for the previous request, if it still is.
     BicyclePath.nativeCancel();
+    final double[] la = lat.clone();
+    final double[] lo = lon.clone();
     EXECUTOR.execute(() -> {
       final long start = System.nanoTime();
       final boolean hasBearing = !Double.isNaN(bearingDeg);
-      final BicyclePath p = BicyclePath.nativeBuild(fromLat, fromLon, toLat, toLon, hasBearing,
-                                                    hasBearing ? bearingDeg : 0);
+      final BicyclePath p = BicyclePath.nativeBuild(la, lo, profile.ordinal(), hasBearing, hasBearing ? bearingDeg : 0);
       final RoutedPath path = p == null || p.code != BicyclePath.OK ? null : toPath(p);
+      final Reason reason = path != null ? Reason.OK : p == null ? Reason.ERROR : Reason.of(p.code);
       Log.i(TAG, (path == null ? "No path (" + (p == null ? "no engine" : p.code) + ")"
                                : "Path " + Math.round(path.line.totalM()) + " m")
-                     + " in " + (System.nanoTime() - start) / 1_000_000 + " ms");
-      final boolean mapMissing = p != null && (p.code == BicyclePath.NEED_MORE_MAPS || p.code == BicyclePath.NO_MAP);
+                     + " " + profile.id + " in " + (System.nanoTime() - start) / 1_000_000 + " ms");
       MAIN.post(() -> {
         if (request == sRequest)
-          callback.onPath(path, mapMissing);
+          callback.onPath(path, reason);
       });
     });
   }
@@ -83,6 +125,14 @@ public final class TzRouter
   {
     cancel();
     EXECUTOR.execute(BicyclePath::nativeRelease);
+  }
+
+  /** The profile whose router is kept (its road graphs loaded), or null: for the idle check (Phase 22). */
+  @Nullable
+  public static Profile loaded()
+  {
+    final int p = BicyclePath.nativeLoadedProfile();
+    return p < 0 || p >= Profile.values().length ? null : Profile.values()[p];
   }
 
   @Nullable

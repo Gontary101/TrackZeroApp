@@ -16,14 +16,16 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import app.organicmaps.R;
+import app.trackzero.base.TzRouter;
 import app.trackzero.ride.RideSession;
 import app.trackzero.ride.RideStats;
 import app.trackzero.ride.TzRideService;
+import app.trackzero.routes.Profile;
 import com.google.android.material.button.MaterialButton;
 import java.util.Locale;
 
 /**
- * Debug-only ride controls until the ride screens exist:
+ * Debug-only ride controls until the ride screens exist, and the router kept (Phase 22's idle check: "router none"):
  * adb shell am start -n app.trackzero.debug/app.trackzero.TzRideDebugActivity
  */
 public class TzRideDebugActivity extends AppCompatActivity implements TzRideService.Listener
@@ -63,7 +65,7 @@ public class TzRideDebugActivity extends AppCompatActivity implements TzRideServ
     mStatus = new TextView(this, null, 0, R.style.TzText_Body);
     column.addView(mStatus);
     button(column, "START FREE RIDE", () -> {
-      TzRideService.start(this, null, "Free ride (debug)");
+      TzRideService.start(this, null, "Free ride (debug)", TzPrefs.profile(this));
       bind();
     });
     button(column, "PAUSE", () -> {
@@ -96,6 +98,7 @@ public class TzRideDebugActivity extends AppCompatActivity implements TzRideServ
   {
     super.onStart();
     bind();
+    tick();
   }
 
   private void bind()
@@ -123,12 +126,18 @@ public class TzRideDebugActivity extends AppCompatActivity implements TzRideServ
   private void tick()
   {
     mHandler.removeCallbacks(mTick);
+    final Profile router = TzRouter.loaded();
+    final String routerLine = "router " + (router == null ? "none" : router.id);
     final RideSession s = mService == null ? null : mService.session();
     if (s == null)
+    {
+      mStatus.setText(routerLine);
+      mHandler.postDelayed(mTick, 1000);
       return;
+    }
     final RideStats st = s.stats();
     final long now = SystemClock.elapsedRealtime();
-    mStatus.setText(String.format(Locale.ROOT,
+    mStatus.setText(routerLine + "\n" + String.format(Locale.ROOT,
                                   "%s  %s\n%.1f km/h  %.0f m  %d s\nalt %.1f  gain %.0f  grade %.1f  max %.1f km/h\n"
                                       + "points %d  segments %d",
                                   s.state(), s.name(), st.speedKmh(), st.distanceM(), st.movingMs(now) / 1000,

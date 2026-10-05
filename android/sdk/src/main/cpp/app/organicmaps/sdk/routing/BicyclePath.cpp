@@ -1,4 +1,4 @@
-// TrackZero: a bicycle path between two points from CoMaps' router, for the app to follow with its own engine.
+// TrackZero: a path through two or more points from CoMaps' router, for the app to follow with its own engine.
 // Unlike RoutingManager's session nothing is drawn, no route marks are added and the map's follow mode is left
 // alone, so it can run in the middle of a ride (to the start of a track, back onto it, or to a place).
 
@@ -37,13 +37,18 @@ routing::RouterDelegate * g_delegate = nullptr;
 uint32_t constexpr kTimeoutSec = 30;
 
 // One router for all the paths of a ride: its road graphs stay loaded between paths (loading them is most of the
-// work). Used on one thread only; freed by nativeRelease.
+// work). Never more than one: a path for another profile frees it and builds that profile's. Used on one thread
+// only; freed by nativeRelease.
 std::unique_ptr<routing::IndexRouter> g_router;
+// The profile (TrackZero's Profile ordinal) g_router was built for; -1 with none.
+int g_profile = -1;
 
-routing::IndexRouter & Router(Framework & f)
+routing::IndexRouter & Router(Framework & f, int profile)
 {
-  if (g_router)
+  if (g_router && g_profile == profile)
     return *g_router;
+  g_router.reset();
+  g_profile = profile;
   auto const & infoGetter = f.GetCountryInfoGetter();
   auto const & storage = f.GetStorage();
   // The router locks maps while it reads them; RoutingManager is given this same data source, non-const.
@@ -54,6 +59,8 @@ routing::IndexRouter & Router(Framework & f)
   { numMwmIds->RegisterFile(country.GetFile()); });
 
   static traffic::TrafficCache const kNoTraffic;
+  // Every profile rides the bicycle router for now; Gravel's weights (Phase 24) and the pedestrian router for Walk and
+  // Hike (Phases 25, 26) come with those profiles.
   g_router = std::make_unique<routing::IndexRouter>(
       routing::VehicleType::Bicycle, true /* loadAltitudes */,
       [&storage](std::string const & id) { return storage.GetParentIdFor(id); },
@@ -100,19 +107,29 @@ jobject MakePath(JNIEnv * env, int code, std::vector<double> const & lat, std::v
 extern "C"
 {
 // Blocking (seconds on a long path): call it off the main thread. Returns null when the engine isn't running.
+// lats / lons: the start, any waypoints, the end.
 JNIEXPORT jobject JNICALL Java_app_organicmaps_sdk_routing_BicyclePath_nativeBuild(JNIEnv * env, jclass,
-                                                                                  jdouble fromLat, jdouble fromLon,
-                                                                                  jdouble toLat, jdouble toLon,
-                                                                                  jboolean hasBearing,
+                                                                                  jdoubleArray lats, jdoubleArray lons,
+                                                                                  jint profile, jboolean hasBearing,
                                                                                   jdouble bearingDeg)
 {
   Framework * const f = frm();
   if (f == nullptr)
     return nullptr;
-  routing::IndexRouter & router = Router(*f);
-
-  m2::PointD const from = mercator::FromLatLon(fromLat, fromLon);
-  m2::PointD const to = mercator::FromLatLon(toLat, toLon);
+  jsize const n = env->GetArrayLength(lats);
+  if (n < 2 || env->GetArrayLength(lons) != n)
+    return nullptr;
+  std::vector<m2::PointD> points;
+  points.reserve(n);
+  {
+    jdouble * const la = env->GetDoubleArrayElements(lats, nullptr);
+    jdouble * const lo = env->GetDoubleArrayElements(lons, nullptr);
+    for (jsize i = 0; i < n; ++i)
+      points.push_back(mercator::FromLatLon(la[i], lo[i]));
+    env->ReleaseDoubleArrayElements(lats, la, JNI_ABORT);
+    env->ReleaseDoubleArrayElements(lons, lo, JNI_ABORT);
+  }
+  routing::IndexRouter & router = Router(*f, profile);
   // The rider's heading picks the road they are on at a junction; zero when unknown. (A flag, not NaN: this code
   // is built with finite math only.)
   m2::PointD direction = m2::PointD::Zero();
@@ -132,8 +149,8 @@ JNIEXPORT jobject JNICALL Java_app_organicmaps_sdk_routing_BicyclePath_nativeBui
   routing::RouterResultCode code;
   try
   {
-    code = router.CalculateRoute(routing::Checkpoints(from, to), direction, false /* adjustToPrevRoute */, delegate,
-                                 route);
+    code = router.CalculateRoute(routing::Checkpoints(std::move(points)), direction, false /* adjustToPrevRoute */,
+                                 delegate, route);
   }
   catch (RootException const & e)
   {
@@ -188,6 +205,13 @@ JNIEXPORT jobject JNICALL Java_app_organicmaps_sdk_routing_BicyclePath_nativeBui
 JNIEXPORT void JNICALL Java_app_organicmaps_sdk_routing_BicyclePath_nativeRelease(JNIEnv *, jclass)
 {
   g_router.reset();
+  g_profile = -1;
+}
+
+// For checks (nothing kept while idle, Phase 22): the profile of the router kept, -1 with none.
+JNIEXPORT jint JNICALL Java_app_organicmaps_sdk_routing_BicyclePath_nativeLoadedProfile(JNIEnv *, jclass)
+{
+  return g_router ? g_profile : -1;
 }
 
 JNIEXPORT void JNICALL Java_app_organicmaps_sdk_routing_BicyclePath_nativeCancel(JNIEnv *, jclass)

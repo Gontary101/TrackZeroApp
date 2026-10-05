@@ -4,6 +4,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import app.trackzero.TzConfig;
 import app.trackzero.geo.Geo;
+import app.trackzero.routes.Profile;
 import java.util.Arrays;
 import java.util.List;
 
@@ -40,6 +41,9 @@ public final class RideSession
   /** A ride to a place: where to; NaN otherwise. */
   private double mPlaceLat = Double.NaN;
   private double mPlaceLon = Double.NaN;
+  /** Fixed at START (Phase 22). */
+  @NonNull
+  private Profile mProfile = Profile.ROAD;
   private long mStartedAt;
   @Nullable
   private TzFix mLastFix;
@@ -68,6 +72,7 @@ public final class RideSession
     s.mName = c.name;
     s.mPlaceLat = c.placeLat;
     s.mPlaceLon = c.placeLon;
+    s.mProfile = c.profile;
     s.mTrack = c.track;
     s.mTrack.breakSegment();
     s.mStats.restore(c.totals);
@@ -85,22 +90,26 @@ public final class RideSession
     return s;
   }
 
-  public void start(long startedAtUtc, long elapsedMs, @Nullable String routeId, @NonNull String name)
+  public void start(long startedAtUtc, long elapsedMs, @Nullable String routeId, @NonNull String name,
+                    @NonNull Profile profile)
   {
     if (mState != State.IDLE)
       throw new IllegalStateException("Already started: " + mState);
     mStartedAt = startedAtUtc;
     mRouteId = routeId;
     mName = name;
+    mProfile = profile;
     mState = State.RECORDING;
     mStats.startRecording(elapsedMs);
     RideJournal.header(mJournal, startedAtUtc, routeId, name);
+    RideJournal.profile(mJournal, profile);
   }
 
   /** Starts a ride to a place (no route of the library: a path is worked out to it). */
-  public void startTo(long startedAtUtc, long elapsedMs, @NonNull String name, double lat, double lon)
+  public void startTo(long startedAtUtc, long elapsedMs, @NonNull String name, double lat, double lon,
+                      @NonNull Profile profile)
   {
-    start(startedAtUtc, elapsedMs, null, name);
+    start(startedAtUtc, elapsedMs, null, name, profile);
     mPlaceLat = lat;
     mPlaceLon = lon;
     RideJournal.place(mJournal, lat, lon);
@@ -259,6 +268,13 @@ public final class RideSession
   public String name()
   {
     return mName;
+  }
+
+  /** How the rider gets about on this ride, fixed at START. */
+  @NonNull
+  public Profile profile()
+  {
+    return mProfile;
   }
 
   /** A ride to a place ({@link #placeLat()}, {@link #placeLon()}). */
