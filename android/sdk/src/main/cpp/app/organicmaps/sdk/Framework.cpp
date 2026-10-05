@@ -1961,12 +1961,16 @@ JNIEXPORT void JNICALL Java_app_organicmaps_sdk_Framework_nativeShowRect(JNIEnv 
   frm()->ShowRect(rect, -1 /* maxScale */, animate, true /* useVisibleViewport */);
 }
 
-// TrackZero: draws a lat/lon polyline as a route line (not a bookmark, nothing is persisted): a 16dp glow under a
-// 5.5dp line, and a ring at its start (ring 1), its end (ring 2: a destination) or none (0: a leg joining another
-// line). Returns the drape subroute ids for nativeRemoveTrackLine, or null when the engine isn't running.
+// TrackZero: draws a lat/lon polyline as a route line (not a bookmark, nothing is persisted), and a ring at its start
+// (ring 1), its end (ring 2: a destination) or none (0: a leg joining another line). Returns the drape subroute ids for
+// nativeRemoveTrackLine, or null when the engine isn't running.
+// Styles (FEAT-005, plan v2 Phase 20; the losing ones go once the owner has compared them outdoors):
+//   0 (B, default): an 8dp line on a 12dp black casing; 1 (A, as built before): 5.5dp line on a 16dp glow;
+//   2 (C): as B with a brighter line; 3 (D): a 10dp line on a 14dp casing.
+// Dimmed (off route, R3) is the same in every style: no casing, the line dashed at 5.5dp in 45 % mint.
 JNIEXPORT jintArray JNICALL Java_app_organicmaps_sdk_Framework_nativeShowTrackLine(JNIEnv * env, jclass,
                                                                                    jdoubleArray lats, jdoubleArray lons,
-                                                                                   jboolean dimmed, jint ring)
+                                                                                   jboolean dimmed, jint ring, jint style)
 {
   auto engine = frm()->GetDrapeEngine();
   jsize const n = env->GetArrayLength(lats);
@@ -1981,11 +1985,13 @@ JNIEXPORT jintArray JNICALL Java_app_organicmaps_sdk_Framework_nativeShowTrackLi
   env->ReleaseDoubleArrayElements(lats, lat, JNI_ABORT);
   env->ReleaseDoubleArrayElements(lons, lon, JNI_ABORT);
 
-  // RouteType::Track is 8dp wide on each side at every zoom; the line is capped to 5.5dp.
-  float constexpr kTrackHalfWidthDp = 8.0f;
-  float constexpr kLineWidthDp = 5.5f;
+  // RouteType::Track is 8dp wide on each side at every zoom; each subroute is capped to its own width.
+  float const vs = static_cast<float>(df::VisualParams::Instance().GetVisualScale());
+  bool const glowStyle = style == 1;
+  float const lineDp = dimmed || glowStyle ? 5.5f : style == 3 ? 10.0f : 8.0f;
+  float const underDp = glowStyle ? 16.0f : style == 3 ? 14.0f : 12.0f;
   auto const makeSubroute = [&polyline](df::ColorConstant const & color, double depthIndex,
-                                        df::RoutePattern const & pattern)
+                                        df::RoutePattern const & pattern, float widthPx)
   {
     auto subroute = std::make_unique<df::Subroute>();
     subroute->m_routeType = df::RouteType::Track;
@@ -1996,18 +2002,20 @@ JNIEXPORT jintArray JNICALL Java_app_organicmaps_sdk_Framework_nativeShowTrackLi
     // The whole line is real route: no "fake" (grey) head or tail. Distances are in mercator units.
     subroute->m_headFakeDistance = -1.0;
     subroute->m_tailFakeDistance = polyline.GetLength() + 1.0;
+    subroute->m_maxPixelWidth = widthPx;
     return subroute;
   };
 
-  // Dimmed (off route, R3): no glow, the line dashed in 45 % mint. Dash and gap are in line half-widths.
-  auto glow = dimmed ? nullptr : makeSubroute("TrackGlow", 0.0, df::RoutePattern());
-  auto line = makeSubroute(dimmed ? "TrackLineOff" : "TrackLine", 1.0,
-                           dimmed ? df::RoutePattern(2.0, 3.0) : df::RoutePattern());
-  line->m_maxPixelWidth = kLineWidthDp * static_cast<float>(df::VisualParams::Instance().GetVisualScale());
+  // Under the line: a hard black casing (it keeps an edge where the line crosses lighter map features in sun), or the
+  // old glow. None when dimmed.
+  auto under = dimmed ? nullptr
+                      : makeSubroute(glowStyle ? "TrackGlow" : "TrackCasing", 0.0, df::RoutePattern(), underDp * vs);
+  auto line = makeSubroute(dimmed ? "TrackLineOff" : style == 2 ? "TrackLineBright" : "TrackLine", 1.0,
+                           dimmed ? df::RoutePattern(2.0, 3.0) : df::RoutePattern(), lineDp * vs);
 
-  // Ring: 13dp black disc with a 3dp mint ring and a 4.5dp mint dot. Markers stack in list order and are
-  // scaled by the line's half width.
-  auto const addCircle = [&line, &polyline, ring](df::ColorConstant const & color, float radiusDp)
+  // Ring: 13dp black disc with a 3dp mint ring and a 4.5dp mint dot, whatever the line's width. Markers stack in list
+  // order and are scaled by the line's half width.
+  auto const addCircle = [&line, &polyline, ring, lineDp](df::ColorConstant const & color, float radiusDp)
   {
     if (ring == 0)
       return;
@@ -2015,7 +2023,7 @@ JNIEXPORT jintArray JNICALL Java_app_organicmaps_sdk_Framework_nativeShowTrackLi
     m.m_position = ring == 2 ? polyline.Back() : polyline.Front();
     m.m_colors = {color};
     m.m_innerColor = color;
-    m.m_scale = radiusDp / (kLineWidthDp / 2);
+    m.m_scale = radiusDp / (lineDp / 2);
     line->m_markers.push_back(std::move(m));
   };
   addCircle("TrackLine", 14.5f);
@@ -2023,8 +2031,8 @@ JNIEXPORT jintArray JNICALL Java_app_organicmaps_sdk_Framework_nativeShowTrackLi
   addCircle("TrackLine", 4.5f);
 
   std::vector<jint> ids;
-  if (glow)
-    ids.push_back(static_cast<jint>(engine->AddSubroute(df::SubrouteConstPtr(glow.release()))));
+  if (under)
+    ids.push_back(static_cast<jint>(engine->AddSubroute(df::SubrouteConstPtr(under.release()))));
   ids.push_back(static_cast<jint>(engine->AddSubroute(df::SubrouteConstPtr(line.release()))));
   jintArray result = env->NewIntArray(static_cast<jsize>(ids.size()));
   env->SetIntArrayRegion(result, 0, static_cast<jsize>(ids.size()), ids.data());

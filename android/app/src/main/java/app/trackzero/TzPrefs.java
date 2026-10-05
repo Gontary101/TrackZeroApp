@@ -15,6 +15,7 @@ public final class TzPrefs
   private static final String AUTO_PAUSE = "autoPause";
   private static final String FIRST_CAMERA_DONE = "firstCameraDone";
   private static final String TRACE = "trace";
+  private static final String LINE_STYLE = "lineStyle";
 
   private TzPrefs() {}
 
@@ -80,6 +81,17 @@ public final class TzPrefs
   public static void setFirstCameraDone(@NonNull Context c)
   {
     prefs(c).edit().putBoolean(FIRST_CAMERA_DONE, true).apply();
+  }
+
+  /** The route line candidate shown (hidden About tools, Phase 20): 0 = B, the default. */
+  public static int lineStyle(@NonNull Context c)
+  {
+    return prefs(c).getInt(LINE_STYLE, 0);
+  }
+
+  public static void setLineStyle(@NonNull Context c, int style)
+  {
+    prefs(c).edit().putInt(LINE_STYLE, style).apply();
   }
 
   /** The hidden tracing switch of release builds (About, Phase 16). */

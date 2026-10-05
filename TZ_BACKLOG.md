@@ -115,3 +115,5 @@ _No bugs marked as fixed yet._
   Field check: NEEDS OWNER N18.
 - **BUG-003** — Phase 19. Material's sheet moved the handle up into the island (D44); one bottom layout now, handle
   under the island on every page. Field check: NEEDS OWNER N18 (handle part).
+- **FEAT-005** — Phase 20. Research in `TZ_RESEARCH_ROUTE_VISIBILITY.md`; 8dp line with a black casing (D45).
+  Field check: NEEDS OWNER N20 (choose among four candidates).

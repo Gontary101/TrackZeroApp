@@ -14,8 +14,10 @@ import androidx.annotation.Nullable;
 import app.organicmaps.R;
 import app.trackzero.TzIo;
 import app.trackzero.TzNavigator;
+import app.trackzero.TzPrefs;
 import app.trackzero.TzTrace;
 import app.trackzero.base.TzBase;
+import app.trackzero.base.TzRouteLayer;
 import app.trackzero.ui.TzListRow;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -62,6 +64,14 @@ public class TzAboutScreen extends TzScreen
     final TzListRow shareTrace = view.findViewById(R.id.tz_about_share_trace);
     shareTrace.setDetail(getString(R.string.tz_about_share_trace_detail));
     shareTrace.setOnClickListener(v -> shareTrace());
+    final TzListRow lineStyle = view.findViewById(R.id.tz_about_line_style);
+    lineStyle.setDetail(TzRouteLayer.STYLES[TzRouteLayer.style()]);
+    lineStyle.setOnClickListener(v -> {
+      final int next = (TzRouteLayer.style() + 1) % TzRouteLayer.STYLES.length;
+      TzPrefs.setLineStyle(requireContext(), next);
+      TzRouteLayer.setStyle(next);
+      lineStyle.setDetail(TzRouteLayer.STYLES[next]);
+    });
     showDebug();
     final TzListRow fonts = view.findViewById(R.id.tz_about_fonts);
     fonts.setDetail(getString(R.string.tz_about_fonts_detail));

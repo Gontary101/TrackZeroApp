@@ -44,6 +44,7 @@ import app.organicmaps.sdk.widget.placepage.PlacePageData;
 import app.organicmaps.util.ThemeSwitcher;
 import app.trackzero.TzConfig;
 import app.trackzero.TzNavigator;
+import app.trackzero.TzPrefs;
 import app.trackzero.TzTrace;
 import app.trackzero.ride.TzRideService;
 import app.trackzero.routes.TzImport;
@@ -92,6 +93,7 @@ public class TzActivity extends BaseMwmFragmentActivity
   {
     super.onSafeCreate(savedInstanceState);
     TzTrace.init(this);
+    TzRouteLayer.setStyle(TzPrefs.lineStyle(this));
     if (savedInstanceState != null)
       mPermissionAsked = savedInstanceState.getBoolean(STATE_PERMISSION_ASKED);
     // Each map position wakes the CPU and animates the map: half as many, the rider can't tell.

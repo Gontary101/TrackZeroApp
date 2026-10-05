@@ -23,7 +23,7 @@ public final class TzRouteLayer
   interface Engine
   {
     @NonNull
-    int[] show(@NonNull double[] lat, @NonNull double[] lon, boolean dimmed, int ring);
+    int[] show(@NonNull double[] lat, @NonNull double[] lon, boolean dimmed, int ring, int style);
 
     void remove(@NonNull int[] ids);
   }
@@ -32,9 +32,9 @@ public final class TzRouteLayer
   static Engine sEngine = new Engine() {
     @NonNull
     @Override
-    public int[] show(@NonNull double[] lat, @NonNull double[] lon, boolean dimmed, int ring)
+    public int[] show(@NonNull double[] lat, @NonNull double[] lon, boolean dimmed, int ring, int style)
     {
-      return Framework.nativeShowTrackLine(lat, lon, dimmed, ring);
+      return Framework.nativeShowTrackLine(lat, lon, dimmed, ring, style);
     }
 
     @Override
@@ -97,7 +97,7 @@ public final class TzRouteLayer
     {
       if (lat != null && lon != null && ids == null)
       {
-        ids = sEngine.show(lat, lon, dimmed, ring);
+        ids = sEngine.show(lat, lon, dimmed, ring, sStyle);
         if (TzTrace.on())
           TzTrace.log("line", name + " drawn owner=" + ownerName(owner) + " points=" + lat.length + " dimmed=" + dimmed
                               + " ids=" + Arrays.toString(ids));
@@ -117,6 +117,28 @@ public final class TzRouteLayer
 
   private static final Line sRoute = new Line("route");
   private static final Line sLeg = new Line("leg");
+
+  /** Route line candidates for the daylight check (FEAT-005, D45): B (shipped), A (before v2), C, D. */
+  public static final String[] STYLES = {"B", "A", "C", "D"};
+  private static int sStyle;
+
+  /** Draws the lines in another candidate style (the hidden About tools, for the owner's outdoor comparison). */
+  public static void setStyle(int style)
+  {
+    if (style == sStyle)
+      return;
+    sStyle = style;
+    for (Line l : new Line[] {sRoute, sLeg})
+    {
+      l.remove();
+      l.draw();
+    }
+  }
+
+  public static int style()
+  {
+    return sStyle;
+  }
 
   /** Owns the lines between START RIDE and the ride screen taking them ({@link #transfer}). */
   public static final Object RIDE_START = new Object();

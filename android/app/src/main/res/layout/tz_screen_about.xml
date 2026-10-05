@@ -109,6 +109,12 @@
         style="@style/TzListRow"
         app:tzIcon="@drawable/ic_tz_share"
         app:tzTitle="@string/tz_about_share_trace" />
+
+      <app.trackzero.ui.TzListRow
+        android:id="@+id/tz_about_line_style"
+        style="@style/TzListRow"
+        app:tzIcon="@drawable/ic_tz_contrast"
+        app:tzTitle="@string/tz_about_line_style" />
     </LinearLayout>
 
     <TextView

@@ -27,7 +27,7 @@ public class TzRouteLayerTest
     TzRouteLayer.sEngine = new TzRouteLayer.Engine() {
       @NonNull
       @Override
-      public int[] show(@NonNull double[] lat, @NonNull double[] lon, boolean dimmed, int ring)
+      public int[] show(@NonNull double[] lat, @NonNull double[] lon, boolean dimmed, int ring, int style)
       {
         mCalls.add("show");
         return new int[] {mNextId++};

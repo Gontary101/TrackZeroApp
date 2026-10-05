@@ -17,6 +17,10 @@ Collected from the v2 phases; each says what to do, what to look at and what cou
   two thirds of the screen height? Pass: every start shows the rider and the line correctly from the first second (or
   from the first GPS position, indoors), no jumps, no zoom in/out; heading-up within about a second. If one fails:
   About › tap the version 7 times › Share trace, and send the file.
+- **N20 · Route line in sun (FEAT-005, Phase 20).** Midday, sun out, phone on the handlebar at arm's length.
+  About › tap the version 7 times › **Route line** cycles B → A → C → D (B is the default). For each, look at a route
+  preview (B5) and a ride (R2) for a second and look away: which line can you follow most easily at a glance? Report
+  the order. Pass: one is chosen; I then remove the others.
 - **N18 · Immersive ride (FEAT-001, Phase 18).** On a ride, no status bar or navigation bar on all three pages and with
   the controls open. Swipe from the top or bottom edge: the bars appear briefly over the ride and nothing moves. Tap the
   handle 10 times: it opens the controls every time. A quick upward swipe from just above the handle opens them too.
@@ -383,3 +387,19 @@ it led to).
 - Tests: `RideBottomLayoutTest` (2). Smoke test: steps 1–21 pass; the run then lost its way in Android's share chooser
   (script: Back now waits 3 s). Page swipes in the scripts are 300 ms (adb's 120 ms swipe sends too few move events).
 - `shots/R1`–`R7.png` updated.
+
+## Phase 20 — Route line for daylight (FEAT-005)
+
+- `TZ_RESEARCH_ROUTE_VISIBILITY.md`: ambient-contrast table (`tools/trackzero/contrast.py`, copied from the handoff),
+  what helps (width, a hard casing, direction marks, a light map in the brightest light), sources checked against
+  their abstracts. One correction to the plan's summary: Dobres et al. (2017) found the polarity effect in dark
+  surroundings; in bright light both polarities read well.
+- `nativeShowTrackLine(…, style)`: B (shipped) 8dp line on a 12dp black casing; A, C, D for the comparison
+  (D45). Dimmed line unchanged. Leg and place path use the same style. Drape colours `TrackCasing`, `TrackLineBright`;
+  styles regenerated. Hidden About row "Route line" (tracing on) cycles the styles; kept in `tz_prefs`.
+- Checked on the emulator: B5 in all four styles; R2 and R3 in B. Same number of subroutes as before (casing + line
+  instead of glow + line), so no extra draw work; the emulator's frame numbers are too noisy to show a difference
+  either way (TZ_BASELINE).
+- Smoke test: all steps pass. The line shown on B1 just after the ride is the emulator engine's lag (D43): it was
+  gone 2.5 minutes later.
+- `shots/B5.png`, `R2.png`, `R3.png` updated.

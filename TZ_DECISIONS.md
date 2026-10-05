@@ -500,3 +500,18 @@ out again. Fix: the sheet ignores that adjustment, and one function (`applyBotto
 on insets, on page bind and on resize. The base is the gesture strip of D43, not 0. Handle 34dp, 4dp to the island,
 grabber-to-dots gap 6dp. Also new (Flow board): a fast upward swipe starting in the bottom 120dp opens the sheet. It is
 read from the activity's touch stream, so the pager keeps its horizontal swipes.
+
+## D45 · Route line for daylight (Phase 20, FEAT-005)
+Research and table in `TZ_RESEARCH_ROUTE_VISIBILITY.md`. In sun every line colour ends between 1.2:1 and 2.1:1 against
+the dark map, ranked by luminance only, so the gains are width and a hard edge, not hue. Shipped **B**: an 8dp mint
+line on a 12dp black casing; the 16dp glow is gone (at 18 % mint it is below the screen's reflection in sun). The four
+candidates (A as before, B, C brighter, D wider) are one native function with a style argument, switchable in About's
+hidden tools for the owner's outdoor check. When the owner has chosen, the switch and the losing styles go.
+
+Departures from the plan's steps:
+- The width table `kRouteHalfWidthInPixelTrack` stays 8 (the widest candidate's half-width) and each subroute is capped
+  by `m_maxPixelWidth`. Setting it to 6 now would break A and D; it can be set to B's 6 when the switch goes.
+- The colours `TrackCasing` (#000000) and, for C only, `TrackLineBright` are added; `TrackGlow` stays until the
+  choice is made.
+- The ring keeps its on-screen size: marker scales are relative to the line's half-width, so they are computed from
+  each style's line width.

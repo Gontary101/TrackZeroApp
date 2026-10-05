@@ -360,7 +360,7 @@ public class Framework
   /// ring: 0 none, 1 at the start, 2 at the end.
   /// Returns the ids for nativeRemoveTrackLine, null when the map engine isn't running.
   @Nullable
-  public static native int[] nativeShowTrackLine(double[] lat, double[] lon, boolean dimmed, int ring);
+  public static native int[] nativeShowTrackLine(double[] lat, double[] lon, boolean dimmed, int ring, int style);
 
   public static native void nativeRemoveTrackLine(int[] ids);
 
