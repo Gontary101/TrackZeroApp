@@ -21,6 +21,7 @@ import androidx.activity.SystemBarStyle;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
+import androidx.lifecycle.Lifecycle;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 import app.organicmaps.MwmActivity;
@@ -157,6 +158,8 @@ public class TzActivity extends BaseMwmFragmentActivity
   private static final float COMPASS_ON_MPS = 3f;
   private double mLastNorth = Double.NaN;
   private boolean mCompassAsleep;
+  /** The battery saver (Phase 35) holds the compass off whatever the speed. */
+  private boolean mCompassPaused;
   private final SensorListener mCompass = north -> {
     if (!Double.isNaN(mLastNorth)
         && Math.abs(Math.IEEEremainder(north - mLastNorth, 2 * Math.PI)) < COMPASS_STEP_RAD)
@@ -172,7 +175,7 @@ public class TzActivity extends BaseMwmFragmentActivity
       return;
     final float speed = location.getSpeed();
     final boolean asleep = mCompassAsleep ? speed >= COMPASS_ON_MPS : speed >= COMPASS_OFF_MPS;
-    if (asleep == mCompassAsleep)
+    if (asleep == mCompassAsleep || mCompassPaused)
       return;
     mCompassAsleep = asleep;
     final SensorHelper sensor = MwmApplication.from(this).getSensorHelper();
@@ -181,6 +184,24 @@ public class TzActivity extends BaseMwmFragmentActivity
     else
       sensor.start();
   };
+
+  /** The battery saver stops the compass, and starts it again when it ends (Phase 35). */
+  public void pauseCompass(boolean paused)
+  {
+    if (paused == mCompassPaused)
+      return;
+    mCompassPaused = paused;
+    final SensorHelper sensor = MwmApplication.from(this).getSensorHelper();
+    if (paused)
+    {
+      sensor.stop();
+      return;
+    }
+    mCompassAsleep = false;
+    // Not in the background: the next start runs it as usual.
+    if (getLifecycle().getCurrentState().isAtLeast(Lifecycle.State.STARTED))
+      sensor.start();
+  }
 
   @Override
   protected void onStart()
@@ -194,6 +215,9 @@ public class TzActivity extends BaseMwmFragmentActivity
     mCompassAsleep = false;
     mLastNorth = Double.NaN;
     TzLocation.addListener(this, mBearing);
+    // Unless the battery saver holds it off (Phase 35).
+    if (mCompassPaused)
+      MwmApplication.from(this).getSensorHelper().stop();
   }
 
   @Override

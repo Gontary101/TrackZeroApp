@@ -131,6 +131,9 @@ _No bugs marked as fixed yet._
   under the island on every page. Field check: NEEDS OWNER N18 (handle part).
 - **FEAT-005** — Phase 20. Research in `TZ_RESEARCH_ROUTE_VISIBILITY.md`; 8dp line with a black casing (D45).
   Field check: NEEDS OWNER N20 (choose among four candidates).
+- **FEAT-011** — Phase 35. Extreme battery saver: R6 SAVER › X1 › TURN ON; X2 black screen with the turn, tones
+  and warnings kept, map/voice/rerouting/barometer paused, GPS every 3 s away from turns; one tap to exit (D60).
+  Field check: NEEDS OWNER N35.
 - **FEAT-014** — Phase 34. Share my location: R6 SHARE opens E1 with the last good fix as an editable message
   (check-in, low battery, I need help), COPY or Android's share sheet; TrackZero sends nothing itself (D59). Field
   check: NEEDS OWNER N34.

@@ -115,7 +115,7 @@
             android:textColor="@color/tz_text1" />
         </LinearLayout>
 
-        <!-- ActionTile row: STOPS (Phase 30), SHARE (Phase 34); SAVER takes the last third in Phase 35. -->
+        <!-- ActionTile row: STOPS (Phase 30), SHARE (Phase 34), SAVER (Phase 35). -->
         <LinearLayout
           android:layout_width="match_parent"
           android:layout_height="@dimen/tz_action_tile_h"
@@ -170,11 +170,32 @@
               android:layout_marginTop="@dimen/tz_space_8"
               android:text="@string/tz_share_tile" />
           </LinearLayout>
-          <Space
+          <LinearLayout
+            android:id="@+id/tz_ride_saver"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_marginStart="@dimen/tz_space_8"
-            android:layout_weight="1" />
+            android:layout_weight="1"
+            android:background="@drawable/tz_bg_surface3_r20"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackground"
+            android:gravity="center"
+            android:orientation="vertical">
+            <ImageView
+              android:id="@+id/tz_ride_saver_icon"
+              android:layout_width="@dimen/tz_action_tile_icon"
+              android:layout_height="@dimen/tz_action_tile_icon"
+              android:importantForAccessibility="no"
+              android:src="@drawable/ic_tz_battery"
+              app:tint="@color/tz_text1" />
+            <TextView
+              style="@style/TzText.Tile"
+              android:layout_width="wrap_content"
+              android:layout_height="wrap_content"
+              android:layout_marginTop="@dimen/tz_space_8"
+              android:text="@string/tz_saver_tile" />
+          </LinearLayout>
         </LinearLayout>
 
         <app.trackzero.ui.TzToggleRow
@@ -227,4 +248,12 @@
         android:layout_height="@dimen/tz_handle_h" />
     </FrameLayout>
   </androidx.coordinatorlayout.widget.CoordinatorLayout>
+
+  <!-- X2 (Phase 35): over everything while the battery saver is on. -->
+  <app.trackzero.ui.TzSaverView
+    android:id="@+id/tz_ride_saver_view"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:elevation="@dimen/tz_elev3"
+    android:visibility="gone" />
 </FrameLayout>

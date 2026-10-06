@@ -223,6 +223,20 @@ public class RideSessionTest
   }
 
   @Test
+  public void theSaverComesBackFromTheJournal()
+  {
+    final RideSession s = new RideSession(true);
+    s.start(1_780_000_000_000L, 0, "r1", "Loop", Profile.ROAD);
+    s.setSaver(true);
+    RideJournal.Content c = RideJournal.parse(s.drainJournal(0));
+    assertTrue(c.saver);
+    assertTrue(RideSession.restore(c, true).saver());
+    s.setSaver(false);
+    final String all = "H,1,1780000000000,r1,Loop\nZ,1\nZ,0\n";
+    assertFalse(RideJournal.parse(all).saver);
+  }
+
+  @Test
   public void journalWithoutHeaderRestoresNothing()
   {
     assertNull(RideJournal.parse(""));

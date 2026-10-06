@@ -42,6 +42,7 @@ import app.trackzero.follow.FollowEngine;
 import app.trackzero.follow.FollowRoute;
 import app.trackzero.follow.Guide;
 import app.trackzero.follow.Stop;
+import app.trackzero.follow.TurnState;
 import app.trackzero.follow.ManeuverBuilder;
 import app.trackzero.follow.RouteManeuver;
 import app.trackzero.follow.RoutedPath;
@@ -78,7 +79,6 @@ public final class TzRideService extends Service
   private static final long JOURNAL_FLUSH_MS = 30_000;
   private static final long NOTIFICATION_UPDATE_MS = 10_000;
   /** Screen off and nothing to say: fixes come in batches this far apart, so the phone sleeps between them. */
-  private static final long SCREEN_OFF_BATCH_MS = 15_000;
   /** A GPX waypoint names a climb when it is this close to its summit (plan §11.1). */
   private static final double SUMMIT_WAYPOINT_M = 300;
 
@@ -398,14 +398,14 @@ public final class TzRideService extends Service
       startSources();
     else if (!needed && mLocation != null)
       stopSources();
-    if (mLocation != null)
-      mLocation.setMaxDelay(mInteractive || speaks() ? 0 : SCREEN_OFF_BATCH_MS);
+    applyGps();
   }
 
   /** Turns are announced: fixes must come as they happen. */
   private boolean speaks()
   {
-    return mGuide != null && TzPrefs.voice(this);
+    // Tones too (Phase 32): a tone from a batch of fixes 15 s late would be no use.
+    return mGuide != null && (TzPrefs.voice(this) || TzPrefs.tones(this) || (mSession != null && mSession.saver()));
   }
 
   private void startSources()
@@ -416,6 +416,9 @@ public final class TzRideService extends Service
     mLocation.start(this::onFix);
     // A replayed track carries its own elevation; the phone's barometer knows nothing about it.
     if (TzConfig.DEBUG_REPLAY)
+      return;
+    // The saver pauses the barometer: altitude comes from the GPS (Phase 35).
+    if (mSession != null && mSession.saver())
       return;
     mBarometer = new BarometerSource(this);
     mBarometer.start(alt -> {
@@ -453,7 +456,8 @@ public final class TzRideService extends Service
       }
       if (TzTrace.on())
         TzTrace.log("ride", "guide created (place, path " + (path == null ? "none" : Math.round(path.line.totalM()) + " m") + ")");
-      mVoice = new TzVoice(this);
+      mVoice = s.saver() ? null : new TzVoice(this);
+      mGuide.setRerouting(!s.saver());
       updateSources();
       placeClimbs();
       if (mFollowFix != null)
@@ -481,7 +485,8 @@ public final class TzRideService extends Service
           if (TzTrace.on())
             TzTrace.log("ride", "guide created (track " + Math.round(prepared.engine.totalM()) + " m)");
           mClimbs = prepared.climbs;
-          mVoice = new TzVoice(this);
+          mVoice = mSession.saver() ? null : new TzVoice(this);
+          mGuide.setRerouting(!mSession.saver());
           updateSources();
           // Built while the rider moved on: place them now, before anything shows the guide's state.
           if (mFollowFix != null)
@@ -603,6 +608,72 @@ public final class TzRideService extends Service
     return s.isEmpty() ? null : s;
   }
 
+  // ---- Battery saver (Phase 35) ----
+
+  /**
+   * Turns the battery saver on or off. On: fixes every 3 s away from maneuvers, no rerouting (the router's graphs
+   * freed), no voice (its engine shut down), no barometer, the notification only on state changes; tones stay, forced
+   * on. Off: everything back at once, and a path asked for if the rider is off the route.
+   */
+  public void setSaver(boolean on)
+  {
+    final RideSession s = mSession;
+    if (s == null || s.saver() == on)
+      return;
+    if (TzTrace.on())
+      TzTrace.log("ride", "saver " + (on ? "on" : "off"));
+    s.setSaver(on);
+    final Guide g = mGuide;
+    if (on)
+    {
+      if (g != null)
+      {
+        g.setRerouting(false);
+        TzRouter.release();
+      }
+      if (mVoice != null)
+        mVoice.shutdown();
+      mVoice = null;
+      if (mBarometer != null)
+        mBarometer.stop();
+      mBarometer = null;
+    }
+    else
+    {
+      if (g != null)
+      {
+        mVoice = new TzVoice(this);
+        g.setRerouting(true);
+      }
+      // The barometer again, if fixes are coming.
+      if (mLocation != null)
+      {
+        stopSources();
+        startSources();
+      }
+    }
+    flushJournal();
+    applyGps();
+    changed();
+  }
+
+  /** How often the GPS reports, chosen after each fix and on every change of state (SaverPolicy). */
+  private void applyGps()
+  {
+    final TzLocationSource source = mLocation;
+    final RideSession s = mSession;
+    if (source == null || s == null)
+      return;
+    final Guide g = mGuide;
+    final boolean placed = g != null && g.placed();
+    final TurnState turn = placed ? g.turnState() : null;
+    final SaverPolicy.Gps gps =
+        SaverPolicy.choose(s.saver(), g != null, turn == null ? Double.NaN : turn.distanceM,
+                           turn != null && (turn.offRoute || turn.wrongWay), mInteractive, speaks());
+    source.setInterval(gps.intervalMs);
+    source.setMaxDelay(gps.maxDelayMs);
+  }
+
   // ---- Estimate (Phase 33) ----
 
   private EstimateOnce mEstimate = new EstimateOnce();
@@ -638,7 +709,8 @@ public final class TzRideService extends Service
     @Override
     public boolean tones()
     {
-      return TzPrefs.tones(TzRideService.this);
+      // The saver keeps the tones whatever the setting: they are its guidance (Phase 35).
+      return TzPrefs.tones(TzRideService.this) || (mSession != null && mSession.saver());
     }
 
     @Override
@@ -914,6 +986,8 @@ public final class TzRideService extends Service
       play(mRules.fix(f.elapsedMs));
       armGpsCheck();
       follow(s, f);
+      if (s.saver())
+        applyGps();
     }
     if (s.state() != before || f.elapsedMs - mLastFlushMs >= JOURNAL_FLUSH_MS)
       flushJournal();
@@ -957,7 +1031,9 @@ public final class TzRideService extends Service
     final long now = SystemClock.elapsedRealtime();
     final boolean stateChanged = mNotifiedState != s.state();
     // Nobody sees it with the screen off: refreshed when the screen comes on (state changes still go out at once).
-    if (stateChanged || (mInteractive && now - mLastNotificationMs >= NOTIFICATION_UPDATE_MS))
+    // The saver refreshes it only on state changes (Phase 35).
+    if (stateChanged
+        || (mInteractive && !s.saver() && now - mLastNotificationMs >= NOTIFICATION_UPDATE_MS))
       updateNotification();
     for (Listener l : mListeners)
       l.onRideChanged(s);

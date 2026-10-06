@@ -921,3 +921,38 @@ with the stock weights, so near region borders the profile applies a little less
 - **Age line.** ≤ 30 s mint "GPS fix n s ago · battery n %", ≤ 2 min the same in grey, older amber "Last fix n min
   ago — may be out of date", none amber "No GPS position yet". The message's stale note uses the fix's own time.
 
+## D60 · Extreme battery saver (Phase 35, FEAT-011)
+- **What it keeps and pauses.** As the plan's table. Kept: GPS tracking and recording, turn tones and the off-route /
+  wrong-way / GPS warnings (forced on even with tones off: they are the saver's guidance), the turn, the distances,
+  the clock and battery on X2, SHARE. Paused: map drawing, the 1 s refresh and the ride pages, voice (its engine
+  shut down), rerouting and new legs (the router released; off route only warns), the barometer and the compass,
+  the notification's timed refreshes.
+- **GPS policy (`SaverPolicy`).** Guided: every 3 s (batched up to 9 s with the screen off) while the next maneuver
+  is more than 600 m away and the rider is on the route; every second and unbatched within 600 m, off route or riding
+  the wrong way, or before the rider is placed. Free ride: every 3 s, batched up to 15 s with the screen off. The
+  choice is made after every fix. The 600 m margin covers a 9 s batch plus a 3 s gap at 40 km/h (133 m), so the switch
+  to 1 Hz always comes well before the 200 m and 50 m calls. `SaverTonesTest` rides 20 turns at 25 and 40 km/h on
+  this policy: every "turn now" comes between 80 m and 20 m before its turn.
+- **Tones keep fixes unbatched outside the saver too.** Since Phase 32 a tone may play with the voice off. The
+  normal screen-off batching (15 s) applied unless the voice was on, so a tone could have come up to 15 s late. Any
+  sound now counts (voice, tones, or the saver), found while writing the policy.
+- **Ride stats at 3 s.** Nothing to change: the speed comes from the GPS or from distance over the fixes' own times,
+  and the 150 km/h jump filter is a speed, so it scales with the gap. `RideStatsTest` covers 40 km/h at 3 s.
+- **Rerouting off.** `Guide.setRerouting(false)` drops a request in flight and asks for nothing more; a leg already
+  followed stays. Turning it back on asks at once if the rider is off the route. Stops added before the saver keep
+  their place in the list, but their legs wait for the saver to end.
+- **X2.** A layer over the ride screen (`TzSaverView`), black in every appearance (`tz_saver_*` colours), at window
+  brightness 0.04. `FLAG_KEEP_SCREEN_ON` is cleared so the screen sleeps and the phone locks as usual (no device
+  admin, no lock-screen replacement, no overlay permission); unlocking shows X2 again because the ride screen draws
+  from the session's saver flag. It redraws only when the maneuver, its distance band (1 km / 500 m / 200 m / 50 m),
+  a warning or the minute changes, driven by the ride's own updates (no ticking handler). On a free ride it shows
+  the distance and the time ridden.
+- **One tap each way.** R6 SAVER › X1 › TURN ON; EXIT SAVER (or the tile) turns it off without asking, and
+  everything comes back at once (rendering, the page and its camera, 1 Hz, barometer, compass, voice if it was on,
+  keep-awake, brightness, rerouting). The flag is journaled (`Z,1` / `Z,0`), so a restored ride comes back in the
+  saver.
+- **Compass.** The map's compass belongs to `TzActivity`; `pauseCompass` holds it off for the saver and is released
+  when the ride screen goes. It also holds when the activity starts again, and never starts the sensor in the
+  background.
+- **Measured, not promised.** The emulator run (2-minute windows, the baseline's tool, instead of the plan's
+  30-minute replays) is in TZ_BASELINE; the real numbers are N35. No battery-life figure appears in the app.

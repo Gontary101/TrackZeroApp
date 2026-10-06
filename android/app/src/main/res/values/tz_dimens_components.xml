@@ -182,4 +182,10 @@
   <!-- Phase 32 · ToneTile: 104 high, glyph 36 -->
   <dimen name="tz_tone_tile_h">104dp</dimen>
   <dimen name="tz_tone_tile_glyph">36dp</dimen>
+  <!-- Phase 35 · X2 -->
+  <dimen name="tz_saver_well">120dp</dimen>
+  <dimen name="tz_saver_glyph">64dp</dimen>
+  <dimen name="tz_saver_button_h">64dp</dimen>
+  <!-- X1's rows: 34dp, as on the board -->
+  <dimen name="tz_saver_row_pad">5dp</dimen>
 </resources>

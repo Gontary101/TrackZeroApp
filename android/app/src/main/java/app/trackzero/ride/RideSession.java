@@ -56,6 +56,8 @@ public final class RideSession
   /** The ride-time estimate made at the start (Phase 33): seconds, -1 none yet; its basis (0: a typical pace). */
   private long mEstimateS = -1;
   private int mEstimateBasis;
+  /** The battery saver (Phase 35). */
+  private boolean mSaver;
   /** Stops kept in the journal of a restored ride, for the guide once it exists (Phase 30). */
   @NonNull
   private List<Stop> mRestoredStops = new ArrayList<>();
@@ -84,6 +86,7 @@ public final class RideSession
     s.mRestoredStops = new ArrayList<>(c.stops);
     s.mEstimateS = c.estimateS;
     s.mEstimateBasis = c.estimateBasis;
+    s.mSaver = c.saver;
     s.mTrack = c.track;
     s.mTrack.breakSegment();
     s.mStats.restore(c.totals);
@@ -306,6 +309,20 @@ public final class RideSession
   public int estimateBasis()
   {
     return mEstimateBasis;
+  }
+
+  /** The battery saver on or off; journaled, so a restored ride comes back in it. */
+  public void setSaver(boolean on)
+  {
+    if (on == mSaver)
+      return;
+    mSaver = on;
+    RideJournal.saver(mJournal, on);
+  }
+
+  public boolean saver()
+  {
+    return mSaver;
   }
 
   /** Journals a stop added (Phase 30). */

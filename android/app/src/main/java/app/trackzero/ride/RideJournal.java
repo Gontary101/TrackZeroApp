@@ -19,6 +19,7 @@ import java.util.Locale;
  * P,{time},{lat},{lon},{alt or NaN}         a recorded point
  * T,{distanceM},{movingMs},{gainM},{maxKmh},{maxGrade}   totals so far (the last one wins)
  * E,{totalS},{basis}                       the ride-time estimate made at the start (Phase 33)
+ * Z,{1|0}                                  the battery saver turned on or off (Phase 35; the last one wins)
  * A,{kind},{lat},{lon},{name}              a stop added (Phase 30)
  * X,{lat},{lon}                            that stop reached or removed
  * </pre>
@@ -51,11 +52,14 @@ public final class RideJournal
     /** The estimate made at the start (Phase 33): seconds, -1 none; rides it came from, 0 a typical pace. */
     public final long estimateS;
     public final int estimateBasis;
+    /** In the battery saver when the journal was last written (Phase 35). */
+    public final boolean saver;
 
     Content(long startedAt, @Nullable String routeId, @NonNull String name, @NonNull RideTrack track,
             @NonNull RideStats.Snapshot totals, double placeLat, double placeLon, @NonNull Profile profile,
-            @NonNull List<Stop> stops, long estimateS, int estimateBasis)
+            @NonNull List<Stop> stops, long estimateS, int estimateBasis, boolean saver)
     {
+      this.saver = saver;
       this.stops = stops;
       this.estimateS = estimateS;
       this.estimateBasis = estimateBasis;
@@ -92,6 +96,11 @@ public final class RideJournal
   static void estimate(@NonNull StringBuilder out, long totalS, int basis)
   {
     out.append("E,").append(totalS).append(',').append(basis).append('\n');
+  }
+
+  static void saver(@NonNull StringBuilder out, boolean on)
+  {
+    out.append("Z,").append(on ? 1 : 0).append('\n');
   }
 
   static void stopAdded(@NonNull StringBuilder out, @NonNull Stop stop)
@@ -151,6 +160,7 @@ public final class RideJournal
     final List<Stop> stops = new ArrayList<>();
     long estimateS = -1;
     int estimateBasis = 0;
+    boolean saver = false;
     for (int i = 1; i < lines.length; i++)
     {
       if (lines[i].startsWith("A,"))
@@ -201,6 +211,11 @@ public final class RideJournal
             estimateBasis = Integer.parseInt(f[2]);
           }
         }
+        case "Z" ->
+        {
+          if (f.length == 2)
+            saver = "1".equals(f[1]);
+        }
         case "X" ->
         {
           if (f.length == 3)
@@ -224,6 +239,6 @@ public final class RideJournal
       }
     }
     return new Content(startedAt, routeId, h[4], track, totals, placeLat, placeLon, profile, stops, estimateS,
-                       estimateBasis);
+                       estimateBasis, saver);
   }
 }

@@ -20,6 +20,7 @@ import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
@@ -35,6 +36,7 @@ import app.trackzero.TzConfig;
 import app.trackzero.TzNavigator;
 import app.trackzero.TzPrefs;
 import app.trackzero.TzTrace;
+import app.trackzero.base.TzActivity;
 import app.trackzero.base.TzMap;
 import app.trackzero.base.TzRouteLayer;
 import app.trackzero.follow.Climb;
@@ -58,6 +60,7 @@ import app.trackzero.ui.TzHoldButton;
 import app.trackzero.ui.TzMetricView;
 import app.trackzero.ui.TzPageHandle;
 import app.trackzero.ui.TzSegmented;
+import app.trackzero.ui.TzSaverView;
 import app.trackzero.ui.TzStatsIsland;
 import app.trackzero.ui.TzTextSize;
 import app.trackzero.ui.TzToggleRow;
@@ -72,12 +75,14 @@ import java.util.TimeZone;
  * RIDE: page 0 map (R1 free ride / R2 route), page 1 speed (R4), page 2 elevation (R5); the controls sheet (R6)
  * whose collapsed state is the page handle; paused states (R7). Reads the ride from {@link TzRideService}.
  */
-public class TzRideScreen extends TzScreen implements TzRideService.Listener
+public class TzRideScreen extends TzScreen implements TzRideService.Listener, TzSaverSheet.Listener
 {
   private static final int PAGE_MAP = 0;
   private static final int PAGE_SPEED = 1;
   private static final int PAGE_CLIMB = 2;
   private static final long REFRESH_MS = 1000;
+  /** X2's window brightness (Phase 35). */
+  private static final float SAVER_BRIGHTNESS = 0.04f;
   /** An upward swipe starting this close to the bottom opens the controls... */
   private static final float SWIPE_UP_ZONE_DP = 120;
   /** ...when it is at least this fast (dp per second). */
@@ -135,6 +140,11 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
   private TextView mSheetSummary;
   private TzToggleRow mVoice;
   private TzToggleRow mTones;
+  /** X2 (Phase 35), and whether the screen is in the saver's state now. */
+  private TzSaverView mSaverView;
+  private boolean mSaverShown;
+  /** The sheet and handle's layer: hidden under X2. */
+  private View mSheetLayer;
   // Page 0
   @Nullable
   private View mMapTop;
@@ -255,6 +265,22 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
     mSheetSummary = view.findViewById(R.id.tz_ride_sheet_summary);
     mVoice = view.findViewById(R.id.tz_ride_voice);
     mTones = view.findViewById(R.id.tz_ride_tones);
+    mSaverView = view.findViewById(R.id.tz_ride_saver_view);
+    mSheetLayer = (View) view.findViewById(R.id.tz_ride_sheet).getParent();
+    mSaverView.setListener(new TzSaverView.Listener() {
+      @Override
+      public void onShare()
+      {
+        TzShareSheet.show(TzRideScreen.this, mService == null ? null : mService.lastGoodFix());
+      }
+
+      @Override
+      public void onExit()
+      {
+        if (mService != null)
+          mService.setSaver(false);
+      }
+    });
 
     // The preview's line, handed over by START RIDE: shown until this screen has the route, and kept if it is the same.
     TzRouteLayer.transfer(TzRouteLayer.RIDE_START, this);
@@ -343,6 +369,15 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
       }
     });
     mScrim.setOnClickListener(v -> mSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED));
+    // X1, then X2 (Phase 35); the tile turns the saver off again without asking.
+    mSheet.findViewById(R.id.tz_ride_saver).setOnClickListener(v -> {
+      mSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
+      final RideSession s = session();
+      if (s != null && s.saver())
+        mService.setSaver(false);
+      else
+        TzSaverSheet.show(this);
+    });
     // E1 over the ride (Phase 34): the last good fix, nothing asked of the GPS.
     mSheet.findViewById(R.id.tz_ride_share).setOnClickListener(v -> {
       mSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
@@ -395,6 +430,14 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
     TzMap.removeTouchObserver(mSwipeUp);
     mHandler.removeCallbacks(mTick);
     requireActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+    if (mSaverShown)
+    {
+      // Put again on the next start (the phone was locked, the app left): the brightness goes with the window.
+      mSaverShown = false;
+      final WindowManager.LayoutParams lp = requireActivity().getWindow().getAttributes();
+      lp.screenBrightness = WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE;
+      requireActivity().getWindow().setAttributes(lp);
+    }
     TzDisplay.limitRefreshRate(requireActivity(), false);
     TzDisplay.setImmersive(requireActivity(), false);
     if (mService != null)
@@ -409,6 +452,9 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
   public void onDestroyView()
   {
     super.onDestroyView();
+    // The ride ended (or the screen went) in the saver: the compass is the activity's again.
+    if (requireActivity() instanceof TzActivity a)
+      a.pauseCompass(false);
     TzRouteLayer.hide(this);
     mLinesShown = -1;
     TzMap.clearVisibleArea(this);
@@ -434,6 +480,7 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
     // bar's height whether it shows or not: clear of a camera hole, and steady.
     mTopInset = top;
     mBottomInset = TzNavigator.gestureInset();
+    mSaverView.setInsets(top, mBottomInset);
     applyBottomLayout();
     applyVisibleArea();
   }
@@ -669,6 +716,65 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
   }
 
   @Override
+  public void onSaverConfirmed()
+  {
+    if (mService != null)
+      mService.setSaver(true);
+  }
+
+  // ---- Battery saver (Phase 35) ----
+
+  /**
+   * The screen's side of the saver: X2 over a black, dim window that may sleep; no map drawing, compass, pages or
+   * ticking. Leaving it brings all of that back at once. Returns whether the saver is on.
+   */
+  private boolean applySaver(boolean on)
+  {
+    if (on == mSaverShown)
+      return on;
+    mSaverShown = on;
+    final Window window = requireActivity().getWindow();
+    final WindowManager.LayoutParams lp = window.getAttributes();
+    lp.screenBrightness = on ? SAVER_BRIGHTNESS : WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE;
+    window.setAttributes(lp);
+    if (requireActivity() instanceof TzActivity a)
+      a.pauseCompass(on);
+    mSaverView.setVisibility(on ? View.VISIBLE : View.GONE);
+    mPager.setVisibility(on ? View.INVISIBLE : View.VISIBLE);
+    mSheetLayer.setVisibility(on ? View.INVISIBLE : View.VISIBLE);
+    if (on)
+    {
+      mSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
+      mSaverView.invalidateContent();
+      // The screen may sleep and the phone lock as usual; the ride service keeps the tones going.
+      window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+      TzMap.setRenderingEnabled(false);
+      mHandler.removeCallbacks(mTick);
+    }
+    else
+    {
+      applyKeepAwake();
+      mHandler.removeCallbacks(mTick);
+      mHandler.post(mTick);
+      // Map drawing, the camera and the page come back with the page.
+      mLinesShown = -1;
+      setPage(mPager.getCurrentItem());
+    }
+    return on;
+  }
+
+  /** X2's content; it redraws only what changed (TzSaverView). */
+  private void renderSaver(@NonNull RideSession s)
+  {
+    final TzFormat.Units units = TzPrefs.units(requireContext());
+    final Guide guide = mService == null ? null : mService.guide();
+    if (guided(s) && guide != null)
+      mSaverView.bindTurn(guide.placed() ? guide.turnState() : null, guide.remainingM(), units);
+    else
+      mSaverView.bindFree(s.stats().distanceM(), s.stats().movingMs(SystemClock.elapsedRealtime()) / 1000, units);
+  }
+
+  @Override
   public void onRideChanged(@NonNull RideSession session)
   {
     render();
@@ -677,6 +783,9 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
   /** The clock runs on without fixes (no GPS, paused): render when no fix has for a second. */
   private void tick()
   {
+    // X2 has no ticking: it is drawn from the ride's own changes (Phase 35).
+    if (mSaverShown)
+      return;
     if (SystemClock.elapsedRealtime() - mRenderedAtMs >= REFRESH_MS - TICK_SLACK_MS)
       render();
     mHandler.postDelayed(mTick, REFRESH_MS);
@@ -696,6 +805,12 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
     }
     loadRoute(s);
     mZoom.setFoot(s.profile().foot);
+    // The battery saver (Phase 35): X2 only.
+    if (applySaver(s.saver()))
+    {
+      renderSaver(s);
+      return;
+    }
 
     final long now = SystemClock.elapsedRealtime();
     mRenderedAtMs = now;

@@ -48,4 +48,9 @@
   <color name="tz_sf_gravel">#C8A26A</color>
   <color name="tz_sf_rough">#FF7A7A</color>
   <color name="tz_sf_none">#3A3D42</color>
+  <!-- X2 battery saver (Phase 35): the same in every appearance, dim on black. -->
+  <color name="tz_saver_bg">#000000</color>
+  <color name="tz_saver_dim">#6B7076</color>
+  <color name="tz_saver_text">#8A8F95</color>
+  <color name="tz_saver_well">#111214</color>
 </resources>

@@ -86,6 +86,11 @@ Collected from the v2 phases; each says what to do, what to look at and what cou
   check-in to yourself with the messaging app you use, and open the link: the right place? Tap Low battery / help
   twice: "I need help". In airplane mode: the text is still built and COPY works. Pass: the message reaches you and
   its link shows where you were.
+- **N35 · Battery saver (FEAT-011, Phase 35).** Two real rides of 2 h or more on the same kind of route, one normal
+  and one with R6 › SAVER › TURN ON from the start, screen off in a pocket or on the bars. Note the battery % at the
+  start and end of each (battery % per hour). In the saver: did every turn give its tones in time (none missed, none
+  late)? Off route: the warning plays? Unlock mid-ride: X2 shows at once, EXIT SAVER brings the map back at once.
+  Pass: no missed turn, and the saver ride uses clearly less battery per hour (the numbers go in TZ_BASELINE).
 - **N18 · Immersive ride (FEAT-001, Phase 18).** On a ride, no status bar or navigation bar on all three pages and with
   the controls open. Swipe from the top or bottom edge: the bars appear briefly over the ride and nothing moves. Tap the
   handle 10 times: it opens the controls every time. A quick upward swipe from just above the handle opens them too.
@@ -763,3 +768,26 @@ it led to).
   locale). 284 tests pass.
 - Smoke test: all steps pass, no crashes.
 
+## Phase 35 — Extreme battery saver (FEAT-011)
+
+- `ride/SaverPolicy` (pure): how often the GPS reports. Normal 1 s (batched 15 s with the screen off when nothing
+  speaks). Saver, guided: 3 s (batched 9 s with the screen off) more than 600 m from the next maneuver on the route;
+  1 s and unbatched within 600 m, off route, wrong way or not placed yet. Saver, free ride: 3 s, batched 15 s. Chosen
+  after every fix and on every change of state (`TzLocationSource.setInterval`).
+- `TzRideService.setSaver`: no voice (engine shut down), no rerouting (`Guide.setRerouting`; off route only warns),
+  no barometer (altitude from the GPS), tones forced on, the notification only on state changes. Outside the saver,
+  tones now keep fixes unbatched like the voice (they could have come up to 15 s late with the voice off).
+- The flag is in the session and the journal (`Z` line): a restored ride comes back in the saver.
+- X1 `screens/TzSaverSheet` from R6's SAVER tile: what keeps working and what pauses, TURN ON. X2
+  `ui/TzSaverView`: a black layer over the ride screen (`tz_saver_*` colours, brightness 0.04, keep-awake cleared,
+  map rendering off, the tick stopped, pages and sheet hidden), the maneuver, its distance, what's left, the clock and
+  battery, SHARE and EXIT SAVER. It redraws only when the maneuver, its distance band, a warning or the minute
+  changes. The compass is held off (`TzActivity.pauseCompass`).
+- Checked on the emulator (D60): X1 and X2 on a guided ride, tones through turns in the saver, 3 s request with the
+  screen off, EXIT SAVER restores the map, page and 1 Hz at once (`shots/X1.png`, `X2.png`). Measured with
+  `tools/trackzero/saver_measure.sh` (TZ_BASELINE "Battery saver"): X2 0.7 % of a core against 103.7 % for the map
+  page, no barometer, no wake lock.
+- Tests: `SaverPolicyTest` (4), `SaverTonesTest` (2: 20 turns at 25 and 40 km/h, every "turn now" 20–80 m before
+  its turn), `GuideTest` (+2, rerouting off and back on), `RideStatsTest` (+1, 3 s fixes), `RideSessionTest` (+1,
+  the journaled flag). 294 tests pass.
+- Smoke test: all steps pass, no crashes.

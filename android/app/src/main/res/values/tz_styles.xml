@@ -72,6 +72,12 @@
     <item name="android:textColor">@color/tz_text1</item>
     <item name="iconTint">@color/tz_text1</item>
   </style>
+  <!-- X2 (Phase 35): dim on the saver's well, the same in every appearance. -->
+  <style name="TzButton.Saver">
+    <item name="backgroundTint">@color/tz_saver_well</item>
+    <item name="android:textColor">@color/tz_saver_text</item>
+    <item name="iconTint">@color/tz_saver_text</item>
+  </style>
   <style name="TzButton.Danger">
     <item name="backgroundTint">@color/tz_danger_bg</item>
     <item name="android:textColor">@color/tz_danger</item>

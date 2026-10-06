@@ -204,4 +204,20 @@ public class RideStatsTest
     assertEquals(18, s.speedKmh(7_000), 0.01);
     assertEquals(0, s.speedKmh(7_001), 0.01);
   }
+
+  @Test
+  public void fixesEveryThreeSecondsInTheSaver()
+  {
+    // 40 km/h, a fix every 3 s without GPS speed (33 m apart): all of it counts, nothing is taken for a jump.
+    final RideStats s = new RideStats();
+    s.startRecording(0);
+    final double mps = 40 / 3.6;
+    for (int t = 0; t <= 300; t += 3)
+      ride(s, at(t, mps * t, Double.NaN, -1));
+    assertEquals(mps * 300, s.distanceM(), 1);
+    assertEquals(300_000, s.movingMs(300_000));
+    assertEquals(40, s.speedKmh(), 0.5);
+    // A batch of 9 s comes in late but each fix keeps its own time: the same.
+    assertEquals(40, s.maxKmh(), 0.5);
+  }
 }

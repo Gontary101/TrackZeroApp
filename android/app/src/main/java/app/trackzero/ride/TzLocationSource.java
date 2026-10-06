@@ -19,4 +19,7 @@ public interface TzLocationSource
    * between them; 0 delivers each at once. Sources that can't batch ignore it.
    */
   default void setMaxDelay(long maxDelayMs) {}
+
+  /** Fixes every {@code intervalMs} (1 s; 3 s in the battery saver, Phase 35). Sources that can't change it ignore it. */
+  default void setInterval(long intervalMs) {}
 }

@@ -355,6 +355,24 @@
   <string name="tz_plan_cd_remove">Remove</string>
 
   <!-- Propose a loop (Phase 29, boards L1, L2) -->
+  <!-- Battery saver (Phase 35). No battery-life figure anywhere. -->
+  <string name="tz_saver_tile">Saver</string>
+  <string name="tz_saver_title">BATTERY SAVER</string>
+  <string name="tz_saver_keeps">Keeps working</string>
+  <string name="tz_saver_keeps_tones">Turn tones and warnings</string>
+  <string name="tz_saver_keeps_tracking">Route tracking and recording</string>
+  <string name="tz_saver_keeps_screen">Screen off or locked</string>
+  <string name="tz_saver_paused">Paused</string>
+  <string name="tz_saver_paused_map">Map and live stats</string>
+  <string name="tz_saver_paused_voice">Spoken directions</string>
+  <string name="tz_saver_paused_reroute">Automatic rerouting</string>
+  <string name="tz_saver_turn_on">Turn on</string>
+  <string name="tz_saver_caption">Turn it off any time: one tap on the saver screen.</string>
+  <string name="tz_saver_on">SAVER ON</string>
+  <string name="tz_saver_clock">%1$s · %2$d %%</string>
+  <string name="tz_saver_line">%1$s · %2$s left</string>
+  <string name="tz_saver_free_line">Ridden in %1$s</string>
+  <string name="tz_saver_exit">Exit saver</string>
   <!-- Share location (Phase 34). TrackZero never sends anything itself and never dials. -->
   <string name="tz_share_tile">Share</string>
   <string name="tz_share_title">SHARE LOCATION</string>

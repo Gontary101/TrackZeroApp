@@ -15,17 +15,17 @@ import androidx.core.location.LocationManagerCompat;
 import androidx.core.location.LocationRequestCompat;
 import app.trackzero.TzTrace;
 
-/** GPS fixes once a second straight from the GPS provider (no Play Services). */
+/** GPS fixes once a second (every 3 s in the battery saver) straight from the GPS provider (no Play Services). */
 final class GpsLocationSource implements TzLocationSource, LocationListenerCompat
 {
   private static final String TAG = "TzGps";
-  private static final long INTERVAL_MS = 1000;
 
   @NonNull
   private final LocationManager mManager;
   @Nullable
   private Listener mListener;
   private long mMaxDelayMs;
+  private long mIntervalMs = 1000;
 
   GpsLocationSource(@NonNull Context context)
   {
@@ -46,7 +46,7 @@ final class GpsLocationSource implements TzLocationSource, LocationListenerCompa
   @SuppressLint("MissingPermission")
   private void request()
   {
-    final LocationRequestCompat request = new LocationRequestCompat.Builder(INTERVAL_MS)
+    final LocationRequestCompat request = new LocationRequestCompat.Builder(mIntervalMs)
                                               .setQuality(LocationRequestCompat.QUALITY_HIGH_ACCURACY)
                                               .setMinUpdateDistanceMeters(0)
                                               .setMaxUpdateDelayMillis(mMaxDelayMs)
@@ -83,6 +83,18 @@ final class GpsLocationSource implements TzLocationSource, LocationListenerCompa
       }
     }
     mMaxDelayMs = maxDelayMs;
+    if (mListener != null)
+      request();
+  }
+
+  @Override
+  public void setInterval(long intervalMs)
+  {
+    if (intervalMs == mIntervalMs)
+      return;
+    if (TzTrace.on())
+      TzTrace.log("gps", "setInterval " + intervalMs);
+    mIntervalMs = intervalMs;
     if (mListener != null)
       request();
   }

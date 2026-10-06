@@ -131,6 +131,8 @@ public final class Guide
   private Entry mLegStop;
   @NonNull
   private StopEvents mStopEvents = new StopEvents() {};
+  /** False in the battery saver (Phase 35): no paths asked for; off the route only warns. */
+  private boolean mRerouting = true;
 
   // The last fix, to place a new engine at once.
   private boolean mHasFix;
@@ -366,7 +368,7 @@ public final class Guide
 
   private void request(@NonNull Want want)
   {
-    if (!mHasFix || mPending != Want.NONE || mElapsedMs < mNextRequestMs)
+    if (!mRerouting || !mHasFix || mPending != Want.NONE || mElapsedMs < mNextRequestMs)
       return;
     final double toLat, toLon;
     boolean onFoot = false;
@@ -513,6 +515,32 @@ public final class Guide
       mMain.setQuiet(true);
     mLines++;
     place(mLeg);
+  }
+
+  /**
+   * The battery saver turns rerouting off: no path is asked for (a leg already followed stays). Turning it back on
+   * asks at once if the rider needs one (off the route, or a leg to a stop wanted).
+   */
+  public void setRerouting(boolean on)
+  {
+    if (on == mRerouting)
+      return;
+    mRerouting = on;
+    if (!on)
+    {
+      if (mPending != Want.NONE && mPending != Want.STOP_CHECK)
+        cancel();
+      return;
+    }
+    mNextRequestMs = 0;
+    mBackoffMs = RETRY_MIN_MS;
+    if (mHasFix)
+      plan();
+  }
+
+  public boolean rerouting()
+  {
+    return mRerouting;
   }
 
   // ---- Stops ----

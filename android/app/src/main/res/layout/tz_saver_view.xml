@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- X2 · Battery saver (Phase 35): black, dim, the next turn and little else. The same in every appearance. -->
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:app="http://schemas.android.com/apk/res-auto">
+  <LinearLayout
+    android:id="@+id/tz_saver_top"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_gravity="top"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingStart="@dimen/tz_gutter"
+    android:paddingEnd="@dimen/tz_gutter">
+    <TextView
+      style="@style/TzText.DotM"
+      android:layout_width="0dp"
+      android:layout_height="wrap_content"
+      android:layout_weight="1"
+      android:text="@string/tz_saver_on"
+      android:textColor="@color/tz_saver_dim" />
+    <TextView
+      android:id="@+id/tz_saver_clock"
+      style="@style/TzText.MetricS"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:textColor="@color/tz_saver_text" />
+  </LinearLayout>
+
+  <LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_gravity="center"
+    android:gravity="center_horizontal"
+    android:orientation="vertical">
+    <FrameLayout
+      android:id="@+id/tz_saver_well"
+      android:layout_width="@dimen/tz_saver_well"
+      android:layout_height="@dimen/tz_saver_well"
+      android:background="@drawable/tz_bg_saver_well">
+      <ImageView
+        android:id="@+id/tz_saver_glyph"
+        android:layout_width="@dimen/tz_saver_glyph"
+        android:layout_height="@dimen/tz_saver_glyph"
+        android:layout_gravity="center"
+        android:importantForAccessibility="no"
+        app:tint="@color/tz_saver_text" />
+    </FrameLayout>
+    <app.trackzero.ui.TzMetricView
+      android:id="@+id/tz_saver_distance"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_marginTop="@dimen/tz_space_24"
+      app:tzNumberSize="96"
+      app:tzNumberStyle="@style/TzText.Turn" />
+    <TextView
+      android:id="@+id/tz_saver_line"
+      style="@style/TzText.TitleM"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_marginTop="@dimen/tz_space_8"
+      android:textColor="@color/tz_saver_text" />
+  </LinearLayout>
+
+  <LinearLayout
+    android:id="@+id/tz_saver_buttons"
+    android:layout_width="match_parent"
+    android:layout_height="@dimen/tz_saver_button_h"
+    android:layout_gravity="bottom"
+    android:orientation="horizontal"
+    android:paddingStart="@dimen/tz_gutter"
+    android:paddingEnd="@dimen/tz_gutter">
+    <com.google.android.material.button.MaterialButton
+      android:id="@+id/tz_saver_share"
+      style="@style/TzButton.Saver"
+      android:layout_width="0dp"
+      android:layout_height="match_parent"
+      android:layout_weight="1"
+      android:text="@string/tz_share_share"
+      app:icon="@drawable/ic_tz_share" />
+    <com.google.android.material.button.MaterialButton
+      android:id="@+id/tz_saver_exit"
+      style="@style/TzButton.Saver"
+      android:layout_width="0dp"
+      android:layout_height="match_parent"
+      android:layout_marginStart="@dimen/tz_space_12"
+      android:layout_weight="1"
+      android:text="@string/tz_saver_exit" />
+  </LinearLayout>
+</merge>

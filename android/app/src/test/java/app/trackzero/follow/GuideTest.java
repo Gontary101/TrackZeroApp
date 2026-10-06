@@ -420,6 +420,38 @@ public class GuideTest
     assertFalse(r.guide.offRoute());
   }
 
+  // ---- Battery saver (Phase 35) ----
+
+  @Test
+  public void inTheSaverOffRouteOnlyWarnsAndLeavingItAsksAtOnce()
+  {
+    final Rider r = Rider.onTrack();
+    r.guide.setRerouting(false);
+    r.at(0, 0);
+    r.rideTo(0, 300);
+    r.rideTo(100, 300);
+    r.hold(30);
+    assertTrue(r.paths.requests.isEmpty());
+    assertTrue(r.guide.offRoute());
+    r.guide.setRerouting(true);
+    assertEquals(1, r.paths.requests.size());
+  }
+
+  @Test
+  public void turningTheSaverOnDropsARequestInFlight()
+  {
+    final Rider r = Rider.onTrack();
+    r.at(0, 0);
+    r.rideTo(0, 300);
+    r.rideTo(100, 300);
+    r.hold(6);
+    assertEquals(1, r.paths.requests.size());
+    r.guide.setRerouting(false);
+    assertEquals(1, r.paths.cancels);
+    r.guide.onPath(path(new double[] {100, 300}, new double[] {0, 500}));
+    assertNull(r.guide.legLine());
+  }
+
   /** A routed path through corners (metres east / north), turning at each inner corner, named "Rue du Coin". */
   private static RoutedPath path(double[]... corners)
   {

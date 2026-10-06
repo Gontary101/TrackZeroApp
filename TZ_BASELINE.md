@@ -77,3 +77,23 @@ the noise band above. R5 and screen-off are within a point.
 preview), `BicyclePath.nativeLoadedProfile()` reads -1 (debug `TzRideDebugActivity`: "router none") and the app has
 no `TzRouter` thread (`ps -T`). The router and its road graphs exist only between a path request and the end of the
 ride or the preview that asked for it.
+
+## Battery saver (Phase 35, `tools/trackzero/saver_measure.sh`)
+
+Same guided ride (the Aubière route, GPX replayed), -PtzMeasure build, 115 s per window. Full output:
+`shots/baseline/phase35_saver.md`.
+
+| Window | CPU % of a core | Frames (views) | GPS request | Barometer | Screen wake lock |
+|---|---|---|---|---|---|
+| Normal, R2 map page | 103.7 | 117 | 1 s | on | held |
+| Normal, screen off | 0.2 | 0 | 1 s, at once (voice on) | on | — |
+| Saver, X2 screen on | 0.7 | 12 | 1 s (window ended < 600 m from a turn) | off | none |
+| Saver, screen off | 0.2 | 0 | 3 s, batched 9 s | off | none |
+
+- **The saver removes the map:** with the screen on, X2 costs 0.7 % of a core against 103.7 % for the map page, a
+  12-frame trickle (one redraw when its text changes) and no wake lock (the screen times out by itself).
+- **GPS follows the turns:** with the screen off, more than 600 m from the next turn, fixes come every 3 s and are
+  delivered within 9 s. The screen-on window ended near a turn, so its snapshot shows the 1 s request the policy
+  asks for there (SaverPolicyTest covers both sides).
+- **The barometer is off** in the saver (the sensor list is empty), so the climb comes from the GPS altitude meanwhile (D60).
+- The real numbers (battery % per hour, missed turns) need two real 2 h+ rides: NEEDS OWNER N35.
