@@ -3,8 +3,10 @@ package app.trackzero.ride;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import app.trackzero.TzConfig;
+import app.trackzero.follow.Stop;
 import app.trackzero.geo.Geo;
 import app.trackzero.routes.Profile;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -51,6 +53,9 @@ public final class RideSession
   private long mSlowSinceMs = -1;
   @NonNull
   private final StringBuilder mJournal = new StringBuilder();
+  /** Stops kept in the journal of a restored ride, for the guide once it exists (Phase 30). */
+  @NonNull
+  private List<Stop> mRestoredStops = new ArrayList<>();
   /** Altitude every 10 m ridden, for the elevation page. */
   private float[] mTraceDist = new float[256];
   private float[] mTraceAlt = new float[256];
@@ -73,6 +78,7 @@ public final class RideSession
     s.mPlaceLat = c.placeLat;
     s.mPlaceLon = c.placeLon;
     s.mProfile = c.profile;
+    s.mRestoredStops = new ArrayList<>(c.stops);
     s.mTrack = c.track;
     s.mTrack.breakSegment();
     s.mStats.restore(c.totals);
@@ -277,6 +283,27 @@ public final class RideSession
 
   /** How the rider gets about on this ride, fixed at START. */
   @NonNull
+  /** Journals a stop added (Phase 30). */
+  public void stopAdded(@NonNull Stop stop)
+  {
+    RideJournal.stopAdded(mJournal, stop);
+  }
+
+  /** Journals a stop reached or removed. */
+  public void stopGone(@NonNull Stop stop)
+  {
+    RideJournal.stopGone(mJournal, stop);
+  }
+
+  /** The stops a restored ride had (once: the guide takes them). */
+  @NonNull
+  public List<Stop> takeRestoredStops()
+  {
+    final List<Stop> out = mRestoredStops;
+    mRestoredStops = new ArrayList<>();
+    return out;
+  }
+
   public Profile profile()
   {
     return mProfile;

@@ -28,6 +28,8 @@ import app.trackzero.screens.TzRideScreen;
 import app.trackzero.screens.TzRoutesScreen;
 import app.trackzero.screens.TzScreen;
 import app.trackzero.screens.TzSearchScreen;
+import app.trackzero.screens.TzStopScreen;
+import app.trackzero.screens.TzStopsScreen;
 import app.trackzero.screens.TzSummaryScreen;
 import app.trackzero.ui.TzBottomIsland;
 
@@ -47,6 +49,10 @@ public final class TzNavigator
     PLAN(false, null),
     /** L1, L2: proposing a loop (Phase 29); the map is drawn again while a point is picked on it. */
     LOOP(true, null),
+    /** S1: stops along the route (Phase 30), from the ride or a preview. */
+    STOPS(true, null),
+    /** S2: one stop over the map, to add to the ride. */
+    STOP(false, null),
     MORE(true, TzBottomIsland.Tab.MORE),
     HISTORY(true, TzBottomIsland.Tab.MORE),
     ABOUT(true, TzBottomIsland.Tab.MORE),
@@ -222,6 +228,8 @@ public final class TzNavigator
       case PREVIEW -> new TzPreviewScreen();
       case PLAN -> new TzPlanScreen();
       case LOOP -> new TzLoopScreen();
+      case STOPS -> new TzStopsScreen();
+      case STOP -> new TzStopScreen();
       case MORE -> new TzMoreScreen();
       case RIDE -> new TzRideScreen();
       case SUMMARY -> new TzSummaryScreen();
@@ -282,6 +290,8 @@ public final class TzNavigator
     case SEARCH, ROUTES, MORE, SUMMARY -> show(Screen.MAP, null);
     case PREVIEW -> show(Screen.ROUTES, null);
     case PLAN, LOOP -> show(Screen.ROUTES, null);
+    // S1 and S2 go back themselves (to the ride, the preview or S1).
+    case STOPS, STOP -> show(Screen.RIDE, null);
     case HISTORY, ABOUT, MAPS -> show(Screen.MORE, null);
     // Back never ends a ride: the ride screen opens its controls sheet in onBackPressed().
     case RIDE, MAP -> {}

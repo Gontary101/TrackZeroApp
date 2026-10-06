@@ -799,3 +799,44 @@ with the stock weights, so near region borders the profile applies a little less
   68 s. Cancel mid-search: the button resets and no result follows. A loop opens in B5 as "Planned · Gravel". The
   temp route was not saved, so the library still holds the three routes.
 
+## D55 · Stops along the route (Phase 30, FEAT-007)
+- **Search.** `nativePoisAlong` reads the line 2 km at a time, each piece's box grown by the radius, in the country
+  maps (not the world map), and keeps point and area features of the category's types once each. Water: drinking
+  water, water point, tap, spring; a tap, spring or water point the map marks `drinking_water=no` is left out. Repair:
+  repair station, bicycle shop. It runs when S1 opens or its chip changes, off the main thread; never in the
+  background. On a ride it reads the next 40 km of the route; from B5, the whole route (simplified to 2000 points);
+  on a free ride, 5 km around the rider.
+- **Placing.** Each place is snapped to the route within the window (on an out-and-back, the leg still ahead). A place
+  closer to the route just behind the rider is already passed and left out. Rows are ordered by distance ahead;
+  "on the route" within 30 m. A place without a name is called by its kind, and its subtitle only says where it is.
+  A spring adds "Check it is drinkable."
+- **Adding a stop keeps the route.** FEAT-007 asks for "an intermediate waypoint" that "preserves the remaining route".
+  So ADD STOP routes to the place at once only to know it can be reached (one router request, as the plan says). The
+  path becomes the leg only if the stop is within 2 km ahead. Otherwise the stop waits in a list in route order, and
+  its leg is asked for when the rider, on the route, is 2 km before it. A leg starting at once for a stop 18 km away
+  would have replaced 18 km of the route with the router's choice.
+- **On the way to a stop.** The leg ends in `Maneuver.STOP` (pin glyph, "Stop", the stop's name on the street line;
+  voice "In 200 meters, stop at {name}"). The route's own engine keeps placing the rider but is quiet
+  (`FollowEngine.setQuiet`: no turns, off route, wrong way or arrival). Leaving the leg asks for a new one. Within
+  30 m: "You have reached {name}", the stop is done, and the existing logic takes over (the rejoin 200 m–2 km ahead,
+  or a new path to the place of a ride to a place). Riding on along the route 500 m past a stop drops it; S1 › the
+  row › REMOVE drops it at once. The journal has `A,{kind},{lat},{lon},{name}` / `X,{lat},{lon}`, so a restored ride
+  keeps its pending stops.
+- **S2 numbers are estimates.** DETOUR is out and back in a straight line × 1.3 (rounded to 10 m). EXTRA TIME uses
+  the ride's average moving speed, or the profile's usual pace before it means anything; whole minutes, at least 1.
+  The plan asked for an "about" label; the board shows "+240 m" under DETOUR, and the board wins. The card's note
+  and S1's "offline map" caption already say these come from the map.
+- **Screens.** S1 and S2 are navigator screens (STOPS opaque, STOP over the map), not views inside the ride screen.
+  The ride keeps running in the service, and Back returns to it. S2 draws the route itself (the ride screen hides its
+  lines when it goes). The dots use the walk look with a hollow ring at the route (ring 3); the place is a
+  `tz_pin_place` teardrop view on `TzPinLayer`. ADD STOP shows "Recalculating…" on the button (not as an off-route
+  turn card), then returns to the ride; a failure shows the toast and S2 stays.
+- **R6 and B5.** R6 gets the ActionTile row with STOPS in its first third (SHARE and SAVER fill it in phases 34 and
+  35). B5 gets the pin button under the star; its rows go back to the preview with the place pinned and framed with
+  its closest point on the route (300 m around). Nothing is added from B5: there is no ride yet.
+- **Free ride.** S1 lists within 5 km; S2 shows the place and its distance, without ADD STOP ("A free ride has no
+  route to add it to: head there yourself."). Guiding a free ride would need the ride screen to change mode mid-ride;
+  it is in the backlog to decide with the owner.
+- **Checked on the emulator.** See the Phase 30 progress entry. Not checked there: a stop that cannot be routed (the
+  emulator's map routes everywhere tried); `GuideTest` covers it.
+

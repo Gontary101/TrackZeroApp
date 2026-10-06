@@ -25,4 +25,5 @@
   <style name="TzText.Label"><item name="android:fontFamily">@font/barlow_semibold</item><item name="android:textSize">12sp</item><item name="android:letterSpacing">0.13</item><item name="android:textAllCaps">true</item><item name="android:textColor">@color/tz_text2</item></style>
   <style name="TzText.IslandLabel"><item name="android:fontFamily">@font/barlow_semibold</item><item name="android:textSize">11sp</item><item name="android:letterSpacing">0.1</item><item name="android:textAllCaps">true</item></style>
   <style name="TzText.Button"><item name="android:fontFamily">@font/barlow_condensed_bold</item><item name="android:textSize">22sp</item><item name="android:letterSpacing">0.09</item><item name="android:textAllCaps">true</item></style>
+  <style name="TzText.Tile"><item name="android:fontFamily">@font/barlow_bold</item><item name="android:textSize">12sp</item><item name="android:letterSpacing">0.12</item><item name="android:textAllCaps">true</item><item name="android:textColor">@color/tz_text1</item></style>
 </resources>

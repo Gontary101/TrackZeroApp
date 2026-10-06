@@ -39,6 +39,7 @@ import app.trackzero.follow.ClimbTracker;
 import app.trackzero.follow.FollowEngine;
 import app.trackzero.follow.FollowRoute;
 import app.trackzero.follow.Guide;
+import app.trackzero.follow.Stop;
 import app.trackzero.follow.ManeuverBuilder;
 import app.trackzero.follow.RouteManeuver;
 import app.trackzero.follow.RoutedPath;
@@ -431,6 +432,7 @@ public final class TzRideService extends Service
       final RoutedPath path = sPreviewedPath;
       sPreviewedPath = null;
       mGuide = Guide.forPlace(s.placeLat(), s.placeLon(), path, mPaths, mFollowEvents, s.profile().foot);
+      takeStops(mGuide, s);
       if (TzTrace.on())
         TzTrace.log("ride", "guide created (place, path " + (path == null ? "none" : Math.round(path.line.totalM()) + " m") + ")");
       mVoice = new TzVoice(this);
@@ -456,6 +458,7 @@ public final class TzRideService extends Service
           if (mSession == null || mGuide != null)
             return;
           mGuide = Guide.forTrack(prepared.engine, mPaths, mFollowEvents, mSession.profile().foot);
+          takeStops(mGuide, mSession);
           if (TzTrace.on())
             TzTrace.log("ride", "guide created (track " + Math.round(prepared.engine.totalM()) + " m)");
           mClimbs = prepared.climbs;
@@ -572,6 +575,94 @@ public final class TzRideService extends Service
     return s.isEmpty() ? null : s;
   }
 
+  // ---- Stops (Phase 30) ----
+
+  /** A stop added from S2: whether it could be routed to. */
+  public interface StopCallback
+  {
+    void onStop(boolean added);
+  }
+
+  @Nullable
+  private StopCallback mStopCallback;
+
+  /** Hooks a new guide's stops to the journal and the voice, and gives it those of a restored ride. */
+  private void takeStops(@NonNull Guide g, @NonNull RideSession s)
+  {
+    g.setStopEvents(mStopEvents);
+    g.restoreStops(s.takeRestoredStops());
+  }
+
+  /** Adds a stop to the ride being guided; {@code callback} hears whether it could be routed to. */
+  public void addStop(@NonNull Stop stop, @NonNull StopCallback callback)
+  {
+    final Guide g = mGuide;
+    if (g == null)
+    {
+      callback.onStop(false);
+      return;
+    }
+    if (TzTrace.on())
+      TzTrace.log("ride", "add stop " + stop + " " + TzTrace.ll(stop.lat, stop.lon));
+    mStopCallback = callback;
+    g.addStop(stop);
+    changed();
+  }
+
+  public void removeStop(@NonNull Stop stop)
+  {
+    if (mGuide != null)
+      mGuide.removeStop(stop);
+    changed();
+  }
+
+  private final Guide.StopEvents mStopEvents = new Guide.StopEvents() {
+    @Override
+    public void onStopAdded(@NonNull Stop stop)
+    {
+      if (mSession != null)
+        mSession.stopAdded(stop);
+      flushJournal();
+      answer(true);
+    }
+
+    @Override
+    public void onStopFailed(@NonNull Stop stop)
+    {
+      if (TzTrace.on())
+        TzTrace.log("ride", "stop failed " + stop);
+      answer(false);
+    }
+
+    @Override
+    public void onStopReached(@NonNull Stop stop)
+    {
+      if (TzTrace.on())
+        TzTrace.log("ride", "stop reached " + stop);
+      if (mSession != null)
+        mSession.stopGone(stop);
+      if (mVoice != null && mSession != null && mSession.state() != RideSession.State.PAUSED)
+        mVoice.say(getString(R.string.tz_voice_stop_reached, stop.name));
+    }
+
+    @Override
+    public void onStopDropped(@NonNull Stop stop)
+    {
+      if (TzTrace.on())
+        TzTrace.log("ride", "stop dropped " + stop);
+      if (mSession != null)
+        mSession.stopGone(stop);
+    }
+
+    private void answer(boolean added)
+    {
+      final StopCallback c = mStopCallback;
+      mStopCallback = null;
+      if (c != null)
+        c.onStop(added);
+    }
+  };
+
   /** Paths for the guide, from CoMaps' router for the ride's profile; answers for a guide since replaced are dropped. */
   private final Guide.Paths mPaths = new Guide.Paths() {
     @Override
@@ -603,6 +694,7 @@ public final class TzRideService extends Service
     if (mGuide != null)
       TzRouter.release();
     mGuide = null;
+    mStopCallback = null;
     mClimbsLines = -1;
     mClimbs = null;
     mFollowFix = null;

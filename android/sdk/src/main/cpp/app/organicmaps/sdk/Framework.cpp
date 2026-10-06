@@ -78,6 +78,7 @@
 
 #include <limits>
 #include <map>
+#include <set>  // TrackZero
 #include <memory>
 #include <string>
 #include <vector>
@@ -1142,6 +1143,114 @@ jintArray ClosestRoadCodes(JNIEnv * env, jdoubleArray lats, jdoubleArray lons, d
   env->SetIntArrayRegion(out, 0, n, result.data());
   return out;
 }
+
+// TrackZero (Phase 30): the places of a category near a line, as {String[] names, double[] lats, double[] lons,
+// int[] kinds}. Kinds: 1 drinking water, 2 water point, 3 water tap, 4 spring (category 1); 5 bicycle repair station,
+// 6 bicycle shop (category 2). Taps, springs and water points the map marks as not drinkable are left out. The line
+// is read 2 km at a time (its box grown by radiusM), country maps only; point and area features, each once. Map data
+// only: safe off the main thread.
+jobjectArray PoisAlong(JNIEnv * env, jdoubleArray lats, jdoubleArray lons, double radiusM, jint category)
+{
+  double constexpr kPieceM = 2000.0;
+  auto const & c = classif();
+  static std::map<uint32_t, jint> const kKinds = [&c]
+  {
+    std::map<uint32_t, jint> m;
+    m[c.GetTypeByPath({"amenity", "drinking_water"})] = 1;
+    m[c.GetTypeByPath({"amenity", "water_point"})] = 2;
+    m[c.GetTypeByPath({"man_made", "water_tap"})] = 3;
+    m[c.GetTypeByPath({"natural", "spring"})] = 4;
+    m[c.GetTypeByPath({"amenity", "bicycle_repair_station"})] = 5;
+    m[c.GetTypeByPath({"shop", "bicycle"})] = 6;
+    return m;
+  }();
+  static std::vector<uint32_t> const kNotDrinkable = {
+      c.GetTypeByPath({"man_made", "water_tap", "drinking_water_no"}),
+      c.GetTypeByPath({"natural", "spring", "drinking_water_no"}),
+      c.GetTypeByPath({"amenity", "water_point", "drinking_water_no"})};
+  auto const kindOf = [category](feature::TypesHolder const & types) -> jint
+  {
+    for (uint32_t const t : kNotDrinkable)
+      if (types.Has(t))
+        return 0;
+    for (uint32_t t : types)
+    {
+      if (ftype::GetLevel(t) > 2)
+        ftype::TruncValue(t, 2);
+      auto const it = kKinds.find(t);
+      if (it == kKinds.end())
+        continue;
+      jint const kind = it->second;
+      if ((category == 1 && kind <= 4) || (category == 2 && kind >= 5 && kind <= 6))
+        return kind;
+    }
+    return 0;
+  };
+
+  jsize const n = env->GetArrayLength(lats);
+  std::vector<m2::PointD> points(n);
+  {
+    jdouble * lat = env->GetDoubleArrayElements(lats, nullptr);
+    jdouble * lon = env->GetDoubleArrayElements(lons, nullptr);
+    for (jsize i = 0; i < n; ++i)
+      points[i] = mercator::FromLatLon(lat[i], lon[i]);
+    env->ReleaseDoubleArrayElements(lats, lat, JNI_ABORT);
+    env->ReleaseDoubleArrayElements(lons, lon, JNI_ABORT);
+  }
+  std::set<FeatureID> seen;
+  std::vector<std::string> names;
+  std::vector<jdouble> outLat, outLon;
+  std::vector<jint> kinds;
+  auto const & dataSource = frm()->GetDataSource();
+  for (jsize first = 0; first < n;)
+  {
+    m2::RectD box(points[first], points[first]);
+    double pieceM = 0;
+    jsize last = first + 1;
+    while (last < n && pieceM < kPieceM)
+    {
+      pieceM += mercator::DistanceOnEarth(points[last - 1], points[last]);
+      box.Add(points[last]);
+      ++last;
+    }
+    double const metresPerUnit = mercator::DistanceOnEarth(box.Center(), box.Center() + m2::PointD(1e-4, 0)) / 1e-4;
+    box.Inflate(radiusM / metresPerUnit, radiusM / metresPerUnit);
+    dataSource.ForEachInRect([&](FeatureType & ft)
+    {
+      if (ft.GetGeomType() == feature::GeomType::Line ||
+          ft.GetID().m_mwmId.GetInfo()->GetType() != MwmInfo::COUNTRY || seen.count(ft.GetID()) != 0)
+        return;
+      jint const kind = kindOf(feature::TypesHolder(ft));
+      if (kind == 0)
+        return;
+      seen.insert(ft.GetID());
+      auto const ll = mercator::ToLatLon(feature::GetCenter(ft, FeatureType::BEST_GEOMETRY));
+      names.push_back(ft.GetTranslatedName().m_primary.value_or(std::string()));
+      outLat.push_back(ll.m_lat);
+      outLon.push_back(ll.m_lon);
+      kinds.push_back(kind);
+    }, box, scales::GetUpperScale());
+    // The next piece starts where this one ended, so no stretch of the line is left out.
+    first = last == n ? n : last - 1;
+  }
+
+  jsize const found = static_cast<jsize>(kinds.size());
+  jdoubleArray jlat = env->NewDoubleArray(found);
+  env->SetDoubleArrayRegion(jlat, 0, found, outLat.data());
+  jdoubleArray jlon = env->NewDoubleArray(found);
+  env->SetDoubleArrayRegion(jlon, 0, found, outLon.data());
+  jintArray jkinds = env->NewIntArray(found);
+  env->SetIntArrayRegion(jkinds, 0, found, kinds.data());
+  jobjectArray out = env->NewObjectArray(4, env->FindClass("java/lang/Object"), nullptr);
+  env->SetObjectArrayElement(out, 0, jni::TScopedLocalObjectArrayRef(env, jni::ToJavaStringArray(env, names)).get());
+  env->SetObjectArrayElement(out, 1, jlat);
+  env->SetObjectArrayElement(out, 2, jlon);
+  env->SetObjectArrayElement(out, 3, jkinds);
+  env->DeleteLocalRef(jlat);
+  env->DeleteLocalRef(jlon);
+  env->DeleteLocalRef(jkinds);
+  return out;
+}
 }  // namespace
 }  // extern "C++"
 
@@ -1247,6 +1356,14 @@ JNIEXPORT jstring JNICALL Java_app_organicmaps_sdk_Framework_nativeGetSummitName
     }
   }, mercator::RectByCenterXYAndSizeInMeters(center, 2 * radiusM), scales::GetUpperScale(), mwmId);
   return jni::ToJavaString(env, best);
+}
+
+// TrackZero (Phase 30): places of a category within radiusM of a line; see PoisAlong.
+JNIEXPORT jobjectArray JNICALL Java_app_organicmaps_sdk_Framework_nativePoisAlong(JNIEnv * env, jclass,
+                                                                                 jdoubleArray lats, jdoubleArray lons,
+                                                                                 jdouble radiusM, jint category)
+{
+  return PoisAlong(env, lats, lons, radiusM, category);
 }
 
 // TrackZero (Phase 29): the town or village nearest the point (a loop's far side), "" when none. Main thread.

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- S2 · the place of a stop (Phase 30): a black teardrop, text1 outline and dot; its tip is the point. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+  android:width="@dimen/tz_pin_place_w" android:height="@dimen/tz_pin_place_h"
+  android:viewportWidth="32" android:viewportHeight="40">
+  <path android:fillColor="@color/tz_bg" android:strokeColor="@color/tz_text1" android:strokeWidth="2.5"
+    android:strokeLineJoin="round"
+    android:pathData="M16,38.5 C16,38.5 3.5,26 3.5,15 A12.5,12.5 0 0 1 28.5,15 C28.5,26 16,38.5 16,38.5 Z"/>
+  <path android:fillColor="@color/tz_text1" android:pathData="M16,15 m-4,0 a4,4 0 1,0 8,0 a4,4 0 1,0 -8,0"/>
+</vector>

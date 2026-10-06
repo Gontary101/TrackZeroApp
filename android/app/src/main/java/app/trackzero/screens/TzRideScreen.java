@@ -339,6 +339,11 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
       }
     });
     mScrim.setOnClickListener(v -> mSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED));
+    // S1 over the ride (Phase 30): the ride keeps running; Back comes here.
+    mSheet.findViewById(R.id.tz_ride_stops).setOnClickListener(v -> {
+      mSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
+      TzNavigator.show(TzNavigator.Screen.STOPS, null);
+    });
     mHandle.setOnClickListener(v -> mSheetBehavior.setState(BottomSheetBehavior.STATE_EXPANDED));
     applySlide(0);
   }

@@ -168,4 +168,10 @@
   <!-- L1 distance chips (Phase 29) -->
   <dimen name="tz_loop_chip_h">56dp</dimen>
   <dimen name="tz_loop_chip_gap">8dp</dimen>
+  <!-- Phase 30 · stops -->
+  <dimen name="tz_action_tile_h">76dp</dimen>
+  <dimen name="tz_action_tile_icon">24dp</dimen>
+  <dimen name="tz_pin_place_w">32dp</dimen>
+  <dimen name="tz_pin_place_h">40dp</dimen>
+  <dimen name="tz_stop_row_icon">44dp</dimen>
 </resources>

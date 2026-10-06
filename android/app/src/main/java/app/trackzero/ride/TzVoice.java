@@ -13,6 +13,7 @@ import androidx.annotation.Nullable;
 import app.organicmaps.R;
 import app.trackzero.TzIo;
 import app.trackzero.TzPrefs;
+import app.trackzero.follow.Maneuver;
 import app.trackzero.follow.RouteManeuver;
 import app.trackzero.format.TzFormat;
 import app.trackzero.ui.TzManeuvers;
@@ -94,7 +95,10 @@ final class TzVoice
   void turnSoon(@NonNull RouteManeuver m, double distanceM)
   {
     final String distance = spokenDistance(distanceM);
-    speak(mContext.getString(R.string.tz_voice_in, distance, TzManeuvers.spoken(mContext, m.type, m.exit)));
+    // A stop the rider added (Phase 30) is named.
+    final String what = m.type == Maneuver.STOP ? mContext.getString(R.string.tz_voice_stop, m.street)
+                                                : TzManeuvers.spoken(mContext, m.type, m.exit);
+    speak(mContext.getString(R.string.tz_voice_in, distance, what));
   }
 
   void turnNow(@NonNull RouteManeuver m)
@@ -105,6 +109,11 @@ final class TzVoice
   void say(int stringRes)
   {
     speak(mContext.getString(stringRes));
+  }
+
+  void say(@NonNull String text)
+  {
+    speak(text);
   }
 
   void shutdown()

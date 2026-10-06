@@ -62,6 +62,13 @@ Collected from the v2 phases; each says what to do, what to look at and what cou
   PROPOSE LOOPS (every loop goes through it); TRY OTHER LOOPS; tap the button while it is looking (it stops); a walk
   at 10 km. Pass: at least two loops you would actually ride, found in under a minute, and nothing keeps working
   (battery) once you leave the screen.
+- **N30 · Stops along the route (FEAT-007, Phase 30).** On a route ride with water you know of ahead: R6 › STOPS.
+  Are the places and their distances ahead believable (compare with what you see), and the repair shops? Pick one
+  2–5 km ahead › ADD STOP: "Recalculating…", then back to the ride with the route unchanged; 2 km before it the turn
+  card leads you there, then "You have reached …", then back onto the route further on. Also: add one and remove it
+  (S1 › the row › REMOVE); B5's pin button (the whole route; a row shows the place on the preview); a free ride's
+  STOPS (within 5 km, no ADD STOP). Pass: the stop is reached and the route continues; nothing searches while S1 is
+  closed.
 - **N18 · Immersive ride (FEAT-001, Phase 18).** On a ride, no status bar or navigation bar on all three pages and with
   the controls open. Swipe from the top or bottom edge: the bars appear briefly over the ride and nothing moves. Tap the
   handle 10 times: it opens the controls every time. A quick upward swipe from just above the handle opens them too.
@@ -622,3 +629,30 @@ it led to).
 - Tests: `LoopPlannerTest` (8: three closed loops within the size, three directions, out-and-back rejected, retrace
   of an out-and-back ≈ 0.5, the try budget, cancel, the via point, direction names). 248 tests pass.
 - Smoke test: all steps pass, no crashes. The emulator was set back to Road.
+
+## Phase 30 — Stops along the route (FEAT-007)
+
+- `Framework.nativePoisAlong` (2 km pieces of the line, boxes grown by the radius, country maps, points and areas,
+  each once; taps, springs and water points marked not drinkable left out), `base/TzPois` (off the main thread,
+  `slice`). `follow/Stop`, `follow/Stops` (placed on the route within the window, ≤ 1 km off, not behind the
+  rider; free ride ≤ 5 km by straight distance; S2's detour 2 × off route × 1.3).
+- Guide stops: added stops are routed at once (STOP_CHECK). A failure changes nothing. They are kept in route order;
+  the leg starts 2 km before a stop, with the route quiet meanwhile (`FollowEngine.setQuiet`). It ends at 30 m ("You
+  have reached …") or when the rider is 500 m past it on the route; then the usual rejoin, or a new path to the
+  place. `Maneuver.STOP` (pin glyph, "Stop", the name as street; voice "In 200 meters, stop at …"). The journal
+  keeps pending stops (`A` / `X` lines), and a restored ride gets them back.
+- Screens: S1 `TzStopsScreen` (STOPS, opaque; chips Water / Repair; from R6, from B5's new pin button, free ride),
+  S2 `TzStopScreen` (STOP, over the map: the route, dots from it with a hollow ring, `tz_pin_place` pin; AHEAD,
+  DETOUR, EXTRA TIME; ADD STOP → "Recalculating…" → the ride, or the toast; REMOVE for an added one). R6 gets the
+  ActionTile row (STOPS; SHARE and SAVER later). B5 shows S1's place framed with the route next to it.
+- Checked on the emulator (D55): Aubière ride, S1 from R6 (water ahead 390 m … 5.2 km), S2 for a water point 260 m
+  off route, ADD STOP (path 943 m) then ridden past: re-routed once, dropped 500 m on. The spring 3.2 km ahead was
+  added with the route unchanged; its leg came at 2.4 km along (2 km before it), the stop was reached, and a 185 m
+  leg led back onto the route. B5 pin and the place framing on the Aydat loop (`shots/R6_stops.png`, `S1.png`,
+  `S1_route.png`, `S2.png`, `B5_stops.png`, `B5_stop_place.png`, `R2_after_stop.png`). Once, S2's pin and dots were
+  drawn late (the emulator's engine lag).
+- Tests: `StopsTest` (4), `GuideTest` (+5: far stop waits then leg and back, failure changes nothing, a near stop
+  uses its check path, two in route order, ridden past / removed), `RideSessionTest` (+1: stops in the journal).
+  258 tests pass.
+- Smoke test: all steps pass, no crashes.
+

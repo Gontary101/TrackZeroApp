@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- S1 · Stops (Phase 30): water or repair near the route ahead (a ride), along the whole route (B5) or around the
+     rider (a free ride). Opaque, no island. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:app="http://schemas.android.com/apk/res-auto"
+  android:id="@+id/tz_stops_root"
+  android:layout_width="match_parent"
+  android:layout_height="match_parent"
+  android:background="@color/tz_bg"
+  android:orientation="vertical">
+
+  <LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingStart="@dimen/tz_gutter"
+    android:paddingEnd="@dimen/tz_gutter">
+    <ImageButton
+      android:id="@+id/tz_stops_back"
+      android:layout_width="@dimen/tz_touch_min_browse"
+      android:layout_height="@dimen/tz_touch_min_browse"
+      android:background="?attr/selectableItemBackgroundBorderless"
+      android:contentDescription="@string/tz_cd_back"
+      android:src="@drawable/ic_tz_back"
+      app:tint="@color/tz_text1" />
+    <TextView
+      style="@style/TzText.DotXL"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_marginStart="@dimen/tz_space_12"
+      android:text="@string/tz_stops_title" />
+  </LinearLayout>
+
+  <LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="@dimen/tz_space_20"
+    android:orientation="horizontal"
+    android:paddingStart="@dimen/tz_gutter"
+    android:paddingEnd="@dimen/tz_gutter">
+    <app.trackzero.ui.TzCategoryChip
+      android:id="@+id/tz_stops_chip_water"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:text="@string/tz_stops_water" />
+    <app.trackzero.ui.TzCategoryChip
+      android:id="@+id/tz_stops_chip_repair"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_marginStart="@dimen/tz_space_8"
+      android:text="@string/tz_stops_repair" />
+  </LinearLayout>
+
+  <TextView
+    android:id="@+id/tz_stops_scope"
+    style="@style/TzText.Caption"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="@dimen/tz_space_16"
+    android:paddingStart="@dimen/tz_gutter"
+    android:paddingEnd="@dimen/tz_gutter" />
+
+  <ScrollView
+    android:id="@+id/tz_stops_scroll"
+    android:layout_width="match_parent"
+    android:layout_height="0dp"
+    android:layout_marginTop="@dimen/tz_space_12"
+    android:layout_weight="1"
+    android:clipToPadding="false">
+    <LinearLayout
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:orientation="vertical">
+      <LinearLayout
+        android:id="@+id/tz_stops_rows"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical" />
+      <TextView
+        android:id="@+id/tz_stops_note"
+        style="@style/TzText.Caption"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/tz_space_20"
+        android:paddingStart="@dimen/tz_gutter"
+        android:paddingEnd="@dimen/tz_gutter" />
+    </LinearLayout>
+  </ScrollView>
+</LinearLayout>

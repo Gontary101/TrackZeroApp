@@ -20,6 +20,8 @@ public final class TzRouteLayer
   private static final int RING_NONE = 0;
   private static final int RING_START = 1;
   private static final int RING_END = 2;
+  /** A hollow ring at the start only (the dotted hint to a stop, Phase 30). */
+  private static final int RING_HOLLOW_START = 3;
   /** Hollow where the bike is left, and the place's ring at the end. */
   private static final int RING_LEAVE_BIKE_AND_END = 4;
   /** How a line looks: drawn, dimmed (off route), on foot (dots). */
@@ -240,6 +242,15 @@ public final class TzRouteLayer
     if (TzTrace.on())
       TzTrace.log("line", "showWalk owner=" + ownerName(owner) + " points=" + lat.length);
     sWalk.set(owner, lat, lon, RING_LEAVE_BIKE_AND_END, 0);
+  }
+
+  /**
+   * S2's hint to a stop (Phase 30): dots in a straight line from the route (a hollow ring there) to the place, whose
+   * pin is a view. Uses the walk's slot: a ride screen is not showing at the same time.
+   */
+  public static void showHint(@NonNull Object owner, @NonNull double[] lat, @NonNull double[] lon)
+  {
+    sWalk.set(owner, lat, lon, RING_HOLLOW_START, 0);
   }
 
   public static void hideWalk()

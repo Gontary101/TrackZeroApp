@@ -107,6 +107,11 @@ Once the app is complete and ready to showcase, create a **sleek, professional m
 - **Leg back onto the track reads "Head to start".** When the router starts a leg on a road more than 60 m from the
   rider (seen on the emulator's off-road detour, Road and Walk), the leg engine shows HEAD_TO_START: "Head to start"
   with an arrow to the leg's first point. The wording is about the route's start, not the leg's (D50).
+- **Stops on a free ride.** S1 lists water and repair within 5 km of a free rider and S2 shows the place, but a free
+  ride has no route, so ADD STOP is not offered (D55). Guiding a free ride to a place mid-ride would need the ride
+  screen to switch between free and guided; decide with the owner whether it is wanted.
+- **A stop leg ignored reads as off route.** A rider who keeps to the route past a stop's turn-off gets "off route"
+  from the stop's leg until the stop is 500 m behind and is dropped (D55). Removing it in S1 is the quick way out.
 
 ## Fixed and verified
 
@@ -123,6 +128,9 @@ _No bugs marked as fixed yet._
   under the island on every page. Field check: NEEDS OWNER N18 (handle part).
 - **FEAT-005** — Phase 20. Research in `TZ_RESEARCH_ROUTE_VISIBILITY.md`; 8dp line with a black casing (D45).
   Field check: NEEDS OWNER N20 (choose among four candidates).
+- **FEAT-007** — Phase 30. Water and bicycle repair along the route from the offline map (S1, from R6 and B5); add
+  one to the ride (S2): routed at once, led there 2 km before it, back onto the route after (D55). Field check:
+  NEEDS OWNER N30.
 - **FEAT-004** — Phase 29. Propose a loop: distance, climbing, profile, a point to pass through; three round trips
   in different directions with little retracing; preview, save, export, ride as a planned route (D54). Field check:
   NEEDS OWNER N29.

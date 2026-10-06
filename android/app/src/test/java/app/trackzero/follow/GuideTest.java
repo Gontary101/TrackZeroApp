@@ -251,6 +251,175 @@ public class GuideTest
     assertEquals(0, r.guide.placePath().walkFromM, 0); // All on foot from here.
   }
 
+  // ---- Stops (Phase 30) ----
+
+  /** 5 km due north. */
+  private static final FollowRoute LONG = FollowTestRoutes.polyline(new double[] {0, 0}, new double[] {0, 5000});
+
+  private static final class StopLog implements Guide.StopEvents, FollowEngine.Events
+  {
+    final List<String> log = new ArrayList<>();
+    int offRoutes;
+
+    @Override
+    public void onStopAdded(Stop stop)
+    {
+      log.add("added " + stop.name);
+    }
+
+    @Override
+    public void onStopFailed(Stop stop)
+    {
+      log.add("failed " + stop.name);
+    }
+
+    @Override
+    public void onStopReached(Stop stop)
+    {
+      log.add("reached " + stop.name);
+    }
+
+    @Override
+    public void onStopDropped(Stop stop)
+    {
+      log.add("dropped " + stop.name);
+    }
+
+    @Override
+    public void onOffRoute()
+    {
+      offRoutes++;
+    }
+  }
+
+  private static Rider onLong(StopLog log)
+  {
+    final Paths paths = new Paths();
+    final Guide g = Guide.forTrack(new FollowEngine(LONG, log), paths, log);
+    g.setStopEvents(log);
+    return new Rider(g, paths);
+  }
+
+  private static Stop stop(String name, double east, double north)
+  {
+    final double[] p = FollowTestRoutes.point(east, north);
+    return new Stop(name, Stop.DRINKING_WATER, p[0], p[1]);
+  }
+
+  @Test
+  public void aStopFarAheadKeepsTheRouteUntilNearThenALegLeadsThereAndBack()
+  {
+    final StopLog log = new StopLog();
+    final Rider r = onLong(log);
+    r.at(0, 0);
+    r.rideTo(0, 300);
+    r.guide.addStop(stop("Fontaine", 120, 4000));
+    assertEquals(1, r.paths.requests.size());
+    assertTrue(r.guide.checkingStop());
+    // Reachable: kept, but 3.7 km ahead the route stays as it is.
+    r.guide.onPath(path(new double[] {0, 300}, new double[] {0, 4000}, new double[] {120, 4000}));
+    assertEquals(List.of("added Fontaine"), log.log);
+    assertNull(r.guide.legLine());
+    assertEquals(1, r.guide.stops().size());
+
+    r.rideTo(0, 1900);
+    assertEquals(1, r.paths.requests.size());
+    r.rideTo(0, 2100);
+    // 2 km before it: the leg is asked for from the rider.
+    assertEquals(2, r.paths.requests.size());
+    r.guide.onPath(path(new double[] {0, 2100}, new double[] {0, 4000}, new double[] {120, 4000}));
+    assertNotNull(r.guide.legLine());
+    assertEquals(Maneuver.TURN_RIGHT, r.guide.turnState().maneuver);
+
+    r.rideTo(0, 4000);
+    final TurnState last = r.guide.turnState();
+    assertEquals(Maneuver.STOP, last.maneuver);
+    assertEquals("Fontaine", last.street);
+    r.rideTo(110, 4000);
+    assertEquals(List.of("added Fontaine", "reached Fontaine"), log.log);
+    assertNull(r.guide.legLine());
+    assertTrue(r.guide.stops().isEmpty());
+    // Off the route at the stop: the usual way back, at least 200 m on. The route was quiet on the way.
+    r.hold(6);
+    assertEquals(3, r.paths.requests.size());
+    final double[] req = r.paths.requests.get(2);
+    assertTrue(Stops.alongOf(LONG, req[2], req[3], 0, 5000) >= 4150);
+    assertEquals(0, log.offRoutes);
+  }
+
+  @Test
+  public void aStopThatCannotBeReachedChangesNothing()
+  {
+    final StopLog log = new StopLog();
+    final Rider r = onLong(log);
+    r.at(0, 0);
+    r.rideTo(0, 300);
+    final TurnState before = r.guide.turnState();
+    r.guide.addStop(stop("Source", 900, 1000));
+    r.guide.onPath(null);
+    assertEquals(List.of("failed Source"), log.log);
+    assertTrue(r.guide.stops().isEmpty());
+    assertNull(r.guide.legLine());
+    assertEquals(before.maneuver, r.guide.turnState().maneuver);
+    // No backoff from it: a rejoin later is asked for as usual.
+    r.rideTo(100, 300);
+    r.hold(6);
+    assertEquals(2, r.paths.requests.size());
+  }
+
+  @Test
+  public void aNearStopUsesItsCheckPathAsTheLeg()
+  {
+    final StopLog log = new StopLog();
+    final Rider r = onLong(log);
+    r.at(0, 0);
+    r.rideTo(0, 300);
+    r.guide.addStop(stop("Atelier", 100, 1500));
+    r.guide.onPath(path(new double[] {0, 300}, new double[] {0, 1500}, new double[] {100, 1500}));
+    assertNotNull(r.guide.legLine());
+    assertEquals(1, r.paths.requests.size());
+    assertEquals(1200 + 100 + 5000 - 1500, r.guide.remainingM(), 20);
+  }
+
+  @Test
+  public void twoStopsAreKeptInRouteOrder()
+  {
+    final StopLog log = new StopLog();
+    final Rider r = onLong(log);
+    r.at(0, 0);
+    r.rideTo(0, 300);
+    r.guide.addStop(stop("B", 100, 4500));
+    r.guide.onPath(path(new double[] {0, 300}, new double[] {0, 4500}, new double[] {100, 4500}));
+    r.guide.addStop(stop("A", -100, 3000));
+    r.guide.onPath(path(new double[] {0, 300}, new double[] {0, 3000}, new double[] {-100, 3000}));
+    assertEquals("A", r.guide.stops().get(0).name);
+    assertEquals("B", r.guide.stops().get(1).name);
+  }
+
+  @Test
+  public void aStopRiddenPastIsDroppedAndOneRemovedEndsItsLeg()
+  {
+    final StopLog log = new StopLog();
+    final Rider r = onLong(log);
+    r.at(0, 0);
+    r.rideTo(0, 300);
+    r.guide.addStop(stop("Atelier", 100, 1500));
+    r.guide.onPath(path(new double[] {0, 300}, new double[] {0, 1500}, new double[] {100, 1500}));
+    r.rideTo(0, 2100);
+    assertEquals("dropped Atelier", log.log.get(log.log.size() - 1));
+    assertNull(r.guide.legLine());
+    assertTrue(r.guide.stops().isEmpty());
+
+    r.guide.addStop(stop("Fontaine", 100, 2800));
+    r.guide.onPath(path(new double[] {0, 2100}, new double[] {0, 2800}, new double[] {100, 2800}));
+    assertNotNull(r.guide.legLine());
+    r.guide.removeStop(stop("Fontaine", 100, 2800));
+    assertNull(r.guide.legLine());
+    assertEquals("dropped Fontaine", log.log.get(log.log.size() - 1));
+    r.rideTo(0, 2400);
+    assertFalse(r.guide.offRoute());
+  }
+
   /** A routed path through corners (metres east / north), turning at each inner corner, named "Rue du Coin". */
   private static RoutedPath path(double[]... corners)
   {

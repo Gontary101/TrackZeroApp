@@ -45,6 +45,7 @@ import app.trackzero.routes.SurfaceProfile;
 import app.trackzero.ui.TzElevationProfileView;
 import app.trackzero.ui.TzMetricView;
 import app.trackzero.ui.TzMotion;
+import app.trackzero.ui.TzPinLayer;
 import app.trackzero.ui.TzProfilePill;
 import app.trackzero.ui.TzSurfaceBarView;
 import java.util.Locale;
@@ -59,6 +60,8 @@ public class TzPreviewScreen extends TzScreen
 {
   /** A place instead of a route of the library: its name and where it is. */
   public static final String ARG_PLACE_NAME = "placeName";
+  /** A place from S1 is shown with at least this much around it and its closest point on the route. */
+  private static final double FOCUS_PAD_M = 300;
   public static final String ARG_PLACE_LAT = "placeLat";
   public static final String ARG_PLACE_LON = "placeLon";
 
@@ -93,6 +96,16 @@ public class TzPreviewScreen extends TzScreen
   private View mPeek;
   @Nullable
   private ImageButton mStar;
+  /** S1 for this route (Phase 30), and the place picked there. */
+  private ImageButton mStopsButton;
+  private TzPinLayer mPins;
+  @Nullable
+  private double[] mFocus;
+  /** Where the place is along the route (its closest point there), NaN when not known. */
+  private double mFocusAlong = Double.NaN;
+  /** The place's closest point on the route, once the route is read. */
+  @Nullable
+  private double[] mFocusOnRoute;
   @Nullable
   private TzProfilePill mPill;
   /** The profile of the path shown (or being worked out). */
@@ -133,6 +146,15 @@ public class TzPreviewScreen extends TzScreen
     mFull = view.findViewById(R.id.tz_preview_full);
     mPeek = view.findViewById(R.id.tz_preview_peek);
     mStar = view.findViewById(R.id.tz_preview_star);
+    mPins = view.findViewById(R.id.tz_preview_pins);
+    mStopsButton = view.findViewById(R.id.tz_preview_stops);
+    mStopsButton.setOnClickListener(v -> {
+      if (mRoute == null)
+        return;
+      final Bundle a = new Bundle();
+      a.putString(TzStopsScreen.ARG_ROUTE_ID, mRoute.id);
+      TzNavigator.show(TzNavigator.Screen.STOPS, a);
+    });
     mPill = view.findViewById(R.id.tz_preview_profile_pill);
     mProfile = TzPrefs.profile(requireContext());
     mPill.setProfile(mProfile);
@@ -189,6 +211,11 @@ public class TzPreviewScreen extends TzScreen
       return;
     }
     final String id = args.getString(TzRoutesScreen.ARG_ROUTE_ID);
+    if (args.containsKey(TzStopScreen.ARG_LAT))
+    {
+      mFocus = new double[] {args.getDouble(TzStopScreen.ARG_LAT), args.getDouble(TzStopScreen.ARG_LON)};
+      mFocusAlong = args.getDouble(TzStopScreen.ARG_ALONG, Double.NaN);
+    }
     final RouteStore store = RouteStore.get(requireContext());
     store.find(id, route -> {
       if (getView() == null || route == null)
@@ -523,6 +550,10 @@ public class TzPreviewScreen extends TzScreen
     ((FrameLayout.LayoutParams) mTop.getLayoutParams()).topMargin =
         top + getResources().getDimensionPixelSize(R.dimen.tz_top_inset_extra);
     mTop.requestLayout();
+    ((FrameLayout.LayoutParams) mStopsButton.getLayoutParams()).topMargin =
+        top + getResources().getDimensionPixelSize(R.dimen.tz_top_inset_extra)
+        + getResources().getDimensionPixelSize(R.dimen.tz_map_btn) + getResources().getDimensionPixelSize(R.dimen.tz_space_12);
+    mStopsButton.requestLayout();
     mBottomMargin = bottom + getResources().getDimensionPixelSize(R.dimen.tz_bottom_inset_extra);
     ((FrameLayout.LayoutParams) mCard.getLayoutParams()).bottomMargin = mBottomMargin;
     mCard.requestLayout();
@@ -534,6 +565,7 @@ public class TzPreviewScreen extends TzScreen
     final TzFormat.Units units = TzPrefs.units(requireContext());
     final Locale locale = Locale.getDefault();
     final String kind = TzRoutesScreen.kindText(requireContext(), r);
+    mStopsButton.setVisibility(View.VISIBLE);
     final Location here = TzLocation.last(requireContext());
     final String label;
     if (here != null && r.silLat.length > 0)
@@ -599,6 +631,11 @@ public class TzPreviewScreen extends TzScreen
       return;
     }
     mBox = new double[] {g.minLat, g.minLon, g.maxLat, g.maxLon};
+    if (mFocus != null && !Double.isNaN(mFocusAlong) && g.lineLat.length >= 2)
+    {
+      final FollowRoute line = new FollowRoute(g.lineLat, g.lineLon);
+      mFocusOnRoute = new double[] {line.latAt(mFocusAlong), line.lonAt(mFocusAlong)};
+    }
     if (g.profileDist != null)
       ((TzElevationProfileView) requireView().findViewById(R.id.tz_preview_profile))
           .setProfile(g.profileDist, g.profileAlt);
@@ -616,8 +653,21 @@ public class TzPreviewScreen extends TzScreen
     // The preview shows the route, not the rider; following would also pull the camera back mid-animation.
     TzMap.stopFollowing();
     TzMap.setVisibleArea(this, mTop.getBottom(), mCard.getHeight() + mBottomMargin);
-    TzMap.showRect(mBox[0], mBox[1], mBox[2], mBox[3], getResources().getDimensionPixelSize(R.dimen.tz_space_24));
     mFramed = true;
+    if (mFocus != null)
+    {
+      // Back from S1 with a place: that place and the route next to it, close up.
+      final double[] near = mFocusOnRoute != null ? mFocusOnRoute : mFocus;
+      final double pad = FOCUS_PAD_M / Geo.M_PER_DEG;
+      final double padLon = pad / Math.cos(Math.toRadians(mFocus[0]));
+      TzMap.showRect(Math.min(mFocus[0], near[0]) - pad, Math.min(mFocus[1], near[1]) - padLon,
+                     Math.max(mFocus[0], near[0]) + pad, Math.max(mFocus[1], near[1]) + padLon,
+                     getResources().getDimensionPixelSize(R.dimen.tz_space_24));
+      mPins.setPlace(mFocus);
+      mPins.follow(1500);
+      return;
+    }
+    TzMap.showRect(mBox[0], mBox[1], mBox[2], mBox[3], getResources().getDimensionPixelSize(R.dimen.tz_space_24));
   }
 
   // B6: collapse while the rider pans / pinches the map, come back 1.5 s after the gesture ends.
@@ -625,6 +675,7 @@ public class TzPreviewScreen extends TzScreen
   @Override
   public void onTouch(@NonNull MotionEvent e)
   {
+    mPins.onMapTouched();
     switch (e.getActionMasked())
     {
     case MotionEvent.ACTION_DOWN ->

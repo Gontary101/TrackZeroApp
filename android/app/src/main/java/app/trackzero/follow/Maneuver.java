@@ -16,6 +16,8 @@ public enum Maneuver
   JOIN,
   /** A path to a place a bike cannot reach (BUG-001, Phase 27): leave the bike here and walk the rest. */
   LEAVE_BIKE,
+  /** The end of a leg to a stop the rider added (FEAT-007, Phase 30); its street is the stop's name. */
+  STOP,
   REROUTE,
   HEAD_TO_START
 }

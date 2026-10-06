@@ -55,6 +55,7 @@
   <string name="tz_mnv_roundabout_any">Go round the roundabout</string>
   <string name="tz_mnv_join">Join the route</string>
   <string name="tz_mnv_leave_bike">Leave the bike, walk</string>
+  <string name="tz_mnv_stop">Stop</string>
   <string name="tz_mnv_reroute">Head back to the route</string>
   <string name="tz_mnv_head_to_start">Head to start</string>
 
@@ -67,6 +68,8 @@
   <string name="tz_voice_back_on_route">Back on route</string>
   <string name="tz_voice_wrong_way">Wrong way</string>
   <string name="tz_voice_arrived">You have arrived</string>
+  <string name="tz_voice_stop">stop at %1$s</string>
+  <string name="tz_voice_stop_reached">You have reached %1$s</string>
   <string name="tz_voice_roundabout">At the roundabout, take exit %1$d</string>
 
   <!-- Route card -->
@@ -355,6 +358,42 @@
   <string name="tz_plan_cd_remove">Remove</string>
 
   <!-- Propose a loop (Phase 29, boards L1, L2) -->
+  <!-- S1 · Stops, S2 · Add a stop (Phase 30) -->
+  <string name="tz_stops_title">STOPS</string>
+  <string name="tz_stops_tile">Stops</string>
+  <string name="tz_stops_cd_open">Stops along this route</string>
+  <string name="tz_stops_water">Water</string>
+  <string name="tz_stops_repair">Repair</string>
+  <string name="tz_stops_scope_ride">Within 1 km of the next 40 km of your route · offline map</string>
+  <string name="tz_stops_scope_route">Within 1 km of the route · offline map</string>
+  <string name="tz_stops_scope_free">Within 5 km of you · offline map</string>
+  <string name="tz_stops_searching">Searching the offline map…</string>
+  <string name="tz_stops_empty_route">Nothing on the map within 1 km of your route.</string>
+  <string name="tz_stops_empty_free">Nothing on the map within 5 km of you.</string>
+  <string name="tz_stops_no_gps">Waiting for your position…</string>
+  <string name="tz_stop_drinking_water">Drinking water</string>
+  <string name="tz_stop_water_point">Water point</string>
+  <string name="tz_stop_water_tap">Water tap</string>
+  <string name="tz_stop_spring">Spring</string>
+  <string name="tz_stop_repair_station">Repair station</string>
+  <string name="tz_stop_bike_shop">Bike shop</string>
+  <string name="tz_stop_on_route">on the route</string>
+  <string name="tz_stop_off_route">%1$s off route</string>
+  <string name="tz_stop_away">%1$s away</string>
+  <string name="tz_stop_kind_where">%1$s · %2$s</string>
+  <string name="tz_stop_spring_note">Check it is drinkable.</string>
+  <string name="tz_stop_added">Added</string>
+  <string name="tz_stop_remove">Remove</string>
+  <string name="tz_stop_ahead">Ahead</string>
+  <string name="tz_stop_distance">Distance</string>
+  <string name="tz_stop_detour">Detour</string>
+  <string name="tz_stop_extra_time">Extra time</string>
+  <string name="tz_stop_add">Add stop</string>
+  <string name="tz_stop_recalculating">Recalculating…</string>
+  <string name="tz_stop_note">Your route stays as it is after the stop.</string>
+  <string name="tz_stop_note_free">A free ride has no route to add it to: head there yourself.</string>
+  <string name="tz_stop_failed">Can\'t route to this stop. Your route is unchanged.</string>
+  <string name="tz_stop_plus">+%1$s</string>
   <string name="tz_loop_title">LOOP</string>
   <string name="tz_loop_start">Start</string>
   <string name="tz_loop_my_location">My location</string>

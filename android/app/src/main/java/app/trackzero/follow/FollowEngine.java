@@ -129,6 +129,9 @@ public final class FollowEngine
   private double mCourseMinMps = COURSE_MIN_MPS;
   /** Where the bike is left on a path to a place bikes cannot reach (Phase 27); -1: no walking. */
   private double mWalkFromM = -1;
+  /** Followed but not heard: the rider is on a leg to a stop (Phase 30). */
+  private boolean mQuiet;
+  private static final Events SILENT = new Events() {};
 
   /** @param maneuvers from {@link ManeuverBuilder#build} for this route */
   public FollowEngine(@NonNull FollowRoute route, @NonNull List<RouteManeuver> maneuvers, @NonNull Events events)
@@ -150,6 +153,27 @@ public final class FollowEngine
   public void setWalkFrom(double m)
   {
     mWalkFromM = m;
+  }
+
+  /**
+   * Quiet: no turns, off route, wrong way, back on route or arrival are told while the rider follows a leg to a stop
+   * instead (Phase 30); the engine still places them, and turns passed meanwhile are not told later.
+   */
+  public void setQuiet(boolean quiet)
+  {
+    mQuiet = quiet;
+  }
+
+  public boolean quiet()
+  {
+    return mQuiet;
+  }
+
+  /** The events, or none while quiet. */
+  @NonNull
+  private Events events()
+  {
+    return mQuiet ? SILENT : mEvents;
   }
 
   /** Maneuvers from the track's shape alone. */
@@ -194,16 +218,16 @@ public final class FollowEngine
         mWrongMinAlong = mAlong;
         mWithSinceMs = -1;
         mWrongRemainingM = Math.max(0, mRoute.totalM() - mAgainstFromAlong);
-        mEvents.onWrongWay();
+        events().onWrongWay();
       }
       if (mPhase != Phase.ON_ROUTE)
         mAgainstSinceMs = -1;
       if (mPhase == Phase.OFF_ROUTE)
-        mEvents.onOffRoute();
+        events().onOffRoute();
       else if (before == Phase.OFF_ROUTE && mPhase == Phase.ON_ROUTE)
-        mEvents.onBackOnRoute();
+        events().onBackOnRoute();
       else if (mPhase == Phase.ARRIVED)
-        mEvents.onArrived();
+        events().onArrived();
     }
     if (mPhase == Phase.ON_ROUTE)
       announce();
@@ -333,12 +357,12 @@ public final class FollowEngine
       m.farAnnounced = true;
       final double previousAt = mNext > 0 ? mManeuvers.get(mNext - 1).at : 0;
       if (dist > FAR_MIN_M && m.at - previousAt >= FAR_MIN_GAP_M)
-        mEvents.onTurnSoon(m, dist);
+        events().onTurnSoon(m, dist);
     }
     if (!m.nearAnnounced && dist <= TzConfig.VOICE_NEAR_M)
     {
       m.nearAnnounced = true;
-      mEvents.onTurnNow(m);
+      events().onTurnNow(m);
     }
   }
 

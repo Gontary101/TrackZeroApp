@@ -51,6 +51,11 @@ public class TzPinLayer extends FrameLayout
   private View mStartPin;
   @Nullable
   private double[] mStartAt;
+  /** A place (S2, a stop; B5, a stop's place): a teardrop whose tip is the point (Phase 30). */
+  @Nullable
+  private View mPlacePin;
+  @Nullable
+  private double[] mPlaceAt;
   @Nullable
   private Listener mListener;
   private final int[] mOrigin = new int[2];
@@ -110,6 +115,26 @@ public class TzPinLayer extends FrameLayout
     reposition();
   }
 
+  /** Shows a place's teardrop pin there, or none (null). */
+  public void setPlace(@Nullable double[] at)
+  {
+    if (mPlacePin != null)
+      removeView(mPlacePin);
+    mPlacePin = null;
+    mPlaceAt = at;
+    if (at == null)
+      return;
+    final View v = new View(getContext());
+    v.setLayoutParams(new LayoutParams(getResources().getDimensionPixelSize(R.dimen.tz_pin_place_w),
+                                       getResources().getDimensionPixelSize(R.dimen.tz_pin_place_h),
+                                       Gravity.TOP | Gravity.START));
+    v.setBackgroundResource(R.drawable.tz_pin_place);
+    v.setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_NO);
+    addView(v);
+    mPlacePin = v;
+    reposition();
+  }
+
   /** Keeps the pins on their points for {@code ms} more (the camera animates without a finger). */
   public void follow(long ms)
   {
@@ -149,6 +174,13 @@ public class TzPinLayer extends FrameLayout
         place(mPins.get(i), mAt.get(i));
     if (mStartPin != null && mStartAt != null)
       place(mStartPin, mStartAt);
+    if (mPlacePin != null && mPlaceAt != null)
+    {
+      // The tip, not the middle, is on the point.
+      final float[] p = TzMap.latLonToScreen(mPlaceAt[0], mPlaceAt[1]);
+      mPlacePin.setTranslationX(p[0] - mOrigin[0] - mPlacePin.getLayoutParams().width / 2f);
+      mPlacePin.setTranslationY(p[1] - mOrigin[1] - mPlacePin.getLayoutParams().height);
+    }
   }
 
   private void place(@NonNull View pin, @NonNull double[] at)

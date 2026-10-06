@@ -2,7 +2,10 @@ package app.trackzero.ride;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import app.trackzero.follow.Stop;
 import app.trackzero.routes.Profile;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 
 /**
@@ -15,6 +18,8 @@ import java.util.Locale;
  * S                                         the next point starts a new segment
  * P,{time},{lat},{lon},{alt or NaN}         a recorded point
  * T,{distanceM},{movingMs},{gainM},{maxKmh},{maxGrade}   totals so far (the last one wins)
+ * A,{kind},{lat},{lon},{name}              a stop added (Phase 30)
+ * X,{lat},{lon}                            that stop reached or removed
  * </pre>
  * A line cut short by a crash is ignored.
  */
@@ -39,10 +44,15 @@ public final class RideJournal
     public final double placeLon;
     @NonNull
     public final Profile profile;
+    /** Stops added and not yet reached or removed (Phase 30). */
+    @NonNull
+    public final List<Stop> stops;
 
     Content(long startedAt, @Nullable String routeId, @NonNull String name, @NonNull RideTrack track,
-            @NonNull RideStats.Snapshot totals, double placeLat, double placeLon, @NonNull Profile profile)
+            @NonNull RideStats.Snapshot totals, double placeLat, double placeLon, @NonNull Profile profile,
+            @NonNull List<Stop> stops)
     {
+      this.stops = stops;
       this.profile = profile;
       this.startedAt = startedAt;
       this.routeId = routeId;
@@ -71,6 +81,17 @@ public final class RideJournal
   static void place(@NonNull StringBuilder out, double lat, double lon)
   {
     out.append("D,").append(lat).append(',').append(lon).append('\n');
+  }
+
+  static void stopAdded(@NonNull StringBuilder out, @NonNull Stop stop)
+  {
+    out.append("A,").append(stop.kind).append(',').append(stop.lat).append(',').append(stop.lon).append(',')
+        .append(stop.name.replace('\n', ' ').replace('\r', ' ')).append('\n');
+  }
+
+  static void stopGone(@NonNull StringBuilder out, @NonNull Stop stop)
+  {
+    out.append("X,").append(stop.lat).append(',').append(stop.lon).append('\n');
   }
 
   static void segment(@NonNull StringBuilder out)
@@ -116,8 +137,24 @@ public final class RideJournal
     double placeLat = Double.NaN;
     double placeLon = Double.NaN;
     Profile profile = Profile.ROAD;
+    final List<Stop> stops = new ArrayList<>();
     for (int i = 1; i < lines.length; i++)
     {
+      if (lines[i].startsWith("A,"))
+      {
+        // The name may hold commas: the last field takes the rest of the line.
+        final String[] a = lines[i].split(",", 5);
+        try
+        {
+          if (a.length == 5)
+            stops.add(new Stop(a[4], Integer.parseInt(a[1]), Double.parseDouble(a[2]), Double.parseDouble(a[3])));
+        }
+        catch (NumberFormatException e)
+        {
+          // Cut short by a crash.
+        }
+        continue;
+      }
       final String[] f = lines[i].split(",");
       try
       {
@@ -143,6 +180,14 @@ public final class RideJournal
             track.add(new RideTrack.Point(Long.parseLong(f[1]), Double.parseDouble(f[2]), Double.parseDouble(f[3]),
                                           Double.parseDouble(f[4])));
         }
+        case "X" ->
+        {
+          if (f.length == 3)
+          {
+            final Stop gone = new Stop("", 0, Double.parseDouble(f[1]), Double.parseDouble(f[2]));
+            stops.removeIf(st -> st.same(gone));
+          }
+        }
         case "T" ->
         {
           if (f.length == 6)
@@ -157,6 +202,6 @@ public final class RideJournal
         // A record cut short by a crash: the rest of the journal is still good.
       }
     }
-    return new Content(startedAt, routeId, h[4], track, totals, placeLat, placeLon, profile);
+    return new Content(startedAt, routeId, h[4], track, totals, placeLat, placeLon, profile, stops);
   }
 }

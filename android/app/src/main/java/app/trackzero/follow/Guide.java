@@ -3,6 +3,9 @@ package app.trackzero.follow;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import app.trackzero.geo.Geo;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Turn-by-turn for a ride (Phase 15): the route followed, and the routed legs that get the rider onto it. On a track
@@ -10,6 +13,11 @@ import app.trackzero.geo.Geo;
  * closest point 200 m to 2 km further on). On a ride to a place the route itself is a routed path, worked out again
  * from wherever the rider leaves it. Paths come from the bicycle router through {@link Paths}; until one arrives the
  * engine's own guidance stands (head to start, off route). Pure; one thread.
+ *
+ * <p>Stops (Phase 30): a place the rider adds is routed to at once, to know it can be reached, then kept in a list in
+ * route order. When the rider is on the route within 2 km of the next one, a leg leads there; the route itself is
+ * followed quietly meanwhile. Reaching it (30 m) ends the leg, and the usual rejoin (or a new path to the place)
+ * takes the rider on. A stop passed by 500 m on the route is dropped.
  */
 public final class Guide
 {
@@ -23,6 +31,10 @@ public final class Guide
   /** No new path sooner than this after the last one; after failures, twice as long each time up to the max. */
   static final long RETRY_MIN_MS = 10_000;
   static final long RETRY_MAX_MS = 5 * 60_000;
+  /** The leg to the next stop starts this far before it along the route... */
+  static final double STOP_LEAD_M = 2000;
+  /** ...and a stop this far behind the rider on the route was passed by. */
+  static final double STOP_PASSED_M = 500;
 
   /** The bicycle router. A request replaces the one before; the answer comes back through {@link #onPath}. */
   public interface Paths
@@ -36,12 +48,46 @@ public final class Guide
     void cancel();
   }
 
+  /** What happens to stops (Phase 30), for the journal and the voice. */
+  public interface StopEvents
+  {
+    /** Routed to and kept. */
+    default void onStopAdded(@NonNull Stop stop) {}
+
+    /** No path to it: nothing changed. */
+    default void onStopFailed(@NonNull Stop stop) {}
+
+    /** The rider is there (within 30 m). */
+    default void onStopReached(@NonNull Stop stop) {}
+
+    /** Removed by the rider, or passed by on the route. */
+    default void onStopDropped(@NonNull Stop stop) {}
+  }
+
+  /** A stop and where it is on the route (worked out again when the route changes). */
+  private static final class Entry
+  {
+    @NonNull
+    final Stop stop;
+    double along;
+    int alongFor = -1;
+
+    Entry(@NonNull Stop stop)
+    {
+      this.stop = stop;
+    }
+  }
+
   private enum Want
   {
     NONE,
     START,
     REJOIN,
-    DESTINATION
+    DESTINATION,
+    /** A path to a stop just added: can it be reached? */
+    STOP_CHECK,
+    /** The leg to the next stop. */
+    STOP
   }
 
   @NonNull
@@ -76,6 +122,15 @@ public final class Guide
   private long mNextRequestMs;
   private long mBackoffMs = RETRY_MIN_MS;
   private int mLines;
+  /** Stops in route order. */
+  private final List<Entry> mStops = new ArrayList<>();
+  /** The stop being checked (STOP_CHECK), or the one a leg is wanted or followed to. */
+  @Nullable
+  private Entry mChecking;
+  @Nullable
+  private Entry mLegStop;
+  @NonNull
+  private StopEvents mStopEvents = new StopEvents() {};
 
   // The last fix, to place a new engine at once.
   private boolean mHasFix;
@@ -106,7 +161,7 @@ public final class Guide
       @Override
       public void onTurnNow(@NonNull RouteManeuver m)
       {
-        if (m.type != Maneuver.JOIN)
+        if (m.type != Maneuver.JOIN && m.type != Maneuver.STOP)
           mEvents.onTurnNow(m);
       }
 
@@ -188,6 +243,15 @@ public final class Guide
       request(Want.DESTINATION);
       return;
     }
+    if (mLegStop != null)
+    {
+      planStopLeg();
+      return;
+    }
+    if (mPending == Want.STOP_CHECK)
+      return;
+    if (mLeg == null && onIt(main) && nextStopDue(main))
+      return;
     if (mToPlace)
     {
       if (main.phase() == FollowEngine.Phase.OFF_ROUTE)
@@ -212,6 +276,88 @@ public final class Guide
       cancel();
   }
 
+  /** On the way to a stop: there, or off the leg (a new one), or still riding it. */
+  private void planStopLeg()
+  {
+    final FollowEngine leg = mLeg;
+    final Entry stop = mLegStop;
+    final FollowEngine main = mMain;
+    if (main != null && onIt(main) && main.along() - alongOf(stop) > STOP_PASSED_M)
+    {
+      // Ridden on past it along the route: not wanted after all.
+      mStops.remove(stop);
+      endStopLeg();
+      mStopEvents.onStopDropped(stop.stop);
+      return;
+    }
+    if (leg == null)
+    {
+      // The leg is wanted but no path came yet (or the last one failed): ask again when allowed.
+      request(Want.STOP);
+      return;
+    }
+    if (leg.phase() == FollowEngine.Phase.ARRIVED)
+    {
+      mStops.remove(stop);
+      endStopLeg();
+      mStopEvents.onStopReached(stop.stop);
+    }
+    else if (leg.phase() == FollowEngine.Phase.OFF_ROUTE)
+    {
+      request(Want.STOP);
+    }
+  }
+
+  /**
+   * On the route with no leg: whether the next stop wants its leg now (true: asked for). Stops passed by are dropped
+   * first.
+   */
+  private boolean nextStopDue(@NonNull FollowEngine main)
+  {
+    while (!mStops.isEmpty())
+    {
+      final Entry next = mStops.get(0);
+      final double ahead = alongOf(next) - main.along();
+      if (ahead < -STOP_PASSED_M)
+      {
+        mStops.remove(0);
+        mStopEvents.onStopDropped(next.stop);
+        continue;
+      }
+      if (ahead > STOP_LEAD_M)
+        return false;
+      mLegStop = next;
+      main.setQuiet(true);
+      cancel();
+      request(Want.STOP);
+      return true;
+    }
+    return false;
+  }
+
+  private double alongOf(@NonNull Entry e)
+  {
+    if (e.alongFor != mLines && mMain != null)
+    {
+      // From a little behind the rider: of an out-and-back's two legs, the one still to ride.
+      e.along = Stops.alongOf(mMain.route(), e.stop.lat, e.stop.lon, mMain.along() - STOP_PASSED_M, mMain.totalM());
+      e.alongFor = mLines;
+    }
+    return e.along;
+  }
+
+  /** The rider is back to following the route (or its path) by themselves. */
+  private void endStopLeg()
+  {
+    mLegStop = null;
+    if (mPending == Want.STOP)
+      cancel();
+    if (mLeg != null)
+      dropLeg();
+    if (mMain != null)
+      mMain.setQuiet(false);
+  }
+
   /** On the route, either way along it. */
   private static boolean onIt(@NonNull FollowEngine e)
   {
@@ -234,6 +380,13 @@ public final class Guide
       toLon = mWalkTail.line.startLon();
       mPendingToBike = true;
       mPendingEndAlong = 0;
+    }
+    else if (want == Want.STOP_CHECK || want == Want.STOP)
+    {
+      final Entry stop = want == Want.STOP ? mLegStop : mChecking;
+      toLat = stop.stop.lat;
+      toLon = stop.stop.lon;
+      mPendingEndAlong = alongOf(stop);
     }
     else if (want == Want.DESTINATION)
     {
@@ -307,6 +460,11 @@ public final class Guide
     mPending = Want.NONE;
     if (want == Want.NONE)
       return;
+    if (want == Want.STOP_CHECK)
+    {
+      onCheck(path);
+      return;
+    }
     if (path == null)
     {
       mNextRequestMs = mElapsedMs + mBackoffMs;
@@ -327,6 +485,12 @@ public final class Guide
       place(mMain);
       return;
     }
+    if (want == Want.STOP)
+    {
+      if (mLegStop != null)
+        startStopLeg(mLegStop, path);
+      return;
+    }
     // Back on the track by themselves while the path was worked out: no leg.
     if (mMain == null || onIt(mMain))
       return;
@@ -335,6 +499,120 @@ public final class Guide
     mLegEndAlong = mPendingEndAlong;
     mLines++;
     place(mLeg);
+  }
+
+  private void startStopLeg(@NonNull Entry stop, @NonNull RoutedPath path)
+  {
+    final List<RouteManeuver> maneuvers = path.maneuvers(Maneuver.STOP);
+    maneuvers.get(maneuvers.size() - 1).street = stop.stop.name;
+    mLeg = new FollowEngine(path.line, maneuvers, mLegEvents);
+    mLeg.setFoot(mFoot);
+    mLegStop = stop;
+    mLegEndAlong = alongOf(stop);
+    if (mMain != null)
+      mMain.setQuiet(true);
+    mLines++;
+    place(mLeg);
+  }
+
+  // ---- Stops ----
+
+  /** Receives what happens to stops. */
+  public void setStopEvents(@NonNull StopEvents events)
+  {
+    mStopEvents = events;
+  }
+
+  /**
+   * Adds a stop: a path to it is worked out first, and {@link StopEvents#onStopAdded} or
+   * {@link StopEvents#onStopFailed} says how it went. Replaces a request in flight (it is asked again later).
+   */
+  public void addStop(@NonNull Stop stop)
+  {
+    if (!mHasFix || mMain == null || mChecking != null)
+    {
+      mStopEvents.onStopFailed(stop);
+      return;
+    }
+    if (mPending != Want.NONE)
+      cancel();
+    mChecking = new Entry(stop);
+    mPending = Want.STOP_CHECK;
+    mPaths.request(mLat, mLon, stop.lat, stop.lon, mCourseDeg, false);
+  }
+
+  private void onCheck(@Nullable RoutedPath path)
+  {
+    final Entry entry = mChecking;
+    mChecking = null;
+    if (entry == null)
+      return;
+    if (path == null)
+    {
+      mStopEvents.onStopFailed(entry.stop);
+      return;
+    }
+    insert(entry);
+    mStopEvents.onStopAdded(entry.stop);
+    // The next stop and close enough: this path is its leg. Otherwise the route stays as it is until then.
+    final FollowEngine main = mMain;
+    if (main != null && mLegStop == null && mStops.get(0) == entry
+        && alongOf(entry) - main.along() <= STOP_LEAD_M)
+      startStopLeg(entry, path);
+  }
+
+  private void insert(@NonNull Entry entry)
+  {
+    int i = 0;
+    while (i < mStops.size() && alongOf(mStops.get(i)) <= alongOf(entry))
+      i++;
+    mStops.add(i, entry);
+  }
+
+  /** Stops kept from before a restore: already checked, added as they are. */
+  public void restoreStops(@NonNull List<Stop> stops)
+  {
+    for (Stop s : stops)
+      insert(new Entry(s));
+  }
+
+  /** Removes a stop (the rider changed their mind); a leg to it ends. */
+  public void removeStop(@NonNull Stop stop)
+  {
+    for (int i = 0; i < mStops.size(); i++)
+    {
+      final Entry e = mStops.get(i);
+      if (!e.stop.same(stop))
+        continue;
+      mStops.remove(i);
+      if (mLegStop == e)
+        endStopLeg();
+      mStopEvents.onStopDropped(e.stop);
+      return;
+    }
+  }
+
+  /** The stops still to come, in route order. */
+  @NonNull
+  public List<Stop> stops()
+  {
+    final List<Stop> out = new ArrayList<>(mStops.size());
+    for (Entry e : mStops)
+      out.add(e.stop);
+    return Collections.unmodifiableList(out);
+  }
+
+  /** A stop being checked (S2 waits for it). */
+  public boolean checkingStop()
+  {
+    return mChecking != null;
+  }
+
+  /** The stop the current leg leads to, or null. */
+  @Nullable
+  public Stop legStop()
+  {
+    return mLegStop == null || mLeg == null ? null : mLegStop.stop;
   }
 
   // ---- Readings ----

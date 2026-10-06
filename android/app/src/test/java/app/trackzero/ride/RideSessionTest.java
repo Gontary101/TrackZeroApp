@@ -3,6 +3,7 @@ package app.trackzero.ride;
 import static app.trackzero.ride.RideFixes.at;
 import static org.junit.Assert.*;
 
+import app.trackzero.follow.Stop;
 import app.trackzero.routes.Profile;
 import org.junit.Test;
 
@@ -199,6 +200,26 @@ public class RideSessionTest
     assertEquals(Profile.GRAVEL, c.profile);
     assertEquals(45.77, c.placeLat, 1e-9);
     assertEquals(3.08, c.placeLon, 1e-9);
+  }
+
+  @Test
+  public void pendingStopsComeBackFromTheJournal()
+  {
+    final RideSession s = new RideSession(true);
+    s.start(1_780_000_000_000L, 0, "r1", "Loop", Profile.ROAD);
+    final Stop water = new Stop("Fontaine, place du marché", Stop.DRINKING_WATER, 45.77, 3.08);
+    final Stop shop = new Stop("Vélo 63", Stop.BIKE_SHOP, 45.80, 3.10);
+    s.stopAdded(water);
+    s.stopAdded(shop);
+    s.stopGone(water);
+    final RideJournal.Content c = RideJournal.parse(s.drainJournal(0));
+    assertNotNull(c);
+    assertEquals(1, c.stops.size());
+    assertEquals("Vélo 63", c.stops.get(0).name);
+    assertEquals(Stop.BIKE_SHOP, c.stops.get(0).kind);
+    final RideSession restored = RideSession.restore(c, true);
+    assertEquals(1, restored.takeRestoredStops().size());
+    assertEquals(0, restored.takeRestoredStops().size());
   }
 
   @Test
