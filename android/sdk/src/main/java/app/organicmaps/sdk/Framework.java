@@ -115,6 +115,14 @@ public class Framework
   @Size(2)
   public static native double[] nativeGetScreenRectCenter();
 
+  /// TrackZero (Phase 28): a pixel of the map view as {lat, lon}.
+  @NonNull
+  public static native double[] nativeScreenToLatLon(float x, float y);
+
+  /// TrackZero (Phase 28): where {lat, lon} is in the map view, {x, y} pixels (may be off screen).
+  @NonNull
+  public static native float[] nativeLatLonToScreen(double lat, double lon);
+
   public static native DistanceAndAzimut nativeGetDistanceAndAzimuth(double dstMerX, double dstMerY, double srcLat,
                                                                      double srcLon, double north);
 

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The planner's destination pin: the route's ring (black disc, 3dp mint ring, 9dp mint dot). -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+  <item>
+    <shape android:shape="oval">
+      <solid android:color="@color/tz_bg" />
+      <stroke android:width="@dimen/tz_pin_ring" android:color="@color/tz_mint" />
+    </shape>
+  </item>
+  <item android:gravity="center" android:width="@dimen/tz_pin_ring_dot" android:height="@dimen/tz_pin_ring_dot">
+    <shape android:shape="oval">
+      <solid android:color="@color/tz_mint" />
+    </shape>
+  </item>
+</layer-list>

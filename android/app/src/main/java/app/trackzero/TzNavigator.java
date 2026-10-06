@@ -21,6 +21,7 @@ import app.trackzero.screens.TzMapScreen;
 import app.trackzero.screens.TzMapsScreen;
 import app.trackzero.ride.TzRide;
 import app.trackzero.screens.TzMoreScreen;
+import app.trackzero.screens.TzPlanScreen;
 import app.trackzero.screens.TzPreviewScreen;
 import app.trackzero.screens.TzRideScreen;
 import app.trackzero.screens.TzRoutesScreen;
@@ -41,6 +42,8 @@ public final class TzNavigator
     SEARCH(true, null),
     ROUTES(true, TzBottomIsland.Tab.ROUTES),
     PREVIEW(false, null),
+    /** P1, P2: planning a route on the map (Phase 28). */
+    PLAN(false, null),
     MORE(true, TzBottomIsland.Tab.MORE),
     HISTORY(true, TzBottomIsland.Tab.MORE),
     ABOUT(true, TzBottomIsland.Tab.MORE),
@@ -214,6 +217,7 @@ public final class TzNavigator
       case SEARCH -> new TzSearchScreen();
       case ROUTES -> new TzRoutesScreen();
       case PREVIEW -> new TzPreviewScreen();
+      case PLAN -> new TzPlanScreen();
       case MORE -> new TzMoreScreen();
       case RIDE -> new TzRideScreen();
       case SUMMARY -> new TzSummaryScreen();
@@ -273,6 +277,7 @@ public final class TzNavigator
     {
     case SEARCH, ROUTES, MORE, SUMMARY -> show(Screen.MAP, null);
     case PREVIEW -> show(Screen.ROUTES, null);
+    case PLAN -> show(Screen.ROUTES, null);
     case HISTORY, ABOUT, MAPS -> show(Screen.MORE, null);
     // Back never ends a ride: the ride screen opens its controls sheet in onBackPressed().
     case RIDE, MAP -> {}

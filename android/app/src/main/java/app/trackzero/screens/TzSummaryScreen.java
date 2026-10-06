@@ -16,6 +16,7 @@ import app.trackzero.base.TzBase;
 import app.trackzero.format.TzFormat;
 import app.trackzero.ride.Ride;
 import app.trackzero.ride.RideStore;
+import app.trackzero.routes.RouteStore;
 import app.trackzero.ui.TzMetricView;
 import app.trackzero.ui.TzSilhouetteView;
 import java.io.File;
@@ -118,6 +119,27 @@ public class TzSummaryScreen extends TzScreen
     }
   }
 
+  /** A planned route ridden before it was saved (Phase 28): SAVE ROUTE keeps it in the library. */
+  private void offerSave(@NonNull Ride ride)
+  {
+    if (ride.routeId == null)
+      return;
+    final RouteStore store = RouteStore.get(requireContext());
+    store.find(ride.routeId, route -> {
+      if (route == null || !route.temp || getView() == null)
+        return;
+      final View save = requireView().findViewById(R.id.tz_summary_save_route);
+      save.setVisibility(View.VISIBLE);
+      save.setOnClickListener(v -> store.saveTemp(route.id, route.name, saved -> {
+        if (getView() == null)
+          return;
+        save.setVisibility(View.GONE);
+        if (saved != null)
+          Toast.makeText(requireContext(), R.string.tz_plan_saved, Toast.LENGTH_SHORT).show();
+      }));
+    });
+  }
+
   private void bindRide(@NonNull Ride ride)
   {
     final View view = requireView();
@@ -129,6 +151,7 @@ public class TzSummaryScreen extends TzScreen
         DateFormat.getBestDateTimePattern(locale, "EEEdMMM"), locale);
     date.setTimeZone(timeZone);
     ((TextView) view.findViewById(R.id.tz_summary_title)).setText(ride.name);
+    offerSave(ride);
     ((TextView) view.findViewById(R.id.tz_summary_date)).setText(
         date.format(new Date(ride.startedAt)) + " · "
         + TzFormat.clock(ride.startedAt, timeZone, use24h) + " – "

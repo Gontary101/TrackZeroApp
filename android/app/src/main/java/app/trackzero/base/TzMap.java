@@ -255,6 +255,26 @@ public final class TzMap
       sHost.setMapRenderingEnabled(on);
   }
 
+  /** A pixel of the map (activity coordinates: the map fills the window) as {lat, lon} (Phase 28). */
+  @NonNull
+  public static double[] screenToLatLon(float x, float y)
+  {
+    return Framework.nativeScreenToLatLon(x, y);
+  }
+
+  /** Where {@code lat, lon} is on the map, {x, y} pixels; off the screen when it is not shown. */
+  @NonNull
+  public static float[] latLonToScreen(double lat, double lon)
+  {
+    return Framework.nativeLatLonToScreen(lat, lon);
+  }
+
+  /** A finger is on the map, or was a moment ago (the map may still be moving). */
+  public static boolean recentlyTouched(long withinMs)
+  {
+    return sTouchDown || SystemClock.uptimeMillis() - sTouchUpAtMs < withinMs;
+  }
+
   public static void addTouchObserver(@NonNull TouchObserver o)
   {
     sTouchObservers.add(o);

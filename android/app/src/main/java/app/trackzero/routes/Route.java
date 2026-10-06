@@ -33,19 +33,26 @@ public final class Route
   /** The profile a planned or proposed route was made for (Phase 22); null for an imported GPX. */
   @Nullable
   public final Profile profile;
+  /**
+   * A planned route being previewed (Phase 28), not yet saved: never listed, replaced by the next one. Saving clears
+   * it.
+   */
+  public final boolean temp;
 
   Route(@NonNull String id, @NonNull String name, @NonNull String file, double distanceM, double gainM, double highM,
         @NonNull RouteStats.Kind kind, boolean favorite, long importedAt, long lastRiddenAt, @NonNull double[] silLat,
         @NonNull double[] silLon)
   {
-    this(id, name, file, distanceM, gainM, highM, kind, favorite, importedAt, lastRiddenAt, silLat, silLon, null);
+    this(id, name, file, distanceM, gainM, highM, kind, favorite, importedAt, lastRiddenAt, silLat, silLon, null,
+         false);
   }
 
   Route(@NonNull String id, @NonNull String name, @NonNull String file, double distanceM, double gainM, double highM,
         @NonNull RouteStats.Kind kind, boolean favorite, long importedAt, long lastRiddenAt, @NonNull double[] silLat,
-        @NonNull double[] silLon, @Nullable Profile profile)
+        @NonNull double[] silLon, @Nullable Profile profile, boolean temp)
   {
     this.profile = profile;
+    this.temp = temp;
     this.id = id;
     this.name = name;
     this.file = file;
@@ -69,20 +76,29 @@ public final class Route
   Route withFavorite(boolean f)
   {
     return new Route(id, name, file, distanceM, gainM, highM, kind, f, importedAt, lastRiddenAt, silLat, silLon,
-                     profile);
+                     profile, temp);
   }
 
   @NonNull
   Route withName(@NonNull String n)
   {
     return new Route(id, n, file, distanceM, gainM, highM, kind, favorite, importedAt, lastRiddenAt, silLat, silLon,
-                     profile);
+                     profile, temp);
   }
 
   @NonNull
   Route withLastRiddenAt(long t)
   {
-    return new Route(id, name, file, distanceM, gainM, highM, kind, favorite, importedAt, t, silLat, silLon, profile);
+    return new Route(id, name, file, distanceM, gainM, highM, kind, favorite, importedAt, t, silLat, silLon, profile,
+                     temp);
+  }
+
+  /** The temp route kept, under its name. */
+  @NonNull
+  Route saved(@NonNull String n)
+  {
+    return new Route(id, n, file, distanceM, gainM, highM, kind, favorite, importedAt, lastRiddenAt, silLat, silLon,
+                     profile, false);
   }
 
   @NonNull
@@ -109,6 +125,8 @@ public final class Route
         .put("sil", sil);
     if (profile != null)
       o.put("profile", profile.id);
+    if (temp)
+      o.put("temp", true);
     return o;
   }
 
@@ -129,7 +147,7 @@ public final class Route
                      ele ? o.getDouble("gainM") : Double.NaN, ele ? o.getDouble("highM") : Double.NaN,
                      RouteStats.Kind.valueOf(o.getString("kind")), o.getBoolean("favorite"), o.getLong("importedAt"),
                      o.getLong("lastRiddenAt"), lat, lon,
-                     o.has("profile") ? Profile.of(o.getString("profile")) : null);
+                     o.has("profile") ? Profile.of(o.getString("profile")) : null, o.optBoolean("temp", false));
   }
 
   private static double round5(double v)

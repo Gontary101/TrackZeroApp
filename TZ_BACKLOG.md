@@ -123,6 +123,8 @@ _No bugs marked as fixed yet._
   under the island on every page. Field check: NEEDS OWNER N18 (handle part).
 - **FEAT-005** — Phase 20. Research in `TZ_RESEARCH_ROUTE_VISIBILITY.md`; 8dp line with a black casing (D45).
   Field check: NEEDS OWNER N20 (choose among four candidates).
+- **FEAT-002** — Phase 28. Plan a route on the map: destination, points on the way, drag, reorder, undo; preview,
+  ride, save, export (D53). Field check: NEEDS OWNER N28.
 - **BUG-001** — Phase 27. A place a bike cannot reach: ride to the nearest point a bike can reach, then walk
   (B5W, D52). Field check: NEEDS OWNER N27.
 - **FEAT-013** — Phase 26. Hiking profile: trails first, expert paths avoided where possible, hiking times with

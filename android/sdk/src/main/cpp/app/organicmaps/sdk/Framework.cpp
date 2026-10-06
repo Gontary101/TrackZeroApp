@@ -1531,6 +1531,28 @@ JNIEXPORT jdoubleArray JNICALL Java_app_organicmaps_sdk_Framework_nativeGetScree
   return jLatLon;
 }
 
+// TrackZero (Phase 28): a pixel of the map view as {lat, lon}, with the camera as last seen by the UI.
+JNIEXPORT jdoubleArray JNICALL Java_app_organicmaps_sdk_Framework_nativeScreenToLatLon(JNIEnv * env, jclass, jfloat x,
+                                                                                    jfloat y)
+{
+  auto const ll = mercator::ToLatLon(frm()->PtoG(m2::PointD(x, y)));
+  double const out[] = {ll.m_lat, ll.m_lon};
+  jdoubleArray result = env->NewDoubleArray(2);
+  env->SetDoubleArrayRegion(result, 0, 2, out);
+  return result;
+}
+
+// TrackZero (Phase 28): where {lat, lon} is in the map view, in pixels (may be off screen).
+JNIEXPORT jfloatArray JNICALL Java_app_organicmaps_sdk_Framework_nativeLatLonToScreen(JNIEnv * env, jclass,
+                                                                                   jdouble lat, jdouble lon)
+{
+  auto const p = frm()->GtoP(mercator::FromLatLon(lat, lon));
+  float const out[] = {static_cast<float>(p.x), static_cast<float>(p.y)};
+  jfloatArray result = env->NewFloatArray(2);
+  env->SetFloatArrayRegion(result, 0, 2, out);
+  return result;
+}
+
 JNIEXPORT void JNICALL Java_app_organicmaps_sdk_Framework_nativeShowTrackRect(JNIEnv * env, jclass, jlong track)
 {
   frm()->ShowTrack(static_cast<kml::TrackId>(track));

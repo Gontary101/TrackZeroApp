@@ -1,6 +1,8 @@
 package app.trackzero.ride;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import app.trackzero.routes.GpxTrack;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -10,7 +12,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
 
-/** Writes recorded ride segments as GPX 1.1. */
+/** Writes recorded ride segments, and planned routes (Phase 28), as GPX 1.1. */
 public final class GpxWriter
 {
   private GpxWriter()
@@ -91,5 +93,61 @@ public final class GpxWriter
     }
     out.write("  </trk>\n");
     out.write("</gpx>\n");
+  }
+
+  /**
+   * A planned route (Phase 28): its points as {@code wpt} (named when known), then the path as one track with
+   * elevations ({@code ele} may be null). No times: it has not been ridden.
+   */
+  public static void writeRoute(@NonNull Writer out, @NonNull String name, @NonNull double[] lat,
+                                @NonNull double[] lon, @Nullable double[] ele,
+                                @NonNull List<GpxTrack.Waypoint> waypoints) throws IOException
+  {
+    out.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+    out.write("<gpx version=\"1.1\" creator=\"TrackZero\" xmlns=\"http://www.topografix.com/GPX/1/1\">\n");
+    out.write("  <metadata>\n    <name>" + escape(name) + "</name>\n  </metadata>\n");
+    final StringBuilder line = new StringBuilder(160);
+    for (GpxTrack.Waypoint w : waypoints)
+    {
+      line.setLength(0);
+      line.append("  <wpt lat=\"");
+      appendFixed(line, w.lat, 7);
+      line.append("\" lon=\"");
+      appendFixed(line, w.lon, 7);
+      line.append("\">");
+      if (w.name != null && !w.name.isEmpty())
+        line.append("<name>").append(escape(w.name)).append("</name>");
+      line.append("</wpt>\n");
+      out.append(line);
+    }
+    out.write("  <trk>\n    <name>" + escape(name) + "</name>\n    <trkseg>\n");
+    for (int i = 0; i < lat.length; i++)
+    {
+      line.setLength(0);
+      line.append("      <trkpt lat=\"");
+      appendFixed(line, lat[i], 7);
+      line.append("\" lon=\"");
+      appendFixed(line, lon[i], 7);
+      line.append('"');
+      if (ele != null && !Double.isNaN(ele[i]))
+      {
+        line.append("><ele>");
+        appendFixed(line, ele[i], 1);
+        line.append("</ele></trkpt>\n");
+      }
+      else
+      {
+        line.append("/>\n");
+      }
+      out.append(line);
+    }
+    out.write("    </trkseg>\n  </trk>\n</gpx>\n");
+  }
+
+  @NonNull
+  private static String escape(@NonNull String s)
+  {
+    return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;")
+        .replace("'", "&apos;");
   }
 }

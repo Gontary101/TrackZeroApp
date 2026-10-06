@@ -248,4 +248,16 @@
       app:autoSizeMinTextSize="@dimen/tz_text_14"
       app:autoSizeTextType="uniform" />
   </LinearLayout>
+
+  <!-- A planned route ridden before it was saved (Phase 28): a third, text-only action. -->
+  <TextView
+    android:id="@+id/tz_summary_save_route"
+    style="@style/TzText.Label"
+    android:layout_width="match_parent"
+    android:layout_height="@dimen/tz_plan_row_h"
+    android:layout_marginTop="@dimen/tz_space_8"
+    android:gravity="center"
+    android:text="@string/tz_plan_save"
+    android:textColor="@color/tz_text1"
+    android:visibility="gone" />
 </LinearLayout>

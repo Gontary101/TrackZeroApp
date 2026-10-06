@@ -79,6 +79,17 @@
   <!-- B3 / B4 Routes -->
   <string name="tz_routes_title">ROUTES</string>
   <string name="tz_import">IMPORT</string>
+  <!-- Phase 28: B3's header button and B4's button open the New route sheet (N1) -->
+  <string name="tz_new">NEW</string>
+  <string name="tz_new_route">New route</string>
+  <string name="tz_new_route_title">NEW ROUTE</string>
+  <string name="tz_new_import">Import a GPX file</string>
+  <string name="tz_new_import_desc">From this phone or another app</string>
+  <string name="tz_new_plan">Plan on the map</string>
+  <string name="tz_new_plan_desc">Tap a destination, add points on the way</string>
+  <string name="tz_new_loop">Propose a loop</string>
+  <string name="tz_new_loop_desc">Pick a distance, get round trips from here</string>
+  <string name="tz_route_export">Export GPX</string>
   <string name="tz_import_gpx">IMPORT GPX</string>
   <string name="tz_filter_all">All</string>
   <string name="tz_filter_favorites">Favorites</string>
@@ -92,7 +103,7 @@
     <item quantity="other">%d routes · last ridden first</item>
   </plurals>
   <string name="tz_routes_empty_title">No routes yet</string>
-  <string name="tz_routes_empty_body">Import a GPX file from your phone, or share one to TrackZero from any app.</string>
+  <string name="tz_routes_empty_body">Import a GPX file, plan one on the map, or let TrackZero propose a loop.</string>
   <string name="tz_routes_no_favorites">Star a route to keep it here.</string>
   <string name="tz_routes_no_recent">Routes you ride in the next 30 days show up here.</string>
   <string name="tz_route_imported">Route imported</string>
@@ -204,6 +215,8 @@
   <!-- A free ride with the Walk profile (Phase 25) -->
   <string name="tz_free_walk_name">Walk %1$s</string>
   <string name="tz_free_hike_name">Hike %1$s</string>
+  <!-- A planned route's kind (Phase 28): "Planned · Gravel" -->
+  <string name="tz_kind_planned">Planned · %1$s</string>
   <string name="tz_ride_speed_title">SPEED</string>
   <string name="tz_ride_elevation_title">ELEVATION</string>
   <string name="tz_unit_kmh_dot">KM/H</string>
@@ -313,4 +326,31 @@
   <string name="tz_about_compare_detail" translatable="false">Road and Gravel on 10 trips, into the trace</string>
   <string name="tz_about_compare_running" translatable="false">Running…</string>
   <string name="tz_about_compare_done" translatable="false">Done: share the trace</string>
+
+  <!-- Planner (Phase 28, boards P1, P2) -->
+  <string name="tz_plan_title">PLAN A ROUTE</string>
+  <string name="tz_plan_empty_hint">Tap the map to set your destination.</string>
+  <string name="tz_plan_pick_start">Tap the map where the route starts.</string>
+  <string name="tz_plan_from_here">From my location</string>
+  <string name="tz_plan_picked_point">Picked point</string>
+  <string name="tz_plan_change">Change</string>
+  <string name="tz_plan_time">Time</string>
+  <string name="tz_plan_hint">Tap the map to add a point. Drag a pin to move it.</string>
+  <string name="tz_plan_full">Eight points on the way at most. Drag a pin to move it.</string>
+  <string name="tz_plan_no_way">No way between these points for this profile</string>
+  <string name="tz_plan_no_map">A map on the way is missing</string>
+  <string name="tz_plan_no_gps">Waiting for your position…</string>
+  <string name="tz_plan_preview">Preview</string>
+  <string name="tz_plan_save">Save route</string>
+  <string name="tz_plan_saved">Saved to your routes</string>
+  <string name="tz_plan_point">Point %1$d</string>
+  <string name="tz_plan_name_to">To %1$s</string>
+  <string name="tz_plan_name_date">Plan %1$s</string>
+  <string name="tz_plan_discard">Discard this plan?</string>
+  <string name="tz_plan_discard_ok">Discard</string>
+  <string name="tz_plan_undo">Undo</string>
+  <string name="tz_plan_cd_point">Point %1$d. Tap to remove, hold to move</string>
+  <string name="tz_plan_cd_destination">Destination. Tap to remove, hold to move</string>
+  <string name="tz_plan_cd_reorder">Drag to reorder</string>
+  <string name="tz_plan_cd_remove">Remove</string>
 </resources>

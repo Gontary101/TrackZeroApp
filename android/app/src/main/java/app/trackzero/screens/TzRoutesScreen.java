@@ -1,5 +1,6 @@
 package app.trackzero.screens;
 
+import android.content.Context;
 import android.content.DialogInterface;
 import android.graphics.Rect;
 import android.os.Bundle;
@@ -20,11 +21,13 @@ import androidx.recyclerview.widget.RecyclerView;
 import app.organicmaps.R;
 import app.trackzero.TzNavigator;
 import app.trackzero.TzPrefs;
+import app.trackzero.base.TzBase;
 import app.trackzero.format.TzFormat;
 import app.trackzero.routes.Route;
 import app.trackzero.routes.RouteStats;
 import app.trackzero.routes.RouteStore;
 import app.trackzero.routes.TzImport;
+import app.trackzero.ui.TzProfiles;
 import app.trackzero.ui.TzRouteCard;
 import app.trackzero.ui.TzSegmented;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
@@ -34,7 +37,7 @@ import java.util.List;
 import java.util.Locale;
 
 /** B3 · Routes (library) and B4 · Routes · empty. */
-public class TzRoutesScreen extends TzScreen
+public class TzRoutesScreen extends TzScreen implements TzNewRouteSheet.Listener
 {
   public static final String ARG_ROUTE_ID = "routeId";
 
@@ -95,8 +98,8 @@ public class TzRoutesScreen extends TzScreen
     mFilterEmpty = view.findViewById(R.id.tz_routes_filter_empty);
     mList = view.findViewById(R.id.tz_routes_list);
 
-    mImport.setOnClickListener(v -> pickGpx());
-    view.findViewById(R.id.tz_routes_empty_import).setOnClickListener(v -> pickGpx());
+    mImport.setOnClickListener(v -> TzNewRouteSheet.show(this));
+    view.findViewById(R.id.tz_routes_empty_import).setOnClickListener(v -> TzNewRouteSheet.show(this));
 
     final TzSegmented filter = view.findViewById(R.id.tz_routes_filter);
     filter.setOptions(getString(R.string.tz_filter_all), getString(R.string.tz_filter_favorites),
@@ -148,6 +151,18 @@ public class TzRoutesScreen extends TzScreen
     mList.setPadding(mList.getPaddingLeft(), 0, mList.getPaddingRight(), islandSpace);
   }
 
+  @Override
+  public void onImportChosen()
+  {
+    pickGpx();
+  }
+
+  @Override
+  public void onPlanChosen()
+  {
+    TzNavigator.show(TzNavigator.Screen.PLAN, null);
+  }
+
   private void pickGpx()
   {
     if (mPicker != null)
@@ -196,12 +211,16 @@ public class TzRoutesScreen extends TzScreen
 
   private void showActions(@NonNull Route route)
   {
-    final CharSequence[] items = {getString(R.string.tz_route_rename), getString(R.string.tz_route_delete)};
+    final CharSequence[] items = {getString(R.string.tz_route_rename), getString(R.string.tz_route_export),
+                                  getString(R.string.tz_route_delete)};
     new MaterialAlertDialogBuilder(requireContext())
         .setTitle(route.name)
         .setItems(items, (d, which) -> {
           if (which == 0)
             rename(route);
+          else if (which == 1)
+            TzBase.shareGpx(requireActivity(), RouteStore.get(requireContext()).gpxFile(route), route.name,
+                            getString(R.string.tz_export_gpx));
           else
             confirmDelete(route);
         })
@@ -239,6 +258,15 @@ public class TzRoutesScreen extends TzScreen
         .show()
         .getButton(DialogInterface.BUTTON_POSITIVE)
         .setTextColor(ContextCompat.getColor(requireContext(), R.color.tz_danger));
+  }
+
+  /** The card's kind line: "Loop", "Point to point"…; a planned route says "Planned · Gravel" (Phase 28). */
+  @NonNull
+  static String kindText(@NonNull Context c, @NonNull Route r)
+  {
+    if (r.profile != null)
+      return c.getString(R.string.tz_kind_planned, c.getString(TzProfiles.label(r.profile)));
+    return c.getString(kindLabel(r.kind));
   }
 
   static int kindLabel(@NonNull RouteStats.Kind kind)
@@ -286,7 +314,7 @@ public class TzRoutesScreen extends TzScreen
       final Locale locale = Locale.getDefault();
       holder.card.bind(r.name, TzFormat.distance(r.distanceM, units, locale),
                        r.hasElevation() ? TzFormat.elevation(r.gainM, units, locale) : null,
-                       getString(kindLabel(r.kind)), r.favorite, r.silLat, r.silLon);
+                       kindText(requireContext(), r), r.favorite, r.silLat, r.silLon);
       holder.card.setListener(new TzRouteCard.Listener() {
         @Override
         public void onOpen()

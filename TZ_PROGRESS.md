@@ -50,6 +50,11 @@ Collected from the v2 phases; each says what to do, what to look at and what cou
   a hollow ring where to leave the bike and dots to the place. Ride towards it (any part): the ETA is sensible, and at
   the ring the card says "Leave the bike, walk" and the voice says it. Leave the route before the ring: you are routed
   back by bike to the ring. Pass: all of these. (The board's "P" letter on the ring is not there yet: D52.)
+- **N28 · Plan on the map (FEAT-002, Phase 28).** ROUTES › NEW › Plan on the map, choose Gravel, tap a destination and
+  two points on the way; drag a pin (hold it first), remove one, reorder the list, undo. PREVIEW, then START RIDE and
+  ride a little; end the ride and tap SAVE ROUTE. The route is in ROUTES as "Planned · Gravel". Long-press it › Export
+  GPX. Also: a long-press on the map (B1) opens the planner with that point. Pass: all of these feel right with a
+  finger on a real screen.
 - **N18 · Immersive ride (FEAT-001, Phase 18).** On a ride, no status bar or navigation bar on all three pages and with
   the controls open. Swipe from the top or bottom edge: the bars appear briefly over the ride and nothing moves. Tap the
   handle 10 times: it opens the controls every time. A quick upward swipe from just above the handle opens them too.
@@ -566,4 +571,24 @@ it led to).
   hike fallback, no map passed through, cancel), `GuideTest` (re-route before and after P), `FollowEngineTest`
   (bike + walk ETA). 232 tests pass.
 - Smoke test: all steps pass, no crashes.
+
+## Phase 28 — Plan routes on the map (FEAT-002)
+
+- Map plumbing: `Framework.nativeScreenToLatLon` / `nativeLatLonToScreen`, `TzMap.screenToLatLon` /
+  `latLonToScreen` / `recentlyTouched`, `ui/TzMapTap`.
+- `routes/PlanDraft` (tap rules, 8 waypoints, move, remove, reorder, undo 20 deep, start), `ui/TzPinLayer`
+  (numbered pins, destination ring, picked start; drag after 300 ms, tap to remove; moves only while the map can move).
+- `screens/TzPlanScreen` (navigator screen PLAN): P1 and P2 cards, profile pill (reroutes), undo, CHANGE start,
+  rows with drag handles (`ItemTouchHelper`) and remove, routing 400 ms after a change, failure messages, PREVIEW,
+  "Discard this plan?".
+- Library: `Route.temp`, `RouteStore.putTemp` / `saveTemp` (temp never listed, replaced by the next),
+  `GpxWriter.writeRoute` (track with elevations, points as `wpt`), "Planned · {Profile}" kind, Export GPX in the card
+  menu. B3 NEW and B4 NEW ROUTE open `TzNewRouteSheet` (N1); `TzBigRow.showChevron`. B5 shows Save (bookmark) for a
+  temp route; R8 offers SAVE ROUTE. A long-press on B1 opens the planner.
+- Checked on the emulator (D53): N1, P1, P2, B5 with Save, B3 "Planned · Gravel", export and re-import, R8 SAVE
+  ROUTE, discard dialog, idle CPU (`shots/N1.png`, `P1.png`, `P2.png`, `B5_planned.png`, `R8_planned.png`).
+- Tests: `PlanDraftTest` (7), `GpxRouteRoundTripTest` (distance within 0.5 %, waypoints, elevation). The RouteStore
+  temp round trip uses `org.json`, which local tests do not have (D47); its rules were checked on the emulator
+  instead. 240 tests pass.
+- Smoke test: all steps pass, no crashes. The emulator was set back to Road.
 

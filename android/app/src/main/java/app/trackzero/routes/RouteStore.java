@@ -13,9 +13,12 @@ import app.trackzero.TzIo;
 import app.trackzero.TzTrace;
 import app.trackzero.base.TzRoads;
 import app.trackzero.follow.FollowRoute;
+import app.trackzero.follow.RoutedPath;
 import app.trackzero.geo.DouglasPeucker;
+import app.trackzero.ride.GpxWriter;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.BufferedWriter;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
@@ -24,6 +27,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -105,9 +111,84 @@ public final class RouteStore
     mListeners.remove(l);
   }
 
+  /** The library: every route but a planned one not yet saved. */
   public void list(@NonNull TzIo.Callback<List<Route>> callback)
   {
-    TzIo.submit(() -> new ArrayList<>(routes()), callback);
+    TzIo.submit(() -> {
+      final List<Route> listed = new ArrayList<>();
+      for (Route r : routes())
+        if (!r.temp)
+          listed.add(r);
+      return listed;
+    }, callback);
+  }
+
+  /**
+   * A planned route to preview (Phase 28): written as a GPX (the path as a track, the points as waypoints) and kept as
+   * the temp route, replacing the previous one. Null when it cannot be written.
+   */
+  public void putTemp(@NonNull String name, @NonNull RoutedPath path, @NonNull Profile profile,
+                      @NonNull List<GpxTrack.Waypoint> points, @NonNull TzIo.Callback<Route> callback)
+  {
+    TzIo.submit(() -> {
+      for (Route r : new ArrayList<>(routes()))
+        if (r.temp)
+          removeFiles(r);
+      routes().removeIf(r -> r.temp);
+      final String id = UUID.randomUUID().toString();
+      final String file = "routes/" + id + ".gpx";
+      final File gpx = new File(mDir, file);
+      final File tmp = new File(gpx.getPath() + ".tmp");
+      //noinspection ResultOfMethodCallIgnored
+      gpx.getParentFile().mkdirs();
+      final FollowRoute line = path.line;
+      try (Writer out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(tmp), StandardCharsets.UTF_8)))
+      {
+        GpxWriter.writeRoute(out, name, line.lats(), line.lons(), path.ele, points);
+      }
+      catch (IOException e)
+      {
+        Log.w(TAG, "Cannot write the planned route", e);
+        //noinspection ResultOfMethodCallIgnored
+        tmp.delete();
+        return null;
+      }
+      final GpxTrack track;
+      try (InputStream in = new FileInputStream(tmp))
+      {
+        track = GpxParser.parse(in);
+      }
+      catch (IOException e)
+      {
+        //noinspection ResultOfMethodCallIgnored
+        tmp.delete();
+        return null;
+      }
+      if (track.size() < 2 || !tmp.renameTo(gpx))
+      {
+        //noinspection ResultOfMethodCallIgnored
+        tmp.delete();
+        return null;
+      }
+      final Route route = addTrack(id, file, track, name, profile, true);
+      save();
+      return route;
+    }, callback);
+  }
+
+  /** Keeps the temp route in the library under {@code name}; the saved route, or null if it is gone. */
+  public void saveTemp(@NonNull String id, @NonNull String name, @NonNull TzIo.Callback<Route> callback)
+  {
+    TzIo.submit(() -> {
+      final Route r = byId(id);
+      if (r == null)
+        return null;
+      final Route saved = r.saved(name);
+      routes().set(routes().indexOf(r), saved);
+      save();
+      notifyChanged();
+      return saved;
+    }, callback);
   }
 
   public void find(@NonNull String id, @NonNull TzIo.Callback<Route> callback)
@@ -217,10 +298,7 @@ public final class RouteStore
         return;
       routes().remove(r);
       save();
-      //noinspection ResultOfMethodCallIgnored
-      gpxFile(r).delete();
-      //noinspection ResultOfMethodCallIgnored
-      geometryFile(r.id).delete();
+      removeFiles(r);
       notifyChanged();
     });
   }
@@ -287,6 +365,23 @@ public final class RouteStore
       return new ImportResult(null, ImportError.NO_TRACK);
     }
 
+    final String file = "routes/" + id + ".gpx";
+    if (!tmp.renameTo(new File(mDir, file)))
+    {
+      //noinspection ResultOfMethodCallIgnored
+      tmp.delete();
+      return new ImportResult(null, ImportError.NOT_GPX);
+    }
+    final Route route = addTrack(id, file, track, track.name != null ? track.name : displayName(uri), null, false);
+    save();
+    return new ImportResult(route, null);
+  }
+
+  /** A route from its parsed GPX (already at {@code file}): stats, geometry cache, silhouette; first in the list. */
+  @NonNull
+  private Route addTrack(@NonNull String id, @NonNull String file, @NonNull GpxTrack track, @NonNull String name,
+                         @Nullable Profile profile, boolean temp)
+  {
     final RouteStats stats = RouteStats.compute(track.lat, track.lon, track.ele);
     final RouteGeometry geometry = RouteGeometry.of(track);
     // From the already simplified line: the same shape at card size, for a fraction of the work.
@@ -298,20 +393,19 @@ public final class RouteStore
       silLat[i] = geometry.lineLat[keep[i]];
       silLon[i] = geometry.lineLon[keep[i]];
     }
-    final String file = "routes/" + id + ".gpx";
-    if (!tmp.renameTo(new File(mDir, file)))
-    {
-      //noinspection ResultOfMethodCallIgnored
-      tmp.delete();
-      return new ImportResult(null, ImportError.NOT_GPX);
-    }
     saveGeometry(id, geometry);
-    final Route route = new Route(id, track.name != null ? track.name : displayName(uri), file, stats.distanceM,
-                                  stats.gainM, stats.highM, stats.kind, false, System.currentTimeMillis(), 0, silLat,
-                                  silLon);
+    final Route route = new Route(id, name, file, stats.distanceM, stats.gainM, stats.highM, stats.kind, false,
+                                  System.currentTimeMillis(), 0, silLat, silLon, profile, temp);
     routes().add(0, route);
-    save();
-    return new ImportResult(route, null);
+    return route;
+  }
+
+  private void removeFiles(@NonNull Route r)
+  {
+    //noinspection ResultOfMethodCallIgnored
+    gpxFile(r).delete();
+    //noinspection ResultOfMethodCallIgnored
+    geometryFile(r.id).delete();
   }
 
   @NonNull

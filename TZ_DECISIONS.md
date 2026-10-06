@@ -731,3 +731,36 @@ with the stock weights, so near region borders the profile applies a little less
   Started as a ride: both parts drawn, ETA 16.6 km at 18 km/h + 1 km at 4.8 km/h. La table du Puy (a bike route)
   unchanged. A place without a map: the planner passes NO_MAP through (unit test). No place outside the map can be
   searched offline to show it on the emulator.
+
+## D53 · Planning routes on the map (Phase 28, FEAT-002)
+- **Map plumbing.** `Framework.nativeScreenToLatLon` / `nativeLatLonToScreen` (`frm()->PtoG` / `GtoP`, the camera as the
+  UI last saw it). `ui/TzMapTap` turns the map's touch stream into taps (8dp, 300 ms) and long-presses (500 ms). A
+  screen says which touches land on its own views, so a tap on a card or a pin is not a tap on the map. CoMaps' own
+  long-tap and POI tap still happen underneath; TrackZero already closes their place pages (unchanged since Phase 15).
+- **Plan model.** `routes/PlanDraft` (pure): start (rider or picked), up to 8 waypoints and a destination as one
+  ordered list (the last is the destination), an undo stack of 20 whole states. A name found for a point is kept only
+  if the point has not moved since.
+- **Pins.** `ui/TzPinLayer` holds views over the map, moved from a `Choreographer` callback only while a finger is on
+  the map or within 600 ms after (or for a while after a camera move the screen asked for). The callback stops itself.
+  Measured on the emulator with a plan open and untouched: the app's main thread 0.6 % of a core. The map's render
+  thread uses the same ~100 % as on B1 (this emulator's software rendering, Phase 16 baseline), so the planner adds
+  nothing at rest. The destination pin is a view styled like the route's ring; the line is drawn without a ring, so
+  both are not drawn twice.
+- **Routing.** 400 ms after the last change, one `TzRouter.route(points, profile)`; each change cancels the request in
+  flight and older answers are dropped. TIME uses the profile's default pace until Phase 33: a bike at 18 km/h (the
+  ETA fallback), walking and hiking by their formulas.
+- **Temp route.** PREVIEW writes the plan as a GPX (the path as a track with elevations, the points as `wpt`) and adds
+  it to the library with `temp: true`. It is never listed, and the next one replaces it. It gets an ordinary id (not
+  a fixed `_temp` file, as the plan put it), so a ride on it stays linked to it after it is saved. Save clears the
+  flag and keeps the name ("To {destination}" or "Plan {date}"). The kind line reads "Planned · {Profile}" (the
+  route's `profile`). R8 offers SAVE ROUTE when the ridden route is still temp.
+- **Entry points.** B3's header button is NEW (mint plus) and opens N1 (Import a GPX file / Plan on the map; Propose a
+  loop waits for Phase 29). B4 says what can be done and opens N1. A long-press on B1 opens the planner with that
+  point as the destination. The library card's long-press menu adds Export GPX (`TzBase.shareGpx`).
+- **Deviation from P2.** P2's card shows no start row, so CHANGE (a picked start) exists only on P1, before the
+  first point. With points placed, the start stays as chosen.
+- **Checked on the emulator.** NEW › Plan on the map; Gravel; three points (the third added after the card grew);
+  metrics 1.9 km, 31 m, 0:06. PREVIEW: B5 "Planned · Gravel · starts 5 m away", "To Avenue Blaise Pascal", the Save
+  bookmark. Save: the star, and B3 lists it as "Planned · Gravel". Export GPX › share to TrackZero: re-imported at the
+  same 1.9 km and 31 m. A plan previewed and ridden without saving: R8 shows SAVE ROUTE. Back with points: "Discard
+  this plan?". The test routes were deleted afterwards.

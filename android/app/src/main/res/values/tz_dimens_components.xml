@@ -154,4 +154,14 @@
   <dimen name="tz_sf_square_gap">6dp</dimen>
   <dimen name="tz_sf_item_gap">14dp</dimen>
   <dimen name="tz_sf_row_gap">8dp</dimen>
+
+  <!-- Waypoint pins (Components v2, Phase 28): 26dp disc, 3dp ring; the destination as the route's ring -->
+  <dimen name="tz_pin_waypoint">26dp</dimen>
+  <dimen name="tz_pin_ring">3dp</dimen>
+  <dimen name="tz_pin_ring_size">29dp</dimen>
+  <dimen name="tz_pin_ring_dot">9dp</dimen>
+  <dimen name="tz_pin_start">16dp</dimen>
+
+  <!-- Planner rows (P1 start row, P2 PlanPoint rows) -->
+  <dimen name="tz_plan_row_h">48dp</dimen>
 </resources>

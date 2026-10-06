@@ -18,7 +18,8 @@ import app.organicmaps.R;
 
 /**
  * A choice in a sheet (Components v2 "BigRow", the ProfileSheet rows): icon, title, subtitle, and the choice mark: a
- * 28dp mint disc with a check when chosen, a 2dp ring otherwise. The whole row is the target.
+ * 28dp mint disc with a check when chosen, a 2dp ring otherwise; or a chevron instead (the New route sheet, Phase 28).
+ * The whole row is the target.
  */
 public class TzBigRow extends LinearLayout
 {
@@ -33,6 +34,7 @@ public class TzBigRow extends LinearLayout
   @NonNull
   private final ImageView mCheck;
   private boolean mChosen;
+  private boolean mChevron;
 
   public TzBigRow(@NonNull Context context, @Nullable AttributeSet attrs)
   {
@@ -85,6 +87,16 @@ public class TzBigRow extends LinearLayout
     mSubtitle.setText(subtitle);
   }
 
+  /** A chevron instead of the choice mark: the row opens something. */
+  public void showChevron()
+  {
+    mCheck.setImageResource(R.drawable.ic_tz_chev);
+    ImageViewCompat.setImageTintList(mCheck, ContextCompat.getColorStateList(getContext(), R.color.tz_text2));
+    mCheck.setVisibility(VISIBLE);
+    mMark.setBackground(null);
+    mChevron = true;
+  }
+
   public void setChosen(boolean chosen)
   {
     mChosen = chosen;
@@ -98,6 +110,8 @@ public class TzBigRow extends LinearLayout
   public void onInitializeAccessibilityNodeInfo(@NonNull AccessibilityNodeInfo info)
   {
     super.onInitializeAccessibilityNodeInfo(info);
+    if (mChevron)
+      return;
     info.setClassName(RadioButton.class.getName());
     info.setCheckable(true);
     info.setChecked(mChosen);

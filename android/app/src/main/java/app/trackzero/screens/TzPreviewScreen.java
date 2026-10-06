@@ -142,6 +142,18 @@ public class TzPreviewScreen extends TzScreen
     mStar.setOnClickListener(v -> {
       if (mRoute == null)
         return;
+      if (mRoute.temp)
+      {
+        // A planned route not saved yet (Phase 28): Save keeps it in the library; the button becomes the star.
+        RouteStore.get(requireContext()).saveTemp(mRoute.id, mRoute.name, saved -> {
+          if (saved == null || getView() == null)
+            return;
+          mRoute = saved;
+          bindCard(saved);
+          Toast.makeText(requireContext(), R.string.tz_plan_saved, Toast.LENGTH_SHORT).show();
+        });
+        return;
+      }
       mFavorite = !mFavorite;
       RouteStore.get(requireContext()).setFavorite(mRoute.id, mFavorite);
       bindStar(mFavorite);
@@ -521,7 +533,7 @@ public class TzPreviewScreen extends TzScreen
     final View v = requireView();
     final TzFormat.Units units = TzPrefs.units(requireContext());
     final Locale locale = Locale.getDefault();
-    final String kind = getString(TzRoutesScreen.kindLabel(r.kind));
+    final String kind = TzRoutesScreen.kindText(requireContext(), r);
     final Location here = TzLocation.last(requireContext());
     final String label;
     if (here != null && r.silLat.length > 0)
@@ -555,7 +567,18 @@ public class TzPreviewScreen extends TzScreen
     }
     ((TextView) v.findViewById(R.id.tz_preview_peek_stats)).setText(peek);
     mFavorite = r.favorite;
-    bindStar(r.favorite);
+    if (r.temp)
+      bindSave();
+    else
+      bindStar(r.favorite);
+  }
+
+  /** A planned route not saved yet: the bookmark (Save) instead of the star. */
+  private void bindSave()
+  {
+    mStar.setImageResource(R.drawable.ic_tz_save);
+    ImageViewCompat.setImageTintList(mStar, ContextCompat.getColorStateList(requireContext(), R.color.tz_text1));
+    mStar.setContentDescription(getString(R.string.tz_plan_save));
   }
 
   private void bindStar(boolean favorite)

@@ -1,8 +1,10 @@
 package app.trackzero.screens;
 
+import android.graphics.Rect;
 import android.location.Location;
 import android.os.Bundle;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
@@ -19,6 +21,7 @@ import app.trackzero.format.TzFormat;
 import app.trackzero.geo.Geo;
 import app.trackzero.ui.TzChip;
 import app.trackzero.ui.TzMapControls;
+import app.trackzero.ui.TzMapTap;
 import java.util.Locale;
 
 /**
@@ -40,6 +43,9 @@ public class TzMapScreen extends TzScreen implements TzLocation.Listener, TzMap.
   private View mPlaceCard;
   /** Bottom inset, from {@link #onInsets}. */
   private int mBottom;
+  /** A long-press on the map plans a route to there (Phase 28). Nothing is drawn on B1 for it. */
+  @Nullable
+  private TzMapTap mTap;
 
   @Nullable
   @Override
@@ -81,13 +87,43 @@ public class TzMapScreen extends TzScreen implements TzLocation.Listener, TzMap.
         TzMap.followRider(false);
       }
     });
+    mTap = new TzMapTap(requireContext(), new TzMapTap.Listener() {
+      @Override
+      public void onLongPress(float x, float y)
+      {
+        final double[] ll = TzMap.screenToLatLon(x, y);
+        final Bundle args = new Bundle();
+        args.putDouble(TzPlanScreen.ARG_LAT, ll[0]);
+        args.putDouble(TzPlanScreen.ARG_LON, ll[1]);
+        TzNavigator.show(TzNavigator.Screen.PLAN, args);
+      }
+    }, this::onChrome);
     super.onViewCreated(view, savedInstanceState);
+  }
+
+  /** A touch on B1's own views or the island is not the map's. */
+  private boolean onChrome(@NonNull MotionEvent e)
+  {
+    final View island = requireActivity().findViewById(R.id.tz_island_map);
+    return hit(mGps, e) || hit(mControls, e) || hit(mPlaceCard, e)
+           || (island != null && hit((View) island.getParent(), e));
+  }
+
+  private static boolean hit(@Nullable View v, @NonNull MotionEvent e)
+  {
+    if (v == null || v.getVisibility() != View.VISIBLE)
+      return false;
+    final Rect r = new Rect();
+    v.getGlobalVisibleRect(r);
+    return r.contains((int) e.getRawX(), (int) e.getRawY());
   }
 
   @Override
   public void onStart()
   {
     super.onStart();
+    if (mTap != null)
+      TzMap.addTouchObserver(mTap);
     TzMap.addFollowListener(this);
     TzLocation.addListener(requireContext(), this);
     TzSearch.setShownListener(this::bindPlace);
@@ -103,6 +139,11 @@ public class TzMapScreen extends TzScreen implements TzLocation.Listener, TzMap.
   public void onStop()
   {
     super.onStop();
+    if (mTap != null)
+    {
+      TzMap.removeTouchObserver(mTap);
+      mTap.cancel();
+    }
     TzMap.removeFollowListener(this);
     TzLocation.removeListener(requireContext(), this);
     TzSearch.setShownListener(null);

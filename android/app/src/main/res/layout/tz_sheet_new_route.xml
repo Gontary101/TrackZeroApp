@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- N1 · New route sheet (Phase 28): import, plan on the map, propose a loop (Phase 29). -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+  android:layout_width="match_parent"
+  android:layout_height="wrap_content"
+  android:background="@drawable/tz_bg_surface1_top_r32"
+  android:orientation="vertical"
+  android:paddingStart="@dimen/tz_gutter"
+  android:paddingTop="@dimen/tz_sheet_pad_top"
+  android:paddingEnd="@dimen/tz_gutter"
+  android:paddingBottom="@dimen/tz_space_24">
+
+  <View
+    android:layout_width="@dimen/tz_sheet_grabber_w"
+    android:layout_height="@dimen/tz_sheet_grabber_h"
+    android:layout_gravity="center_horizontal"
+    android:background="@drawable/tz_bg_text3_r3" />
+
+  <TextView
+    style="@style/TzText.DotL"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="@dimen/tz_space_20"
+    android:paddingStart="@dimen/tz_sheet_header_pad"
+    android:paddingEnd="@dimen/tz_sheet_header_pad"
+    android:paddingBottom="@dimen/tz_sheet_header_pad_bottom"
+    android:text="@string/tz_new_route_title" />
+
+  <LinearLayout
+    android:id="@+id/tz_new_route_rows"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical" />
+</LinearLayout>
