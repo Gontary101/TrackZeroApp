@@ -74,6 +74,11 @@ Collected from the v2 phases; each says what to do, what to look at and what cou
   "No source says sleeping here is allowed.", are the hours and fees right where the map has them, and are there no
   bus shelters? Tap one in Search: the route there (B5). Pass: no shelter is ever shown VERIFIED and the list helps
   you find a place for the night.
+- **N32 · Tones (FEAT-008, Phase 32).** More › Sounds: tap each tile. Then ride with tones on and the voice off,
+  phone on the handlebar at 25–35 km/h, on a route with left and right turns. Can left, right and straight be told
+  apart without looking? Are the off-route and GPS-lost sounds clearly different from turns? Note the media volume
+  you needed. With earbuds or a car connected, do the tones still come from the phone? Pass: you can tell the turns
+  apart by ear, and each warning plays once.
 - **N18 · Immersive ride (FEAT-001, Phase 18).** On a ride, no status bar or navigation bar on all three pages and with
   the controls open. Swipe from the top or bottom edge: the bars appear briefly over the ride and nothing moves. Tap the
   handle 10 times: it opens the controls every time. A quick upward swipe from just above the handle opens them too.
@@ -683,4 +688,31 @@ it led to).
   S2 with the badge (`shots/S1_bivouac.png`, `B2_bivouac.png`, `S2_bivouac.png`).
 - Tests: `BivouacTest` (3: type to badge, private overrides, restrictions). 261 tests pass.
 - Smoke test: all steps pass, no crashes (B2 shows the Bivouac chip).
+
+## Phase 32 — Direction tones and warnings (FEAT-008)
+
+- `ride/TonePattern` (pure): the ten patterns of the plan's table (sine notes, 40 ms apart; 90 ms for OFF_ROUTE),
+  16-bit mono PCM at 44.1 kHz, 12 ms linear fades, warnings with 30 % of the third harmonic, peak 0.8 of full scale.
+  `ride/ToneRules` (pure): turn soon once, turn now twice 250 ms apart, ARRIVE for arrived / joined / a stop,
+  roundabout then its side when the angle is known, LEAVE_BIKE as STRAIGHT then ARRIVE, off route once per episode,
+  wrong way, GPS lost after 20 s without a fix (once per loss) and GPS_BACK after 5 s of fixes.
+- `ride/TzTones`: one static `AudioTrack` per sound (the patterns mixed at their times), usage navigation guidance /
+  sonification, the built-in speaker preferred (Android 6+). It is released when the sound ends; buffers are built
+  once. `ride/TzAudioFocus` is shared by the tones and `TzVoice` (one ducking session). The words wait for the tone
+  (`playSilentUtterance`).
+- `TzRideService`: tones on every follow event and on stops; the GPS check is one delayed message moved on by each
+  fix (none while paused); `gpsLost()` / `lastFixMs()` for the screen. Prefs `tones`, `warnOffRoute`, `warnGps`.
+- UI: R6 Turn tones toggle (free-ride subtitle "A short tone for warnings"). The More row is now Sounds ("Tones +
+  voice" / "Tones" / "Voice" / "Off") and opens M1 `TzSoundsScreen`: four toggles in two groups; Spoken directions'
+  text opens the system voice settings, its switch toggles; six `TzToneTile`s; the caption. The NO GPS turn card
+  (gps_off glyph, the time since the last fix, "Last turn tones may be late"); on a free ride it replaces the pill's
+  row.
+- Fixed on the way: leaving a preview while its surfaces were still read could run a reframe on a detached screen
+  (crash in the smoke test's last step); the runnable is now cancelled in `onDestroyView` and guarded.
+- Checked on the emulator (D57): M1 matches the board; each tile takes audio focus for its length (0.5 s LEFT,
+  0.95 s GPS LOST); the emulator has no speaker to listen to. Aubière ride: [RIGHT, RIGHT] / [LEFT, LEFT] at each
+  turn's 50 m, one OFF_ROUTE per detour in the smoke test. Location switched off: GPS_LOST once at 20 s and the NO
+  GPS card counting; GPS_BACK 6 s after fixes returned (`shots/M1.png`, `R6_tones.png`, `R2_no_gps.png`).
+- Tests: `TzTonesTest` (4), `ToneRulesTest` (7). 272 tests pass.
+- Smoke test: all steps pass, no crashes.
 

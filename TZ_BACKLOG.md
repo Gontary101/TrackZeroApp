@@ -131,6 +131,9 @@ _No bugs marked as fixed yet._
   under the island on every page. Field check: NEEDS OWNER N18 (handle part).
 - **FEAT-005** — Phase 20. Research in `TZ_RESEARCH_ROUTE_VISIBILITY.md`; 8dp line with a black casing (D45).
   Field check: NEEDS OWNER N20 (choose among four candidates).
+- **FEAT-008** — Phase 32. Direction tones and warnings, generated in the app, through the phone speaker; R6
+  Turn tones toggle, More › Sounds (M1) with the tones to hear, NO GPS card (D57). The first-launch tutorial part
+  is Phase 36. Field check: NEEDS OWNER N32.
 - **FEAT-010** — Phase 31. Bivouac places from the map: campsites and huts VERIFIED, shelters NOT CONFIRMED, with
   hours and fee when the map has them; S1 chip and B2 chip (5 km, 20 km when none) (D56). Field check: NEEDS
   OWNER N31.

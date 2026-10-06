@@ -90,6 +90,20 @@ public class TzToggleRow extends LinearLayout
     mListener = listener;
   }
 
+  /**
+   * The row's text does {@code action} instead of toggling (M1's Spoken directions opens the system voice settings,
+   * Phase 32); the switch alone toggles.
+   */
+  public void setTextAction(@NonNull Runnable action)
+  {
+    setOnClickListener(v -> action.run());
+    mSwitch.setOnClickListener(v -> {
+      setChecked(!mChecked, true);
+      if (mListener != null)
+        mListener.onToggled(mChecked);
+    });
+  }
+
   public boolean isChecked()
   {
     return mChecked;

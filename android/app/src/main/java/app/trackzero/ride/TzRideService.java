@@ -12,7 +12,9 @@ import android.content.pm.PackageManager;
 import android.content.pm.ServiceInfo;
 import android.os.Binder;
 import android.os.Build;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.os.PowerManager;
 import android.os.SystemClock;
 import android.util.Log;
@@ -243,6 +245,7 @@ public final class TzRideService extends Service
           return;
         }
         mSession = RideSession.restore(content, TzPrefs.autoPause(this));
+        mRules.restart(SystemClock.elapsedRealtime());
         sRiding = true;
         updateSources();
         startFollowing();
@@ -263,6 +266,7 @@ public final class TzRideService extends Service
   public void onDestroy()
   {
     unregisterReceiver(mScreen);
+    mHandler.removeCallbacks(mGpsCheck);
     stopSources();
     stopFollowing();
     super.onDestroy();
@@ -306,6 +310,7 @@ public final class TzRideService extends Service
     if (mSession == null)
       return;
     mSession.pause(SystemClock.elapsedRealtime());
+    mHandler.removeCallbacks(mGpsCheck);
     flushJournal();
     updateSources();
     changed();
@@ -316,6 +321,9 @@ public final class TzRideService extends Service
     if (mSession == null)
       return;
     mSession.resume(SystemClock.elapsedRealtime());
+    // The time without a fix counts from now.
+    mRules.restart(SystemClock.elapsedRealtime());
+    armGpsCheck();
     updateSources();
     changed();
   }
@@ -360,6 +368,8 @@ public final class TzRideService extends Service
       TzTrace.log("ride", "startSession route=" + routeId + " profile=" + profile.id
                           + (Double.isNaN(placeLat) ? "" : " place=" + TzTrace.ll(placeLat, placeLon)));
     mSession = new RideSession(TzPrefs.autoPause(this));
+    mRules.restart(SystemClock.elapsedRealtime());
+    armGpsCheck();
     sRiding = true;
     if (Double.isNaN(placeLat))
       mSession.start(System.currentTimeMillis(), now, routeId, name == null ? "" : name, profile);
@@ -575,6 +585,75 @@ public final class TzRideService extends Service
     return s.isEmpty() ? null : s;
   }
 
+  // ---- Tones (Phase 32) ----
+
+  private final Handler mHandler = new Handler(Looper.getMainLooper());
+  @Nullable
+  private TzTones mTones;
+  private final ToneRules mRules = new ToneRules(new ToneRules.Settings() {
+    @Override
+    public boolean tones()
+    {
+      return TzPrefs.tones(TzRideService.this);
+    }
+
+    @Override
+    public boolean warnOffRoute()
+    {
+      return TzPrefs.warnOffRoute(TzRideService.this);
+    }
+
+    @Override
+    public boolean warnGps()
+    {
+      return TzPrefs.warnGps(TzRideService.this);
+    }
+
+    @Override
+    public boolean paused()
+    {
+      return mSession == null || mSession.state() != RideSession.State.RECORDING;
+    }
+  });
+  /** 20 s after the last fix: GPS lost. One delayed message, moved on by every fix; no timer loop. */
+  private final Runnable mGpsCheck = () -> {
+    final List<ToneRules.Sound> lost = mRules.check(SystemClock.elapsedRealtime());
+    if (TzTrace.on() && mRules.gpsLost())
+      TzTrace.log("ride", "gps lost" + (lost.isEmpty() ? " (silent)" : ""));
+    play(lost);
+    changed();
+  };
+
+  private void armGpsCheck()
+  {
+    mHandler.removeCallbacks(mGpsCheck);
+    if (mSession != null && mSession.state() == RideSession.State.RECORDING)
+      mHandler.postDelayed(mGpsCheck, ToneRules.GPS_LOST_MS + 100);
+  }
+
+  /** Plays the sounds; how long they last, so words can follow. */
+  private long play(@NonNull List<ToneRules.Sound> sounds)
+  {
+    if (sounds.isEmpty())
+      return 0;
+    if (mTones == null)
+      mTones = new TzTones(this);
+    if (TzTrace.on())
+      TzTrace.log("ride", "tones " + sounds);
+    return mTones.play(sounds);
+  }
+
+  /** No fix for 20 s while recording (the NO GPS card), and when the last one came (elapsed time). */
+  public boolean gpsLost()
+  {
+    return mRules.gpsLost();
+  }
+
+  public long lastFixMs()
+  {
+    return mRules.lastFixMs();
+  }
+
   // ---- Stops (Phase 30) ----
 
   /** A stop added from S2: whether it could be routed to. */
@@ -641,8 +720,9 @@ public final class TzRideService extends Service
         TzTrace.log("ride", "stop reached " + stop);
       if (mSession != null)
         mSession.stopGone(stop);
+      final long tone = play(mRules.arrived());
       if (mVoice != null && mSession != null && mSession.state() != RideSession.State.PAUSED)
-        mVoice.say(getString(R.string.tz_voice_stop_reached, stop.name));
+        mVoice.say(getString(R.string.tz_voice_stop_reached, stop.name), tone);
     }
 
     @Override
@@ -704,46 +784,54 @@ public final class TzRideService extends Service
   }
 
   private final FollowEngine.Events mFollowEvents = new FollowEngine.Events() {
+    // The tone first (Phase 32), then the words after it.
+
     @Override
     public void onTurnSoon(@NonNull RouteManeuver m, double distanceM)
     {
+      final long tone = play(mRules.turnSoon(m));
       if (voiceOn())
-        mVoice.turnSoon(m, distanceM);
+        mVoice.turnSoon(m, distanceM, tone);
     }
 
     @Override
     public void onTurnNow(@NonNull RouteManeuver m)
     {
+      final long tone = play(mRules.turnNow(m));
       if (voiceOn())
-        mVoice.turnNow(m);
+        mVoice.turnNow(m, tone);
     }
 
     @Override
     public void onOffRoute()
     {
-      if (voiceOn())
-        mVoice.say(R.string.tz_voice_off_route);
+      final long tone = play(mRules.offRoute());
+      if (voiceOn() && mRules.warnOffRoute())
+        mVoice.say(R.string.tz_voice_off_route, tone);
     }
 
     @Override
     public void onWrongWay()
     {
-      if (voiceOn())
-        mVoice.say(R.string.tz_voice_wrong_way);
+      final long tone = play(mRules.wrongWay());
+      if (voiceOn() && mRules.warnOffRoute())
+        mVoice.say(R.string.tz_voice_wrong_way, tone);
     }
 
     @Override
     public void onBackOnRoute()
     {
-      if (voiceOn())
-        mVoice.say(R.string.tz_voice_back_on_route);
+      mRules.backOnRoute();
+      if (voiceOn() && mRules.warnOffRoute())
+        mVoice.say(R.string.tz_voice_back_on_route, 0);
     }
 
     @Override
     public void onArrived()
     {
+      final long tone = play(mRules.arrived());
       if (voiceOn())
-        mVoice.say(R.string.tz_voice_arrived);
+        mVoice.say(R.string.tz_voice_arrived, tone);
     }
 
     @Override
@@ -772,6 +860,8 @@ public final class TzRideService extends Service
     {
       TzLocation.pushRideFix(this, f);
       mFollowFix = f;
+      play(mRules.fix(f.elapsedMs));
+      armGpsCheck();
       follow(s, f);
     }
     if (s.state() != before || f.elapsedMs - mLastFlushMs >= JOURNAL_FLUSH_MS)

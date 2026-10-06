@@ -1,14 +1,11 @@
 package app.trackzero.screens;
 
-import android.content.ActivityNotFoundException;
 import android.content.Context;
-import android.content.Intent;
 import android.os.Bundle;
 import android.text.format.Formatter;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import app.organicmaps.R;
@@ -28,8 +25,6 @@ import java.util.Locale;
 /** B7 · More: offline maps, ride history, settings, about. */
 public class TzMoreScreen extends TzScreen
 {
-  private static final String TTS_SETTINGS = "com.android.settings.TTS_SETTINGS";
-
   @Nullable
   private View mContent;
   private TzListRow mOffline;
@@ -69,7 +64,7 @@ public class TzMoreScreen extends TzScreen
       TzBase.syncUnits(c);
       refresh();
     });
-    mVoice.setOnClickListener(v -> openTtsSettings());
+    mVoice.setOnClickListener(v -> TzNavigator.show(TzNavigator.Screen.SOUNDS, null));
     mDisplay.setOnClickListener(v -> {
       TzPrefs.setKeepAwake(requireContext(), !TzPrefs.keepAwake(requireContext()));
       refresh();
@@ -116,8 +111,13 @@ public class TzMoreScreen extends TzScreen
     });
     final TzFormat.Units units = TzPrefs.units(c);
     mUnits.setDetail(getString(units == TzFormat.Units.METRIC ? R.string.tz_units_metric : R.string.tz_units_imperial));
-    // Announcements are spoken in the language of their phrases (D27).
-    mVoice.setDetail(Locale.forLanguageTag(getString(R.string.tz_voice_language)).getDisplayLanguage(locale));
+    // Sounds (Phase 32): what plays on a ride.
+    final boolean tones = TzPrefs.tones(c);
+    final boolean voice = TzPrefs.voice(c);
+    mVoice.setDetail(getString(tones && voice ? R.string.tz_sounds_tones_voice
+                               : tones        ? R.string.tz_sounds_tones
+                               : voice        ? R.string.tz_sounds_voice
+                                              : R.string.tz_sounds_off));
     mDisplay.setDetail(getString(TzPrefs.keepAwake(c) ? R.string.tz_display_on : R.string.tz_display_off));
     mAutoPause.setDetail(TzPrefs.autoPause(c)
                              ? getString(R.string.tz_auto_pause_on,
@@ -125,18 +125,6 @@ public class TzMoreScreen extends TzScreen
                              : getString(R.string.tz_auto_pause_off));
   }
 
-  /** The system text-to-speech settings: the voice and its language are chosen there. */
-  private void openTtsSettings()
-  {
-    try
-    {
-      startActivity(new Intent(TTS_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
-    }
-    catch (ActivityNotFoundException e)
-    {
-      Toast.makeText(requireContext(), R.string.tz_no_tts_settings, Toast.LENGTH_SHORT).show();
-    }
-  }
 
   @Override
   public void onInsets(int top, int bottom)

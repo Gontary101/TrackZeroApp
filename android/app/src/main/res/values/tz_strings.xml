@@ -147,7 +147,6 @@
   <string name="tz_more_manage">Manage</string>
   <string name="tz_more_history">Ride history</string>
   <string name="tz_more_units">Units</string>
-  <string name="tz_more_voice">Voice guidance</string>
   <string name="tz_more_display">Display</string>
   <string name="tz_more_auto_pause">Auto-pause</string>
   <string name="tz_more_about">About TrackZero</string>
@@ -356,6 +355,30 @@
   <string name="tz_plan_cd_remove">Remove</string>
 
   <!-- Propose a loop (Phase 29, boards L1, L2) -->
+  <!-- Tones (Phase 32) -->
+  <string name="tz_tones_title">Turn tones</string>
+  <string name="tz_tones_subtitle">A short tone for each turn and warning</string>
+  <string name="tz_tones_subtitle_free">A short tone for warnings</string>
+  <string name="tz_no_gps">NO GPS</string>
+  <string name="tz_no_gps_line">Last turn tones may be late</string>
+  <string name="tz_sounds_title">SOUNDS</string>
+  <string name="tz_sounds">Sounds</string>
+  <string name="tz_sounds_tones_voice">Tones + voice</string>
+  <string name="tz_sounds_tones">Tones</string>
+  <string name="tz_sounds_voice">Voice</string>
+  <string name="tz_sounds_off">Off</string>
+  <string name="tz_sounds_spoken">Spoken directions</string>
+  <string name="tz_sounds_off_route">Off-route warning</string>
+  <string name="tz_sounds_gps">GPS lost warning</string>
+  <string name="tz_sounds_tap">Tap to hear</string>
+  <string name="tz_sounds_caption">Tones play through the phone speaker at media volume.</string>
+  <string name="tz_tone_left">Left</string>
+  <string name="tz_tone_straight">Straight</string>
+  <string name="tz_tone_right">Right</string>
+  <string name="tz_tone_arrived">Arrived</string>
+  <string name="tz_tone_off_route">Off route</string>
+  <string name="tz_tone_gps_lost">GPS lost</string>
+  <string name="tz_tone_cd">Play the %1$s tone</string>
   <!-- S1 · Stops, S2 · Add a stop (Phase 30) -->
   <string name="tz_stops_title">STOPS</string>
   <string name="tz_stops_tile">Stops</string>

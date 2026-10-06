@@ -134,6 +134,7 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
   private TzHoldButton mEnd;
   private TextView mSheetSummary;
   private TzToggleRow mVoice;
+  private TzToggleRow mTones;
   // Page 0
   @Nullable
   private View mMapTop;
@@ -253,6 +254,7 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
     mEnd = view.findViewById(R.id.tz_ride_end);
     mSheetSummary = view.findViewById(R.id.tz_ride_sheet_summary);
     mVoice = view.findViewById(R.id.tz_ride_voice);
+    mTones = view.findViewById(R.id.tz_ride_tones);
 
     // The preview's line, handed over by START RIDE: shown until this screen has the route, and kept if it is the same.
     TzRouteLayer.transfer(TzRouteLayer.RIDE_START, this);
@@ -280,6 +282,8 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
                                  TzFormat.distance(TzConfig.VOICE_NEAR_M, units, locale).toString()));
     mVoice.setChecked(TzPrefs.voice(requireContext()), false);
     mVoice.setListener(on -> TzPrefs.setVoice(requireContext(), on));
+    mTones.setChecked(TzPrefs.tones(requireContext()), false);
+    mTones.setListener(on -> TzPrefs.setTones(requireContext(), on));
     final TzToggleRow awake = view.findViewById(R.id.tz_ride_awake);
     awake.setChecked(TzPrefs.keepAwake(requireContext()), false);
     awake.setListener(on -> {
@@ -699,6 +703,8 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
     mResume.setVisibility(state == RideSession.State.PAUSED && mSlide < 1 ? View.VISIBLE : View.GONE);
     // Turn announcements only exist on a route.
     mVoice.setVisibility(guided(s) ? View.VISIBLE : View.GONE);
+    // Tones are there on a free ride too: GPS lost.
+    mTones.setSubtitle(getString(guided(s) ? R.string.tz_tones_subtitle : R.string.tz_tones_subtitle_free));
     renderPauseButton(state == RideSession.State.PAUSED);
     if (mSheetBehavior.getState() != BottomSheetBehavior.STATE_COLLAPSED)
       TzViews.setText(mSheetSummary,
@@ -744,14 +750,16 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
     if (mStats == null)
       return;
     final boolean route = guided(s);
-    mPill.setVisibility(route ? View.GONE : View.VISIBLE);
-    mLocate.setVisibility(route ? View.GONE : View.VISIBLE);
+    // NO GPS (Phase 32): the warning card; on a free ride in place of the pill's row.
+    final boolean noGps = mService != null && mService.gpsLost() && s.state() == RideSession.State.RECORDING;
+    mPill.setVisibility(route || noGps ? View.GONE : View.VISIBLE);
+    mLocate.setVisibility(route || noGps ? View.GONE : View.VISIBLE);
     final Guide guide = mService == null ? null : mService.guide();
     if (guide != null)
       showLines(s, guide);
     // Until the guide has placed the rider, the island shows the ride so far, as on a free ride.
     final boolean following = route && guide != null && guide.placed();
-    mTurn.setVisibility(following ? View.VISIBLE : View.GONE);
+    mTurn.setVisibility(following || noGps ? View.VISIBLE : View.GONE);
 
     final TzFormat.Value speed = TzFormat.speed(st.speedKmh(now), units, locale);
     mStats.setCell(0, getString(R.string.tz_stat_speed), speed.number, speed.unit);
@@ -787,7 +795,8 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
         mStats.setCell(2, getString(R.string.tz_stat_remaining), rem.number, rem.unit);
       }
       mTurn.setUnits(units);
-      mTurn.bind(turn);
+      if (!noGps)
+        mTurn.bind(turn);
     }
     else
     {
@@ -795,6 +804,8 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
       mStats.setCell(1, getString(R.string.tz_stat_distance), dist.number, dist.unit);
       mStats.setCell(2, getString(R.string.tz_stat_time), TzFormat.duration(st.movingMs(now) / 1000), "");
     }
+    if (noGps)
+      mTurn.bindNoGps(Math.max(0, (now - mService.lastFixMs()) / 1000));
     // R7 on the map: the RESUME button takes the island's place, the island moves up over it.
     final float lift = manuallyPaused ? -(mResume.getHeight() + getResources().getDimension(R.dimen.tz_space_12)) : 0;
     mStats.setTranslationY(lift);

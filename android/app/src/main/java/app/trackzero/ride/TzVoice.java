@@ -1,10 +1,6 @@
 package app.trackzero.ride;
 
 import android.content.Context;
-import android.media.AudioAttributes;
-import android.media.AudioFocusRequest;
-import android.media.AudioManager;
-import android.os.Build;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.UtteranceProgressListener;
 import android.util.Log;
@@ -31,16 +27,6 @@ final class TzVoice
 
   @NonNull
   private final Context mContext;
-  @NonNull
-  private final AudioManager mAudio;
-  @NonNull
-  private final AudioAttributes mAttributes =
-      new AudioAttributes.Builder()
-          .setUsage(AudioAttributes.USAGE_ASSISTANCE_NAVIGATION_GUIDANCE)
-          .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
-          .build();
-  @Nullable
-  private AudioFocusRequest mFocusRequest;
   @Nullable
   private TextToSpeech mTts;
   private boolean mReady;
@@ -50,7 +36,6 @@ final class TzVoice
   TzVoice(@NonNull Context context)
   {
     mContext = context;
-    mAudio = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
     mTts = new TextToSpeech(context, this::onInit);
   }
 
@@ -70,7 +55,7 @@ final class TzVoice
       Log.w(TAG, "No voice for " + language);
       return;
     }
-    tts.setAudioAttributes(mAttributes);
+    tts.setAudioAttributes(TzAudioFocus.GUIDANCE);
     tts.setOnUtteranceProgressListener(new UtteranceProgressListener() {
       @Override
       public void onStart(String id) {}
@@ -92,28 +77,29 @@ final class TzVoice
     mReady = true;
   }
 
-  void turnSoon(@NonNull RouteManeuver m, double distanceM)
+  /** {@code afterMs}: a tone plays first; the words wait for it (Phase 32). */
+  void turnSoon(@NonNull RouteManeuver m, double distanceM, long afterMs)
   {
     final String distance = spokenDistance(distanceM);
     // A stop the rider added (Phase 30) is named.
     final String what = m.type == Maneuver.STOP ? mContext.getString(R.string.tz_voice_stop, m.street)
                                                 : TzManeuvers.spoken(mContext, m.type, m.exit);
-    speak(mContext.getString(R.string.tz_voice_in, distance, what));
+    speak(mContext.getString(R.string.tz_voice_in, distance, what), afterMs);
   }
 
-  void turnNow(@NonNull RouteManeuver m)
+  void turnNow(@NonNull RouteManeuver m, long afterMs)
   {
-    speak(TzManeuvers.spoken(mContext, m.type, m.exit));
+    speak(TzManeuvers.spoken(mContext, m.type, m.exit), afterMs);
   }
 
-  void say(int stringRes)
+  void say(int stringRes, long afterMs)
   {
-    speak(mContext.getString(stringRes));
+    speak(mContext.getString(stringRes), afterMs);
   }
 
-  void say(@NonNull String text)
+  void say(@NonNull String text, long afterMs)
   {
-    speak(text);
+    speak(text, afterMs);
   }
 
   void shutdown()
@@ -123,7 +109,7 @@ final class TzVoice
     mTts = null;
     mReady = false;
     if (mPending > 0)
-      abandonFocus();
+      TzAudioFocus.release(mContext);
     mPending = 0;
   }
 
@@ -137,13 +123,20 @@ final class TzVoice
     return mContext.getString(R.string.tz_voice_meters, (int) Math.round(meters / step) * step);
   }
 
-  private void speak(@NonNull String text)
+  private void speak(@NonNull String text, long afterMs)
   {
     final TextToSpeech tts = mTts;
     if (tts == null || !mReady || !TzPrefs.voice(mContext))
       return;
     if (mPending == 0)
-      requestFocus();
+      TzAudioFocus.acquire(mContext);
+    if (afterMs > 0)
+    {
+      // Silence for as long as the tone plays: the phrase follows it.
+      mPending++;
+      if (tts.playSilentUtterance(afterMs, TextToSpeech.QUEUE_ADD, "tz" + mNextId++) != TextToSpeech.SUCCESS)
+        utteranceEnded();
+    }
     mPending++;
     if (tts.speak(text, TextToSpeech.QUEUE_ADD, null, "tz" + mNextId++) != TextToSpeech.SUCCESS)
       utteranceEnded();
@@ -154,48 +147,6 @@ final class TzVoice
     if (mPending == 0)
       return;
     if (--mPending == 0)
-      abandonFocus();
-  }
-
-  private void requestFocus()
-  {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
-    {
-      mFocusRequest = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK)
-                          .setAudioAttributes(mAttributes)
-                          .build();
-      mAudio.requestAudioFocus(mFocusRequest);
-    }
-    else
-    {
-      requestFocusLegacy();
-    }
-  }
-
-  private void abandonFocus()
-  {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
-    {
-      if (mFocusRequest != null)
-        mAudio.abandonAudioFocusRequest(mFocusRequest);
-      mFocusRequest = null;
-    }
-    else
-    {
-      abandonFocusLegacy();
-    }
-  }
-
-  /** Android 7.1 and older: the only audio focus API there. */
-  @SuppressWarnings("deprecation")
-  private void requestFocusLegacy()
-  {
-    mAudio.requestAudioFocus(null, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK);
-  }
-
-  @SuppressWarnings("deprecation")
-  private void abandonFocusLegacy()
-  {
-    mAudio.abandonAudioFocus(null);
+      TzAudioFocus.release(mContext);
   }
 }

@@ -20,7 +20,10 @@ import app.trackzero.follow.TurnState;
 import app.trackzero.format.TzFormat;
 import java.util.Locale;
 
-/** Ride page 0 turn instruction (R2), imminent state (≤ 30 m) and the warnings: off route (R3), wrong way (R3W). */
+/**
+ * Ride page 0 turn instruction (R2), imminent state (≤ 30 m) and the warnings: off route (R3), wrong way (R3W), no
+ * GPS (Phase 32).
+ */
 public class TzTurnCard extends LinearLayout
 {
   private static final float DISTANCE_SP = 64f;
@@ -56,7 +59,9 @@ public class TzTurnCard extends LinearLayout
   {
     TURN,
     OFF_ROUTE,
-    WRONG_WAY
+    WRONG_WAY,
+    /** No fix for 20 s (Phase 32): the time since the last one. */
+    NO_GPS
   }
 
   private TzFormat.Units mUnits = TzFormat.Units.METRIC;
@@ -133,6 +138,15 @@ public class TzTurnCard extends LinearLayout
     }
   }
 
+  /** NO GPS (Components v2): the warning layout, the time since the last fix as the big text. */
+  public void bindNoGps(long secondsSinceFix)
+  {
+    setMode(Mode.NO_GPS);
+    // "0:42", as minutes and seconds; past an hour the ride clock's H:MM:SS.
+    final long s = Math.max(0, secondsSinceFix);
+    mDistance.setValue(s < 3600 ? String.format(Locale.ROOT, "%d:%02d", s / 60, s % 60) : TzFormat.duration(s), "");
+  }
+
   /** A roundabout's exit under its glyph, the glyph moved up to make room; 0 hides it. */
   private void showExit(int exit)
   {
@@ -164,9 +178,12 @@ public class TzTurnCard extends LinearLayout
       return;
     mWell.setBackgroundResource(R.drawable.tz_bg_amber_well_r22);
     final boolean wrongWay = mode == Mode.WRONG_WAY;
+    final boolean noGps = mode == Mode.NO_GPS;
     // A warning: glyph, title, big text and its unit, a line.
-    mOffTitle.setText(wrongWay ? R.string.tz_wrong_way : R.string.tz_off_route);
+    mOffTitle.setText(wrongWay ? R.string.tz_wrong_way : noGps ? R.string.tz_no_gps : R.string.tz_off_route);
     TzManeuvers.applyGlyph(mGlyph, Maneuver.REROUTE, 0f, true); // also undoes a turn glyph's mirror and rotation
+    if (noGps)
+      mGlyph.setImageResource(R.drawable.ic_tz_gps_off_bold);
     if (wrongWay)
     {
       mGlyph.setImageResource(R.drawable.ic_tz_uturn_bold);
@@ -176,7 +193,9 @@ public class TzTurnCard extends LinearLayout
     showExit(0);
     tintGlyph(R.color.tz_amber);
     mRecalculating = false;
-    mInstruction.setText(wrongWay ? R.string.tz_wrong_way_line : R.string.tz_head_back);
+    mInstruction.setText(wrongWay ? R.string.tz_wrong_way_line
+                         : noGps  ? R.string.tz_no_gps_line
+                                  : R.string.tz_head_back);
     mStreet.setVisibility(GONE);
     mDivider.setVisibility(GONE);
     mThenRow.setVisibility(GONE);

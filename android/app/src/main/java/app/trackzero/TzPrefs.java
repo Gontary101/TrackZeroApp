@@ -12,6 +12,9 @@ public final class TzPrefs
   private static final String FILE = "tz_prefs";
   private static final String UNITS = "units";
   private static final String VOICE = "voice";
+  private static final String TONES = "tones";
+  private static final String WARN_OFF_ROUTE = "warnOffRoute";
+  private static final String WARN_GPS = "warnGps";
   private static final String KEEP_AWAKE = "keepAwake";
   private static final String AUTO_PAUSE = "autoPause";
   private static final String FIRST_CAMERA_DONE = "firstCameraDone";
@@ -52,6 +55,39 @@ public final class TzPrefs
   public static void setVoice(@NonNull Context c, boolean on)
   {
     prefs(c).edit().putBoolean(VOICE, on).apply();
+  }
+
+  /** Turn tones (Phase 32): the switch for every tone, warnings included. */
+  public static boolean tones(@NonNull Context c)
+  {
+    return prefs(c).getBoolean(TONES, true);
+  }
+
+  public static void setTones(@NonNull Context c, boolean on)
+  {
+    prefs(c).edit().putBoolean(TONES, on).apply();
+  }
+
+  /** The off-route and wrong-way warnings, tone and words. */
+  public static boolean warnOffRoute(@NonNull Context c)
+  {
+    return prefs(c).getBoolean(WARN_OFF_ROUTE, true);
+  }
+
+  public static void setWarnOffRoute(@NonNull Context c, boolean on)
+  {
+    prefs(c).edit().putBoolean(WARN_OFF_ROUTE, on).apply();
+  }
+
+  /** The GPS-lost warning. */
+  public static boolean warnGps(@NonNull Context c)
+  {
+    return prefs(c).getBoolean(WARN_GPS, true);
+  }
+
+  public static void setWarnGps(@NonNull Context c, boolean on)
+  {
+    prefs(c).edit().putBoolean(WARN_GPS, on).apply();
   }
 
   public static boolean keepAwake(@NonNull Context c)

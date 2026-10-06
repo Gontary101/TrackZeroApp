@@ -31,7 +31,7 @@
       <app.trackzero.ui.TzListRow android:id="@+id/tz_more_units" style="@style/TzListRow"
         app:tzIcon="@drawable/ic_tz_ruler" app:tzTitle="@string/tz_more_units" />
       <app.trackzero.ui.TzListRow android:id="@+id/tz_more_voice" style="@style/TzListRow"
-        app:tzIcon="@drawable/ic_tz_voice" app:tzTitle="@string/tz_more_voice" />
+        app:tzIcon="@drawable/ic_tz_voice" app:tzTitle="@string/tz_sounds" />
       <app.trackzero.ui.TzListRow android:id="@+id/tz_more_display" style="@style/TzListRow"
         app:tzIcon="@drawable/ic_tz_sun" app:tzTitle="@string/tz_more_display" />
       <app.trackzero.ui.TzListRow android:id="@+id/tz_more_auto_pause" style="@style/TzListRow"

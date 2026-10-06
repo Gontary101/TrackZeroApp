@@ -28,6 +28,7 @@ import app.trackzero.screens.TzRideScreen;
 import app.trackzero.screens.TzRoutesScreen;
 import app.trackzero.screens.TzScreen;
 import app.trackzero.screens.TzSearchScreen;
+import app.trackzero.screens.TzSoundsScreen;
 import app.trackzero.screens.TzStopScreen;
 import app.trackzero.screens.TzStopsScreen;
 import app.trackzero.screens.TzSummaryScreen;
@@ -57,6 +58,8 @@ public final class TzNavigator
     HISTORY(true, TzBottomIsland.Tab.MORE),
     ABOUT(true, TzBottomIsland.Tab.MORE),
     MAPS(true, TzBottomIsland.Tab.MORE),
+    /** M1: sounds (Phase 32). */
+    SOUNDS(true, TzBottomIsland.Tab.MORE),
     RIDE(false, null),
     SUMMARY(true, null);
 
@@ -236,6 +239,7 @@ public final class TzNavigator
       case HISTORY -> new TzHistoryScreen();
       case ABOUT -> new TzAboutScreen();
       case MAPS -> new TzMapsScreen();
+      case SOUNDS -> new TzSoundsScreen();
       default -> null;
     };
   }
@@ -292,7 +296,7 @@ public final class TzNavigator
     case PLAN, LOOP -> show(Screen.ROUTES, null);
     // S1 and S2 go back themselves (to the ride, the preview or S1).
     case STOPS, STOP -> show(Screen.RIDE, null);
-    case HISTORY, ABOUT, MAPS -> show(Screen.MORE, null);
+    case HISTORY, ABOUT, MAPS, SOUNDS -> show(Screen.MORE, null);
     // Back never ends a ride: the ride screen opens its controls sheet in onBackPressed().
     case RIDE, MAP -> {}
     }

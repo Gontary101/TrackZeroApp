@@ -135,6 +135,16 @@
           app:tzSubtitle="@string/tz_voice_subtitle"
           app:tzTitle="@string/tz_voice_title" />
 
+        <!-- Phase 32: tones; shown on free rides too (GPS lost). -->
+        <app.trackzero.ui.TzToggleRow
+          android:id="@+id/tz_ride_tones"
+          android:layout_width="match_parent"
+          android:layout_height="@dimen/tz_toggle_row_h"
+          android:layout_marginTop="@dimen/tz_space_12"
+          app:tzIcon="@drawable/ic_tz_bell"
+          app:tzSubtitle="@string/tz_tones_subtitle"
+          app:tzTitle="@string/tz_tones_title" />
+
         <app.trackzero.ui.TzToggleRow
           android:id="@+id/tz_ride_awake"
           android:layout_width="match_parent"

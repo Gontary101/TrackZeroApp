@@ -123,7 +123,8 @@ public class TzPreviewScreen extends TzScreen
   /** The rider has moved the map since it was framed: a taller card no longer reframes it. */
   private boolean mPanned;
   private final Runnable mReframe = () -> {
-    if (!mPanned)
+    // Posted when the surfaces came; the screen may have gone since (Back during the read).
+    if (!mPanned && isAdded() && getView() != null)
       frameRoute();
   };
   @Nullable
@@ -260,6 +261,8 @@ public class TzPreviewScreen extends TzScreen
     super.onDestroyView();
     if (mAnimator != null)
       mAnimator.cancel();
+    mCard.removeCallbacks(mReframe);
+    mCard.removeCallbacks(mExpand);
     TzRouteLayer.hide(this);
     TzMap.clearVisibleArea(this);
     if (mPlanner != null)

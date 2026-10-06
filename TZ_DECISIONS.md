@@ -864,3 +864,28 @@ with the stock weights, so near region borders the profile applies a little less
 - **Badge.** Components v2: 22dp high, radius 11, 11sp bold, tracking 1.2; VERIFIED surface3 / text1 / check 14
   (never mint: it is not live data); NOT CONFIRMED amberBg / amber / warning 14.
 
+## D57 · Tones and warnings (Phase 32, FEAT-008)
+- **The switches.** Turn tones is the switch for every tone, turns and warnings alike. R6 shows it on free rides too,
+  where only warnings play ("A short tone for warnings"), and M1 lists it first. Off-route warning and GPS-lost
+  warning each silence their own warning. The off-route switch covers wrong way too, and the spoken "Off route" /
+  "Wrong way" / "Back on route" with it. Spoken directions is the existing voice setting. Nothing plays while the
+  ride is paused.
+- **Order.** The tone plays first; the phrase is queued behind silence as long as the tone (TTS
+  `playSilentUtterance`), so both share one ducking focus session (`TzAudioFocus`, counted).
+- **Playback.** One static `AudioTrack` per sound, holding all its patterns mixed at their times (a turn's two
+  plays, a roundabout and its side), released when it has played. A track kept 30 s after the last sound (as the
+  plan put it) would only hold memory between turns; building one costs nothing next to a turn. The built-in speaker
+  is preferred over Bluetooth (Android 6+); older phones play wherever audio goes.
+- **Roundabouts.** The router gives the exit's number, not its side: a routed roundabout plays its two notes alone. A
+  track's roundabout (rare) has an angle and adds RIGHT or LEFT beyond ±20°.
+- **GPS lost.** No accepted fix for 20 s while recording: one delayed message, moved on by every fix (no timer
+  loop), so it runs with the screen on or off. Once per loss; GPS_BACK once fixes have come for 5 s (a gap of 5 s
+  during the recovery starts it again). Resuming a paused ride counts from the resume. The NO GPS card shows
+  regardless of the warning switch; only the sound is silenced.
+- **NO GPS card.** As on Components v2: the off-route card's amber layout, gps_off glyph, the time since the last fix
+  (m:ss) and the board's line "Last turn tones may be late". On a guided ride it replaces the turn; on a free ride
+  it takes the FREE RIDE pill's row.
+- **Emulator.** It sends its last position every second whatever the feeder does, so a GPS loss was made by turning
+  location off (`cmd location set-location-enabled false`) for 25 s. It has no audio output to listen to; that
+  part is N32.
+

@@ -179,4 +179,7 @@
   <dimen name="tz_badge_icon">14dp</dimen>
   <dimen name="tz_badge_pad">8dp</dimen>
   <dimen name="tz_badge_icon_gap">4dp</dimen>
+  <!-- Phase 32 · ToneTile: 104 high, glyph 36 -->
+  <dimen name="tz_tone_tile_h">104dp</dimen>
+  <dimen name="tz_tone_tile_glyph">36dp</dimen>
 </resources>
