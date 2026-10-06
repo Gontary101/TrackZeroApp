@@ -54,6 +54,7 @@
   <string name="tz_mnv_roundabout">Take exit %1$d</string>
   <string name="tz_mnv_roundabout_any">Go round the roundabout</string>
   <string name="tz_mnv_join">Join the route</string>
+  <string name="tz_mnv_leave_bike">Leave the bike, walk</string>
   <string name="tz_mnv_reroute">Head back to the route</string>
   <string name="tz_mnv_head_to_start">Head to start</string>
 
@@ -110,6 +111,13 @@
   <string name="tz_preview_high">High point</string>
   <!-- A hike's path (Phase 26): D+ and D−, the time in the label line; no "safe", "easy" or "accessible" -->
   <string name="tz_preview_climb">Climb</string>
+  <!-- B5W (Phase 27): a place bikes cannot reach -->
+  <string name="tz_preview_bike_walk">To a place · bike + walk</string>
+  <string name="tz_preview_by_bike">By bike</string>
+  <string name="tz_preview_on_foot_stat">On foot</string>
+  <string name="tz_preview_walk_note">Bikes can\'t go all the way. Leave the bike at P and walk the last %1$s.</string>
+  <string name="tz_preview_walk_only">No bike access. Walk %1$s?</string>
+  <string name="tz_preview_no_place_route">No route to this place</string>
   <string name="tz_preview_descent">Descent</string>
   <string name="tz_preview_hike">Hike · about %1$s</string>
   <string name="tz_preview_no_ele">No elevation data: time is approximate</string>

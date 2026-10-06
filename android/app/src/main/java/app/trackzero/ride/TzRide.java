@@ -47,13 +47,16 @@ public final class TzRide
     });
   }
 
-  /** Starts a ride to a place along the path previewed (Phase 15). */
+  /**
+   * Starts a ride to a place along the path previewed (Phase 15), with {@code profile} (the one chosen; Walk when a
+   * place without bike access is walked instead, Phase 27).
+   */
   public static void startTo(@NonNull Activity activity, @NonNull String name, double lat, double lon,
-                             @NonNull RoutedPath path, @NonNull Object lineOwner)
+                             @NonNull RoutedPath path, @NonNull Object lineOwner, @NonNull Profile profile)
   {
     TzBase.requestRidePermissions(activity, () -> {
       TzRouteLayer.transfer(lineOwner, TzRouteLayer.RIDE_START);
-      TzRideService.startTo(activity, name, lat, lon, path, TzPrefs.profile(activity));
+      TzRideService.startTo(activity, name, lat, lon, path, profile);
       TzNavigator.show(TzNavigator.Screen.RIDE, null);
     });
   }

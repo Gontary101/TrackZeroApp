@@ -575,11 +575,13 @@ public final class TzRideService extends Service
   /** Paths for the guide, from CoMaps' router for the ride's profile; answers for a guide since replaced are dropped. */
   private final Guide.Paths mPaths = new Guide.Paths() {
     @Override
-    public void request(double fromLat, double fromLon, double toLat, double toLon, double bearingDeg)
+    public void request(double fromLat, double fromLon, double toLat, double toLon, double bearingDeg,
+                        boolean onFoot)
     {
       final Guide g = mGuide;
       final RideSession s = mSession;
-      final Profile profile = s == null ? Profile.ROAD : s.profile();
+      // The ride's profile, or a walk once the bike was left (Phase 27): the ride still records as a bike ride.
+      final Profile profile = onFoot ? Profile.WALK : s == null ? Profile.ROAD : s.profile();
       TzRouter.route(fromLat, fromLon, toLat, toLon, profile, bearingDeg, (path, reason) -> {
         if (g == null || mGuide != g)
           return;

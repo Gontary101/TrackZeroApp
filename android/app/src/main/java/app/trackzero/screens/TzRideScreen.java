@@ -42,6 +42,7 @@ import app.trackzero.follow.ClimbTracker;
 import app.trackzero.follow.FollowRoute;
 import app.trackzero.follow.Guide;
 import app.trackzero.follow.RideZoom;
+import app.trackzero.follow.RoutedPath;
 import app.trackzero.follow.TurnState;
 import app.trackzero.format.TzFormat;
 import app.trackzero.ride.RideSession;
@@ -1000,8 +1001,25 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
     else
       TzRouteLayer.showLeg(this, leg.lats(), leg.lons());
     final FollowRoute line = guide.line();
-    if (s.toPlace() && line != null)
+    if (!s.toPlace() || line == null)
+      return;
+    final RoutedPath path = guide.placePath();
+    if (path != null && path.bikeAndWalk())
+    {
+      // Bike to where it is left, then dots to the place (Phase 27); all dots once walking.
+      final double[][] ride = path.ridePart();
+      final double[][] walk = path.walkPart();
+      if (ride[0].length >= 2)
+        TzRouteLayer.showRide(this, ride[0], ride[1], true);
+      else
+        TzRouteLayer.hide(this);
+      TzRouteLayer.showWalk(this, walk[0], walk[1]);
+    }
+    else
+    {
+      TzRouteLayer.hideWalk();
       TzRouteLayer.showPath(this, line.lats(), line.lons(), true);
+    }
   }
 
   /** A route ride draws its line and shows the route's numbers; loaded once per screen. */

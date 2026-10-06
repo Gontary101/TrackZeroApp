@@ -14,6 +14,8 @@ public enum Maneuver
   ARRIVE,
   /** The end of a routed leg: the rider reaches the track (to its start, or back onto it). */
   JOIN,
+  /** A path to a place a bike cannot reach (BUG-001, Phase 27): leave the bike here and walk the rest. */
+  LEAVE_BIKE,
   REROUTE,
   HEAD_TO_START
 }

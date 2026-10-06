@@ -127,6 +127,8 @@ public final class FollowEngine
   /** On foot (Phase 25): a slower ETA until enough data, and the course read at walking speeds. */
   private double mFallbackMps = TzConfig.ETA_FALLBACK_KMH / 3.6;
   private double mCourseMinMps = COURSE_MIN_MPS;
+  /** Where the bike is left on a path to a place bikes cannot reach (Phase 27); -1: no walking. */
+  private double mWalkFromM = -1;
 
   /** @param maneuvers from {@link ManeuverBuilder#build} for this route */
   public FollowEngine(@NonNull FollowRoute route, @NonNull List<RouteManeuver> maneuvers, @NonNull Events events)
@@ -142,6 +144,12 @@ public final class FollowEngine
     mFallbackMps = (foot ? TzConfig.ETA_FALLBACK_FOOT_KMH : TzConfig.ETA_FALLBACK_KMH) / 3.6;
     mCourseMinMps = foot ? COURSE_MIN_FOOT_MPS : COURSE_MIN_MPS;
     mSpeedMps = mFallbackMps;
+  }
+
+  /** The route is walked from {@code m} on (the bike is left there): the ETA walks that part. */
+  public void setWalkFrom(double m)
+  {
+    mWalkFromM = m;
   }
 
   /** Maneuvers from the track's shape alone. */
@@ -409,7 +417,13 @@ public final class FollowEngine
   /** Seconds to the end at the recent moving speed (plan §10.2). */
   public double etaSeconds()
   {
-    return remainingM() / mSpeedMps;
+    if (mWalkFromM < 0 || mPhase == Phase.WRONG_WAY)
+      return remainingM() / mSpeedMps;
+    // Bike + walk: the ride at the recent speed, then the walk at walking speed (Phase 27).
+    final double walkMps = TzConfig.ETA_FALLBACK_FOOT_KMH / 3.6;
+    final double toBikeEnd = Math.max(0, mWalkFromM - mAlong);
+    final double walked = remainingM() - toBikeEnd;
+    return toBikeEnd / mSpeedMps + walked / walkMps;
   }
 
   @NonNull

@@ -202,6 +202,55 @@ public class GuideTest
     assertEquals(1, wrongWay[0]);
   }
 
+  /** Bike north 1 km to where it is left, then walk 300 m further north to the place. */
+  private static RoutedPath bikeAndWalk()
+  {
+    return BikeWalkPlanner.join(path(new double[] {0, 0}, new double[] {0, 1000}),
+                                path(new double[] {0, 1000}, new double[] {0, 1300}), 0);
+  }
+
+  @Test
+  public void leavingABikeAndWalkPathBeforeTheBikeIsLeftRidesBackToThatPoint()
+  {
+    final Paths paths = new Paths();
+    final FollowEngine.Events events = new FollowEngine.Events() {};
+    final double[] place = FollowTestRoutes.point(0, 1300);
+    final Rider r = new Rider(Guide.forPlace(place[0], place[1], bikeAndWalk(), paths, events), paths);
+    r.at(0, 0);
+    r.rideTo(0, 300);
+    r.rideTo(150, 300); // Off to the east.
+    r.hold(6);
+    assertEquals(1, paths.requests.size());
+    assertFalse("By bike", paths.onFoot.get(0));
+    final double[] p = FollowTestRoutes.point(0, 1000);
+    assertEquals(0, Geo.distance(paths.requests.get(0)[2], paths.requests.get(0)[3], p[0], p[1]), 1);
+    // A new ride to P is joined to the same walk.
+    r.guide.onPath(path(new double[] {150, 300}, new double[] {150, 1000}, new double[] {0, 1000}));
+    final RoutedPath now = r.guide.placePath();
+    assertNotNull(now);
+    assertTrue(now.bikeAndWalk());
+    assertEquals(850, now.walkFromM, 3);
+    assertEquals(850 + 300, now.line.totalM(), 3);
+  }
+
+  @Test
+  public void leavingItAfterTheBikeIsLeftWalksToThePlace()
+  {
+    final Paths paths = new Paths();
+    final FollowEngine.Events events = new FollowEngine.Events() {};
+    final double[] place = FollowTestRoutes.point(0, 1300);
+    final Rider r = new Rider(Guide.forPlace(place[0], place[1], bikeAndWalk(), paths, events), paths);
+    r.at(0, 0);
+    r.rideTo(0, 1100); // Past the bike's end: walking.
+    r.rideTo(150, 1100);
+    r.hold(6);
+    assertEquals(1, paths.requests.size());
+    assertTrue("On foot", paths.onFoot.get(0));
+    assertEquals(0, Geo.distance(paths.requests.get(0)[2], paths.requests.get(0)[3], place[0], place[1]), 1);
+    r.guide.onPath(path(new double[] {150, 1100}, new double[] {0, 1300}));
+    assertEquals(0, r.guide.placePath().walkFromM, 0); // All on foot from here.
+  }
+
   /** A routed path through corners (metres east / north), turning at each inner corner, named "Rue du Coin". */
   private static RoutedPath path(double[]... corners)
   {
@@ -223,12 +272,14 @@ public class GuideTest
   private static final class Paths implements Guide.Paths
   {
     final List<double[]> requests = new ArrayList<>();
+    final List<Boolean> onFoot = new ArrayList<>();
     int cancels;
 
     @Override
-    public void request(double fromLat, double fromLon, double toLat, double toLon, double bearingDeg)
+    public void request(double fromLat, double fromLon, double toLat, double toLon, double bearingDeg, boolean onFoot)
     {
       requests.add(new double[] {fromLat, fromLon, toLat, toLon});
+      this.onFoot.add(onFoot);
     }
 
     @Override

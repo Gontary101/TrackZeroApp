@@ -10,7 +10,8 @@ import java.util.Arrays;
 /**
  * The route lines on the map: drawn by the engine's route renderer (mint line, glow, ring), not imported as a
  * bookmark, so nothing is persisted and nothing appears in base-app lists. The route (a track with a ring at its start,
- * or the path to a place with a ring at the place) and a leg leading onto it. Lines requested before the map engine
+ * or the path to a place with a ring at the place), a leg leading onto it, and the part of a path to a place that is
+ * walked (Phase 27: dots, a hollow ring where the bike is left). Lines requested before the map engine
  * exists are drawn once it does. Each line belongs to the screen that showed it: a screen going away hides only its
  * own (the next screen may have shown its lines already: fragment transactions reorder).
  */
@@ -19,12 +20,18 @@ public final class TzRouteLayer
   private static final int RING_NONE = 0;
   private static final int RING_START = 1;
   private static final int RING_END = 2;
+  /** Hollow where the bike is left, and the place's ring at the end. */
+  private static final int RING_LEAVE_BIKE_AND_END = 4;
+  /** How a line looks: drawn, dimmed (off route), on foot (dots). */
+  private static final int LOOK_LINE = 0;
+  private static final int LOOK_DIMMED = 1;
+  private static final int LOOK_WALK = 2;
 
   /** What draws the lines: the map engine (tests use a fake). */
   interface Engine
   {
     @NonNull
-    int[] show(@NonNull double[] lat, @NonNull double[] lon, boolean dimmed, int ring, int style, double chevronSpacingM);
+    int[] show(@NonNull double[] lat, @NonNull double[] lon, int look, int ring, int style, double chevronSpacingM);
 
     void remove(@NonNull int[] ids);
   }
@@ -33,10 +40,10 @@ public final class TzRouteLayer
   static Engine sEngine = new Engine() {
     @NonNull
     @Override
-    public int[] show(@NonNull double[] lat, @NonNull double[] lon, boolean dimmed, int ring, int style,
+    public int[] show(@NonNull double[] lat, @NonNull double[] lon, int look, int ring, int style,
                       double chevronSpacingM)
     {
-      return Framework.nativeShowTrackLine(lat, lon, dimmed, ring, style, chevronSpacingM);
+      return Framework.nativeShowTrackLine(lat, lon, look, ring, style, chevronSpacingM);
     }
 
     @Override
@@ -51,10 +58,13 @@ public final class TzRouteLayer
   {
     @NonNull
     final String name;
+    /** LOOK_LINE or LOOK_WALK; dimmed overrides it. */
+    final int look;
 
-    Line(@NonNull String name)
+    Line(@NonNull String name, int look)
     {
       this.name = name;
+      this.look = look;
     }
 
     @Nullable
@@ -112,7 +122,7 @@ public final class TzRouteLayer
     {
       if (lat != null && lon != null && ids == null)
       {
-        ids = sEngine.show(lat, lon, dimmed, ring, sStyle, dimmed ? 0 : spacingM);
+        ids = sEngine.show(lat, lon, dimmed ? LOOK_DIMMED : look, ring, sStyle, dimmed ? 0 : spacingM);
         if (TzTrace.on())
           TzTrace.log("line", name + " drawn owner=" + ownerName(owner) + " points=" + lat.length + " dimmed=" + dimmed
                               + " ids=" + Arrays.toString(ids));
@@ -130,8 +140,9 @@ public final class TzRouteLayer
     }
   }
 
-  private static final Line sRoute = new Line("route");
-  private static final Line sLeg = new Line("leg");
+  private static final Line sRoute = new Line("route", LOOK_LINE);
+  private static final Line sLeg = new Line("leg", LOOK_LINE);
+  private static final Line sWalk = new Line("walk", LOOK_WALK);
 
   /** Route line candidates for the daylight check (FEAT-005, D45): B (shipped), A (before v2), C, D. */
   public static final String[] STYLES = {"B", "A", "C", "D"};
@@ -143,7 +154,7 @@ public final class TzRouteLayer
     if (style == sStyle)
       return;
     sStyle = style;
-    for (Line l : new Line[] {sRoute, sLeg})
+    for (Line l : new Line[] {sRoute, sLeg, sWalk})
     {
       l.remove();
       l.draw();
@@ -173,6 +184,8 @@ public final class TzRouteLayer
       sRoute.owner = to;
     if (sLeg.owner == from)
       sLeg.owner = to;
+    if (sWalk.owner == from)
+      sWalk.owner = to;
   }
 
   /** Metres between direction chevrons on a ride's lines (BUG-002): about 96dp apart at the ride zooms. */
@@ -218,6 +231,30 @@ public final class TzRouteLayer
     sLeg.set(null, null, null, RING_NONE, 0);
   }
 
+  /**
+   * The walked part of a path to a place a bike cannot reach (Phase 27): dots from where the bike is left (a hollow
+   * ring) to the place (its ring). The ridden part is shown with {@link #showRide}.
+   */
+  public static void showWalk(@NonNull Object owner, @NonNull double[] lat, @NonNull double[] lon)
+  {
+    if (TzTrace.on())
+      TzTrace.log("line", "showWalk owner=" + ownerName(owner) + " points=" + lat.length);
+    sWalk.set(owner, lat, lon, RING_LEAVE_BIKE_AND_END, 0);
+  }
+
+  public static void hideWalk()
+  {
+    sWalk.set(null, null, null, RING_NONE, 0);
+  }
+
+  /** The ridden part of a bike + walk path: no ring (the walk's ring and the place's are on the walk). */
+  public static void showRide(@NonNull Object owner, @NonNull double[] lat, @NonNull double[] lon, boolean ride)
+  {
+    if (TzTrace.on())
+      TzTrace.log("line", "showRide owner=" + ownerName(owner) + " points=" + lat.length + (ride ? " ride" : ""));
+    sRoute.set(owner, lat, lon, RING_NONE, ride ? RIDE_CHEVRON_M : previewSpacing(lat, lon));
+  }
+
   /** Off route (R3): the route dashed, at 45 %, without its glow. */
   public static void setDimmed(boolean dimmed)
   {
@@ -236,6 +273,8 @@ public final class TzRouteLayer
       sRoute.set(null, null, null, RING_NONE, 0);
     if (sLeg.owner == owner)
       sLeg.set(null, null, null, RING_NONE, 0);
+    if (sWalk.owner == owner)
+      sWalk.set(null, null, null, RING_NONE, 0);
   }
 
   @NonNull
@@ -257,5 +296,6 @@ public final class TzRouteLayer
       TzTrace.log("line", "onEngineReady route=" + ownerName(sRoute.owner) + " leg=" + ownerName(sLeg.owner));
     sRoute.draw();
     sLeg.draw();
+    sWalk.draw();
   }
 }

@@ -371,11 +371,12 @@ public class Framework
   public static native void nativeShowRect(double minLat, double minLon, double maxLat, double maxLon,
                                            boolean animate);
 
-  /// TrackZero: draws a polyline as a route line (non-persistent); dimmed = dashed without glow (off route);
-  /// ring: 0 none, 1 at the start, 2 at the end.
+  /// TrackZero: draws a polyline as a route line (non-persistent). look: 0 the line, 1 dimmed (dashed, off route),
+  /// 2 on foot (dots); ring: 0 none, 1 at the start, 2 at the end, 3 hollow at the start (where the bike is left),
+  /// 4 hollow at the start and the ring at the end.
   /// Returns the ids for nativeRemoveTrackLine, null when the map engine isn't running.
   @Nullable
-  public static native int[] nativeShowTrackLine(double[] lat, double[] lon, boolean dimmed, int ring, int style,
+  public static native int[] nativeShowTrackLine(double[] lat, double[] lon, int look, int ring, int style,
                                                  double chevronSpacingM);
 
   public static native void nativeRemoveTrackLine(int[] ids);

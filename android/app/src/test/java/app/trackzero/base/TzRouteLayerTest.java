@@ -27,7 +27,7 @@ public class TzRouteLayerTest
     TzRouteLayer.sEngine = new TzRouteLayer.Engine() {
       @NonNull
       @Override
-      public int[] show(@NonNull double[] lat, @NonNull double[] lon, boolean dimmed, int ring, int style,
+      public int[] show(@NonNull double[] lat, @NonNull double[] lon, int look, int ring, int style,
                         double chevronSpacingM)
       {
         mCalls.add(chevronSpacingM > 0 ? "show " + Math.round(chevronSpacingM) : "show");

@@ -704,3 +704,30 @@ with the stock weights, so near region borders the profile applies a little less
   Jaude → Gare de Clermont: Walk 1.8 km on streets, pedestrian streets and footways, no track. Hike and Walk differ
   where trails exist, for example Royat – Col de Ceyssat (track 52 % against 35 %), Clermont – Gergovie (secondary
   0 % against 42 %), Issoire – Saint-Nectaire (track 71 % against 34 %).
+
+## D52 · A place a bike cannot reach: bike, then walk (Phase 27, BUG-001)
+- **Planner.** `follow/BikeWalkPlanner` is pure, with a router interface. A bicycle path that fails with NO_WAY or
+  NO_END gets the walking path (a hike's if walking finds none). The bicycle then tries points on it 50, 150, 400 m,
+  1, 2.5 and 6 km before the end, nearest the place first, each with an 8 s limit
+  (`BicyclePath.nativeBuild(…, timeoutSec)`). The first that works is P. Any other failure (no map, cancelled) passes
+  through untouched. No candidate: the walk alone is offered ("No bike access. Walk 3.2 km?"), and START begins it
+  as a Walk ride.
+- **Joined path.** One line: the bike path, then P (a point of the line), then the walk after P.
+  `RoutedPath.walkFromM` marks P. The bike's ARRIVE becomes `Maneuver.LEAVE_BIKE` at P (glyph `ic_tz_walk`, "Leave
+  the bike, walk", spoken like any turn). The walk's turns after P follow, shifted.
+- **Ride.** It records with its bicycle profile. `FollowEngine.setWalkFrom` makes the ETA ride to P at the recent speed
+  and walk the rest at 4.8 km/h. Leaving the path before P asks a bicycle path back to P, joined to the same walk
+  (`RoutedPath.walkTail`). After P it asks a walking path to the place (`Guide.Paths.request(…, onFoot)`).
+- **Map.** The bike part is the route line without a ring; the walk part is `TzRouteLayer`'s walk line:
+  `nativeShowTrackLine` look 2, 6dp mint dots every 13dp. It has no casing, because dots on a casing of the same
+  pattern do not line up, and on the dark map the mint dots read alone. A hollow ring is at P and the place's ring at
+  the end (ring code 4). `look` replaces the old `dimmed` flag: 0 line, 1 dimmed, 2 walk.
+- **Deviation from B5W.** The board's P pin has a "P" letter; the engine's route markers are circles without text.
+  P is a hollow ring (the destination's has a dot), and the note row names it ("Leave the bike at P"). Numbered
+  waypoint pins in Phase 28 need text on the map too. The letter can come with them.
+- **Checked on the emulator.** NAVIGATE HERE to the Temple de Mercure (Puy de Dôme summit): bike fails (8). Walk
+  16.2 km. The bike fails to the points 50, 150 and 400 m before the end and works to 1 km before it: B5W "To a place ·
+  bike + walk", BY BIKE 16.6 km, ON FOOT 1.0 km, gain 1,144 m, the note row, the dots and the hollow ring at P.
+  Started as a ride: both parts drawn, ETA 16.6 km at 18 km/h + 1 km at 4.8 km/h. La table du Puy (a bike route)
+  unchanged. A place without a map: the planner passes NO_MAP through (unit test). No place outside the map can be
+  searched offline to show it on the emulator.

@@ -82,11 +82,12 @@ public final class BicyclePath
    * @param profile    TrackZero's profile ordinal (Road, Gravel, Walk, Hike); another one than the last frees the
    *                   router kept and builds this one's
    * @param bearingDeg the rider's heading, when {@code hasBearing}
+   * @param timeoutSec  give up after this long (it returns a timeout code); 0: the default 30 s
    */
   @WorkerThread
   @Nullable
   public static native BicyclePath nativeBuild(@NonNull double[] lat, @NonNull double[] lon, int profile,
-                                               boolean hasBearing, double bearingDeg);
+                                               boolean hasBearing, double bearingDeg, int timeoutSec);
 
   /** The profile of the router kept between paths, -1 when none is (checks that nothing is loaded while idle). */
   public static native int nativeLoadedProfile();

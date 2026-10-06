@@ -28,6 +28,7 @@ import app.trackzero.base.TzLocation;
 import app.trackzero.base.TzMap;
 import app.trackzero.base.TzRouteLayer;
 import app.trackzero.base.TzRouter;
+import app.trackzero.follow.BikeWalkPlanner;
 import app.trackzero.follow.FollowRoute;
 import app.trackzero.follow.RoutedPath;
 import app.trackzero.format.TzFormat;
@@ -76,6 +77,11 @@ public class TzPreviewScreen extends TzScreen
   private RoutedPath mPath;
   private boolean mRouting;
   private boolean mStarted;
+  /** A bicycle path being worked out, with a walk when the bike cannot go all the way (Phase 27). */
+  @Nullable
+  private BikeWalkPlanner mPlanner;
+  /** No bike access: the walking path is offered, and START begins a walk. */
+  private boolean mWalkOnly;
 
   @Nullable
   private View mTop;
@@ -146,7 +152,8 @@ public class TzPreviewScreen extends TzScreen
         if (mPath == null)
           return;
         mStarted = true;
-        TzRide.startTo(requireActivity(), mPlaceName, mPlaceLat, mPlaceLon, mPath, this);
+        TzRide.startTo(requireActivity(), mPlaceName, mPlaceLat, mPlaceLon, mPath, this,
+                       mWalkOnly ? Profile.WALK : TzPrefs.profile(requireContext()));
       }
       else if (mRoute != null)
       {
@@ -216,6 +223,8 @@ public class TzPreviewScreen extends TzScreen
       mAnimator.cancel();
     TzRouteLayer.hide(this);
     TzMap.clearVisibleArea(this);
+    if (mPlanner != null)
+      mPlanner.cancel();
     // Leaving without riding: the router's road graphs are not needed any more (a ride keeps them).
     if (mPlaceName != null && !mStarted)
       TzRouter.release();
@@ -244,8 +253,25 @@ public class TzPreviewScreen extends TzScreen
     mRouting = true;
     TzLocation.removeListener(requireContext(), this);
     bindPlace(getString(R.string.tz_preview_finding));
-    TzRouter.route(here.getLatitude(), here.getLongitude(), mPlaceLat, mPlaceLon, mProfile,
-                   here.hasBearing() ? here.getBearing() : Double.NaN, this::onPlacePath);
+    final double bearing = here.hasBearing() ? here.getBearing() : Double.NaN;
+    if (mProfile.foot)
+    {
+      TzRouter.route(here.getLatitude(), here.getLongitude(), mPlaceLat, mPlaceLon, mProfile, bearing,
+                     this::onPlacePath);
+      return;
+    }
+    // By bike: and if a bike cannot go all the way, as far as it can and walk the rest (BUG-001).
+    mPlanner = new BikeWalkPlanner(
+        (fromLat, fromLon, toLat, toLon, profile, bearingDeg, timeoutSec, answer)
+            -> TzRouter.route(new double[] {fromLat, toLat}, new double[] {fromLon, toLon}, profile, bearingDeg,
+                              timeoutSec, answer::onPath));
+    final BikeWalkPlanner planner = mPlanner;
+    planner.plan(here.getLatitude(), here.getLongitude(), mPlaceLat, mPlaceLon, mProfile, bearing, r -> {
+      if (planner != mPlanner)
+        return;
+      mWalkOnly = r.kind == BikeWalkPlanner.Result.Kind.WALK_ONLY;
+      onPlacePath(r.path, r.reason);
+    });
   }
 
   private void onPlacePath(@Nullable RoutedPath path, @NonNull TzRouter.Reason reason)
@@ -256,13 +282,25 @@ public class TzPreviewScreen extends TzScreen
     if (path == null)
     {
       bindPlace(getString(reason == TzRouter.Reason.NO_MAP ? R.string.tz_preview_no_map
-                                                           : R.string.tz_preview_no_route));
+                                                           : R.string.tz_preview_no_place_route));
       return;
     }
     mPath = path;
     bindPlace(placeLabel(path));
     final FollowRoute line = path.line;
-    TzRouteLayer.showPath(this, line.lats(), line.lons(), false);
+    if (path.bikeAndWalk())
+    {
+      // B5W: the ride to where the bike is left, then dots to the place.
+      final double[][] ride = path.ridePart();
+      final double[][] walk = path.walkPart();
+      TzRouteLayer.showRide(this, ride[0], ride[1], false);
+      TzRouteLayer.showWalk(this, walk[0], walk[1]);
+    }
+    else
+    {
+      TzRouteLayer.hideWalk();
+      TzRouteLayer.showPath(this, line.lats(), line.lons(), false);
+    }
     mBox = extent(line.lats(), line.lons());
     frameRoute();
     RouteSurfaces.forPath(requireContext(), line, p -> {
@@ -283,6 +321,11 @@ public class TzPreviewScreen extends TzScreen
   @NonNull
   private String placeLabel(@NonNull RoutedPath path)
   {
+    if (mWalkOnly)
+      return getString(R.string.tz_preview_walk_only, TzFormat.distance(path.line.totalM(), TzPrefs.units(
+          requireContext()), Locale.getDefault()).toString());
+    if (path.bikeAndWalk())
+      return getString(R.string.tz_preview_bike_walk);
     if (!mProfile.foot)
       return getString(R.string.tz_preview_to_place);
     final FollowRoute line = path.line;
@@ -337,6 +380,10 @@ public class TzPreviewScreen extends TzScreen
     if (mPlaceName == null)
       return;
     TzRouter.cancel();
+    if (mPlanner != null)
+      mPlanner.cancel();
+    mPlanner = null;
+    mWalkOnly = false;
     mRouting = false;
     mPath = null;
     TzRouteLayer.hide(this);
@@ -363,12 +410,19 @@ public class TzPreviewScreen extends TzScreen
     final TzMetricView stat2 = v.findViewById(R.id.tz_preview_stat2);
     final TzElevationProfileView profile = v.findViewById(R.id.tz_preview_profile);
     final RoutedPath path = mPath;
-    // A hike shows what it climbs and descends (D+, D−); the others gain and high point.
+    // A hike shows what it climbs and descends (D+, D−); bike + walk (B5W) the two parts and the gain; the others
+    // distance, gain and high point.
     final boolean hike = mProfile == Profile.HIKE;
-    ((TextView) v.findViewById(R.id.tz_preview_stat1_label)).setText(hike ? R.string.tz_preview_climb
-                                                                           : R.string.tz_preview_gain);
-    ((TextView) v.findViewById(R.id.tz_preview_stat2_label)).setText(hike ? R.string.tz_preview_descent
-                                                                           : R.string.tz_preview_high);
+    final boolean bikeWalk = path != null && path.bikeAndWalk();
+    ((TextView) v.findViewById(R.id.tz_preview_stat0_label)).setText(bikeWalk ? R.string.tz_preview_by_bike
+                                                                               : R.string.tz_preview_distance);
+    ((TextView) v.findViewById(R.id.tz_preview_stat1_label)).setText(bikeWalk ? R.string.tz_preview_on_foot_stat
+                                                                     : hike   ? R.string.tz_preview_climb
+                                                                              : R.string.tz_preview_gain);
+    ((TextView) v.findViewById(R.id.tz_preview_stat2_label)).setText(bikeWalk ? R.string.tz_preview_gain
+                                                                     : hike   ? R.string.tz_preview_descent
+                                                                              : R.string.tz_preview_high);
+    v.findViewById(R.id.tz_preview_walk_note).setVisibility(bikeWalk ? View.VISIBLE : View.GONE);
     v.findViewById(R.id.tz_preview_ele_note).setVisibility(hike && path != null && path.ele == null ? View.VISIBLE
                                                                                                      : View.GONE);
     if (path == null)
@@ -420,6 +474,18 @@ public class TzPreviewScreen extends TzScreen
       stat1.setValue(TzFormat.UNKNOWN, "");
       stat2.setValue(TzFormat.UNKNOWN, "");
       profile.setVisibility(View.GONE);
+    }
+    if (bikeWalk)
+    {
+      final TzFormat.Value onFoot = TzFormat.distance(line.totalM() - path.walkFromM, units, locale);
+      stat0.setValue(TzFormat.distance(path.walkFromM, units, locale));
+      stat1.setValue(onFoot);
+      if (path.ele == null)
+        stat2.setValue(TzFormat.UNKNOWN, "");
+      else
+        stat2.setValue(TzFormat.elevation(RouteStats.compute(line.lats(), line.lons(), path.ele).gainM, units, locale));
+      ((TextView) v.findViewById(R.id.tz_preview_walk_note_text))
+          .setText(getString(R.string.tz_preview_walk_note, onFoot.toString()));
     }
     ((TextView) v.findViewById(R.id.tz_preview_peek_stats)).setText(peek);
   }

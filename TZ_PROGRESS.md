@@ -45,6 +45,11 @@ Collected from the v2 phases; each says what to do, what to look at and what cou
   right for you? If the map grades part of the way as demanding, a line says so under the surface legend. Also: the
   plan says no text may say "safe", "easy" or "accessible", but board N2's Gravel text says "easy tracks"; I kept the
   board's words (D51). Tell me if it should change. Pass: trails taken, times plausible.
+- **N27 · Bike + walk (BUG-001, Phase 27).** Search a place a bike cannot reach (the Puy de Dôme summit: "Temple de
+  Mercure") › NAVIGATE HERE. The card says "To a place · bike + walk" with BY BIKE and ON FOOT, the map shows the ride,
+  a hollow ring where to leave the bike and dots to the place. Ride towards it (any part): the ETA is sensible, and at
+  the ring the card says "Leave the bike, walk" and the voice says it. Leave the route before the ring: you are routed
+  back by bike to the ring. Pass: all of these. (The board's "P" letter on the ring is not there yet: D52.)
 - **N18 · Immersive ride (FEAT-001, Phase 18).** On a ride, no status bar or navigation bar on all three pages and with
   the controls open. Swipe from the top or bottom edge: the bars appear briefly over the ride and nothing moves. Tap the
   handle 10 times: it opens the controls every time. A quick upward swipe from just above the handle opens them too.
@@ -544,4 +549,21 @@ it led to).
 - Tests: `FootTimeTest` (hiking time), `RouteStatsTest` (ascent and descent), `ProfileTest`. 222 tests pass.
 - Smoke test with Hike selected (both rides `profile=hike`, free hike "Hike Oct 6, 2026"): all steps pass, no crashes.
   The emulator was set back to Road.
+
+## Phase 27 — A place a bike cannot reach (BUG-001)
+
+- `follow/BikeWalkPlanner` (bike → walk → bike to candidate points, 8 s each; joins the paths), `RoutedPath.walkFromM`,
+  `ridePart` / `walkPart` / `walkTail`, `Maneuver.LEAVE_BIKE` ("Leave the bike, walk", `ic_tz_walk`).
+- Native: `BicyclePath.nativeBuild(…, timeoutSec)`; `nativeShowTrackLine` takes a look (line, dimmed, walk dots) and
+  ring 3 / 4 (hollow at the start, and the end's ring). `TzRouteLayer.showRide` / `showWalk` / `hideWalk`.
+- Preview: bike profiles go through the planner; B5W card (label, BY BIKE / ON FOOT / GAIN, the note row on surface3),
+  the walk-only offer starts a Walk ride, "No route to this place" when even walking fails.
+- Ride: ETA walks the part after P; leaving the path re-routes by bike to P (joined to the same walk) or on foot after
+  it; the ride screen draws both parts.
+- Checked on the emulator (D52): Temple de Mercure → B5W (`shots/B5W.png`, `B5W_walk_part.png`), started and ended
+  as a ride; La table du Puy unchanged.
+- Tests: `BikeWalkPlannerTest` (7: unchanged bike place, bike to the 400 m candidate then walk, walk-only, no route,
+  hike fallback, no map passed through, cancel), `GuideTest` (re-route before and after P), `FollowEngineTest`
+  (bike + walk ETA). 232 tests pass.
+- Smoke test: all steps pass, no crashes.
 

@@ -79,19 +79,27 @@ public final class TzRouter
 
   private TzRouter() {}
 
-  /** From one point to another; see {@link #route(double[], double[], Profile, double, Callback)}. */
+  /** From one point to another; see {@link #route(double[], double[], Profile, double, int, Callback)}. */
   public static void route(double fromLat, double fromLon, double toLat, double toLon, @NonNull Profile profile,
                            double bearingDeg, @NonNull Callback callback)
   {
-    route(new double[] {fromLat, toLat}, new double[] {fromLon, toLon}, profile, bearingDeg, callback);
+    route(new double[] {fromLat, toLat}, new double[] {fromLon, toLon}, profile, bearingDeg, 0, callback);
+  }
+
+  /** Through waypoints, with the default 30 s limit. */
+  public static void route(@NonNull double[] lat, @NonNull double[] lon, @NonNull Profile profile, double bearingDeg,
+                           @NonNull Callback callback)
+  {
+    route(lat, lon, profile, bearingDeg, 0, callback);
   }
 
   /**
    * @param lat        the start, any waypoints, the end (two or more points)
    * @param bearingDeg the rider's heading (picks the road they are on), NaN when unknown
+   * @param timeoutSec  give up after this long (0: 30 s)
    */
   public static void route(@NonNull double[] lat, @NonNull double[] lon, @NonNull Profile profile, double bearingDeg,
-                           @NonNull Callback callback)
+                           int timeoutSec, @NonNull Callback callback)
   {
     final int request = ++sRequest;
     // Stops the path being worked out for the previous request, if it still is.
@@ -101,7 +109,8 @@ public final class TzRouter
     EXECUTOR.execute(() -> {
       final long start = System.nanoTime();
       final boolean hasBearing = !Double.isNaN(bearingDeg);
-      final BicyclePath p = BicyclePath.nativeBuild(la, lo, profile.ordinal(), hasBearing, hasBearing ? bearingDeg : 0);
+      final BicyclePath p = BicyclePath.nativeBuild(la, lo, profile.ordinal(), hasBearing, hasBearing ? bearingDeg : 0,
+                                                    timeoutSec);
       final RoutedPath path = p == null || p.code != BicyclePath.OK ? null : toPath(p);
       final Reason reason = path != null ? Reason.OK : p == null ? Reason.ERROR : Reason.of(p.code);
       Log.i(TAG, (path == null ? "No path (" + (p == null ? "no engine" : p.code) + ")"

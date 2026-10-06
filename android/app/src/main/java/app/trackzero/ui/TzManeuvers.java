@@ -32,6 +32,7 @@ public final class TzManeuvers
       case SLIGHT_RIGHT, SLIGHT_LEFT -> bold ? R.drawable.ic_tz_fork_right_bold : R.drawable.ic_tz_fork_right;
       case ROUNDABOUT -> bold ? R.drawable.ic_tz_roundabout_bold : R.drawable.ic_tz_roundabout;
       case ARRIVE -> bold ? R.drawable.ic_tz_flag_bold : R.drawable.ic_tz_flag;
+      case LEAVE_BIKE -> bold ? R.drawable.ic_tz_walk_bold : R.drawable.ic_tz_walk;
       case REROUTE -> bold ? R.drawable.ic_tz_reroute_bold : R.drawable.ic_tz_reroute;
     };
   }
@@ -68,6 +69,7 @@ public final class TzManeuvers
       case ROUNDABOUT -> R.string.tz_mnv_roundabout_any;
       case ARRIVE -> R.string.tz_mnv_arrive;
       case JOIN -> R.string.tz_mnv_join;
+      case LEAVE_BIKE -> R.string.tz_mnv_leave_bike;
       case REROUTE -> R.string.tz_mnv_reroute;
       case HEAD_TO_START -> R.string.tz_mnv_head_to_start;
     };

@@ -35,6 +35,7 @@ namespace
 std::mutex g_delegateMutex;
 routing::RouterDelegate * g_delegate = nullptr;
 
+// The longest a path may take unless the caller asks for less (bike + walk tries, Phase 27).
 uint32_t constexpr kTimeoutSec = 30;
 
 // One router for all the paths of a ride: its road graphs stay loaded between paths (loading them is most of the
@@ -117,7 +118,8 @@ extern "C"
 JNIEXPORT jobject JNICALL Java_app_organicmaps_sdk_routing_BicyclePath_nativeBuild(JNIEnv * env, jclass,
                                                                                   jdoubleArray lats, jdoubleArray lons,
                                                                                   jint profile, jboolean hasBearing,
-                                                                                  jdouble bearingDeg)
+                                                                                  jdouble bearingDeg,
+                                                                                  jint timeoutSec)
 {
   Framework * const f = frm();
   if (f == nullptr)
@@ -146,7 +148,7 @@ JNIEXPORT jobject JNICALL Java_app_organicmaps_sdk_routing_BicyclePath_nativeBui
   }
 
   routing::RouterDelegate delegate;
-  delegate.SetTimeout(kTimeoutSec);
+  delegate.SetTimeout(timeoutSec > 0 ? std::min<uint32_t>(timeoutSec, kTimeoutSec) : kTimeoutSec);
   {
     std::lock_guard lock(g_delegateMutex);
     g_delegate = &delegate;

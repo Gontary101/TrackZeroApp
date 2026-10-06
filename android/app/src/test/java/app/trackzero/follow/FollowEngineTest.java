@@ -179,6 +179,19 @@ public class FollowEngineTest
   }
 
   @Test
+  public void aBikeAndWalkPathWalksItsLastPart()
+  {
+    Ride ride = new Ride(FollowTestRoutes.polyline(new double[] {0, 0}, new double[] {0, 2000}));
+    ride.engine.setWalkFrom(1500);
+    ride.onRoute();
+    // 1500 m at the fallback 18 km/h, then 500 m at 4.8 km/h.
+    double expected = (1500 - ride.engine.along()) / (TzConfig.ETA_FALLBACK_KMH / 3.6)
+                      + (ride.engine.remainingM() - (1500 - ride.engine.along())) / (TzConfig.ETA_FALLBACK_FOOT_KMH / 3.6);
+    assertEquals(expected, ride.engine.etaSeconds(), 1e-6);
+    assertEquals(300 + 375, ride.engine.etaSeconds(), 5);
+  }
+
+  @Test
   public void onFootTheEtaStartsAtWalkingSpeed()
   {
     Ride ride = new Ride(longStraight());

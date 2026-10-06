@@ -83,6 +83,7 @@
           android:layout_weight="1"
           android:orientation="vertical">
           <TextView
+            android:id="@+id/tz_preview_stat0_label"
             style="@style/TzText.Label"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -155,6 +156,32 @@
         android:layout_marginTop="@dimen/tz_space_12"
         android:text="@string/tz_sf_no_map"
         android:visibility="gone" />
+      <!-- B5W (Phase 27): a place bikes cannot reach. Walk icon and where to leave the bike, on surface3. -->
+      <LinearLayout
+        android:id="@+id/tz_preview_walk_note"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/tz_space_16"
+        android:background="@drawable/tz_bg_surface3_r20"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:padding="@dimen/tz_space_16"
+        android:visibility="gone">
+        <ImageView
+          android:layout_width="@dimen/tz_profile_pill_icon"
+          android:layout_height="@dimen/tz_profile_pill_icon"
+          android:importantForAccessibility="no"
+          android:src="@drawable/ic_tz_walk"
+          app:tint="@color/tz_text1" />
+        <TextView
+          android:id="@+id/tz_preview_walk_note_text"
+          style="@style/TzText.RowDetail"
+          android:layout_width="0dp"
+          android:layout_height="wrap_content"
+          android:layout_marginStart="@dimen/tz_row_gap"
+          android:layout_weight="1"
+          android:textColor="@color/tz_text1" />
+      </LinearLayout>
       <!-- A hike (Phase 26): no altitudes on its path; demanding trail sections on it, per the map. -->
       <TextView
         android:id="@+id/tz_preview_ele_note"

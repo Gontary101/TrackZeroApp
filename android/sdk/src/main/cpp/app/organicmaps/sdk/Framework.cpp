@@ -2138,11 +2138,16 @@ JNIEXPORT void JNICALL Java_app_organicmaps_sdk_Framework_nativeShowRect(JNIEnv 
 //   2 (C): as B with a brighter line; 3 (D): a 10dp line on a 14dp casing.
 // Dimmed (off route, R3) is the same in every style: no casing, the line dashed at 5.5dp in 45 % mint.
 // chevronSpacingM > 0: direction chevrons inside the line every that many metres (never on a dimmed line).
+// look: 0 the line, 1 dimmed (off route), 2 on foot (Phase 27: 6dp mint dots 13dp apart, no casing, no chevrons).
+// ring: 0 none, 1 at the start, 2 at the end, 3 a hollow ring at the start (where the bike is left, Phase 27), 4 both
+// the hollow ring at the start and the ring at the end (the walked part of a path to a place).
 JNIEXPORT jintArray JNICALL Java_app_organicmaps_sdk_Framework_nativeShowTrackLine(JNIEnv * env, jclass,
                                                                                    jdoubleArray lats, jdoubleArray lons,
-                                                                                   jboolean dimmed, jint ring, jint style,
+                                                                                   jint look, jint ring, jint style,
                                                                                    jdouble chevronSpacingM)
 {
+  bool const dimmed = look == 1;
+  bool const walk = look == 2;
   auto engine = frm()->GetDrapeEngine();
   jsize const n = env->GetArrayLength(lats);
   if (engine == nullptr || n < 2)
@@ -2159,7 +2164,7 @@ JNIEXPORT jintArray JNICALL Java_app_organicmaps_sdk_Framework_nativeShowTrackLi
   // RouteType::Track is 8dp wide on each side at every zoom; each subroute is capped to its own width.
   float const vs = static_cast<float>(df::VisualParams::Instance().GetVisualScale());
   bool const glowStyle = style == 1;
-  float const lineDp = dimmed || glowStyle ? 5.5f : style == 3 ? 10.0f : 8.0f;
+  float const lineDp = walk ? 6.0f : dimmed || glowStyle ? 5.5f : style == 3 ? 10.0f : 8.0f;
   float const underDp = glowStyle ? 16.0f : style == 3 ? 14.0f : 12.0f;
   auto const makeSubroute = [&polyline](df::ColorConstant const & color, double depthIndex,
                                         df::RoutePattern const & pattern, float widthPx)
@@ -2179,13 +2184,18 @@ JNIEXPORT jintArray JNICALL Java_app_organicmaps_sdk_Framework_nativeShowTrackLi
 
   // Under the line: a hard black casing (it keeps an edge where the line crosses lighter map features in sun), or the
   // old glow. None when dimmed.
-  auto under = dimmed ? nullptr
-                      : makeSubroute(glowStyle ? "TrackGlow" : "TrackCasing", 0.0, df::RoutePattern(), underDp * vs);
-  auto line = makeSubroute(dimmed ? "TrackLineOff" : style == 2 ? "TrackLineBright" : "TrackLine", 1.0,
-                           dimmed ? df::RoutePattern(2.0, 3.0) : df::RoutePattern(), lineDp * vs);
+  auto under = dimmed || walk
+                   ? nullptr
+                   : makeSubroute(glowStyle ? "TrackGlow" : "TrackCasing", 0.0, df::RoutePattern(), underDp * vs);
+  // Dash and gap are in half-widths: 6dp dots (2 × 3dp) every 13dp (gap 7dp).
+  auto line = makeSubroute(dimmed ? "TrackLineOff" : style == 2 && !walk ? "TrackLineBright" : "TrackLine", 1.0,
+                           dimmed ? df::RoutePattern(2.0, 3.0)
+                           : walk ? df::RoutePattern(2.0, 7.0 / 3.0)
+                                  : df::RoutePattern(),
+                           lineDp * vs);
 
   // Direction chevrons (BUG-002): every chevronSpacingM metres, none within 25 m of either end (the ring).
-  if (!dimmed && chevronSpacingM > 0)
+  if (!dimmed && !walk && chevronSpacingM > 0)
   {
     double constexpr kEndClearM = 25.0;
     auto const & pts = polyline.GetPoints();
@@ -2209,22 +2219,32 @@ JNIEXPORT jintArray JNICALL Java_app_organicmaps_sdk_Framework_nativeShowTrackLi
     }
   }
 
-  // Ring: 13dp black disc with a 3dp mint ring and a 4.5dp mint dot, whatever the line's width. Markers stack in list
-  // order and are scaled by the line's half width.
-  auto const addCircle = [&line, &polyline, ring, lineDp](df::ColorConstant const & color, float radiusDp)
+  // Ring: 13dp black disc with a 3dp mint ring and a 4.5dp mint dot, whatever the line's width; the hollow ring (3) has
+  // no dot. Markers stack in list order and are scaled by the line's half width.
+  auto const addCircle = [&line, lineDp](m2::PointD const & at, df::ColorConstant const & color, float radiusDp)
   {
-    if (ring == 0)
-      return;
     df::SubrouteMarker m;
-    m.m_position = ring == 2 ? polyline.Back() : polyline.Front();
+    m.m_position = at;
     m.m_colors = {color};
     m.m_innerColor = color;
     m.m_scale = radiusDp / (lineDp / 2);
     line->m_markers.push_back(std::move(m));
   };
-  addCircle("TrackLine", 14.5f);
-  addCircle("TrackMarkerCenter", 11.5f);
-  addCircle("TrackLine", 4.5f);
+  auto const addRing = [&addCircle](m2::PointD const & at, bool dot)
+  {
+    addCircle(at, "TrackLine", 14.5f);
+    addCircle(at, "TrackMarkerCenter", 11.5f);
+    if (dot)
+      addCircle(at, "TrackLine", 4.5f);
+  };
+  if (ring == 1)
+    addRing(polyline.Front(), true);
+  else if (ring == 2)
+    addRing(polyline.Back(), true);
+  else if (ring == 3 || ring == 4)
+    addRing(polyline.Front(), false);
+  if (ring == 4)
+    addRing(polyline.Back(), true);
 
   std::vector<jint> ids;
   if (under)

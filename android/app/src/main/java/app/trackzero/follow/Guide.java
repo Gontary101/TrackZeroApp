@@ -27,8 +27,11 @@ public final class Guide
   /** The bicycle router. A request replaces the one before; the answer comes back through {@link #onPath}. */
   public interface Paths
   {
-    /** @param bearingDeg the rider's heading, NaN when unknown */
-    void request(double fromLat, double fromLon, double toLat, double toLon, double bearingDeg);
+    /**
+     * @param bearingDeg the rider's heading, NaN when unknown
+     * @param onFoot     a walking path, whatever the ride's profile (after the bike was left, Phase 27)
+     */
+    void request(double fromLat, double fromLon, double toLat, double toLon, double bearingDeg, boolean onFoot);
 
     void cancel();
   }
@@ -65,6 +68,11 @@ public final class Guide
   @NonNull
   private Want mPending = Want.NONE;
   private double mPendingEndAlong;
+  /** The pending path is the ride to where the bike is left, to be joined to {@link #mWalkTail} (Phase 27). */
+  private boolean mPendingToBike;
+  /** A path to a place bikes cannot reach: the walked part, kept for a new ride to where the bike is left. */
+  @Nullable
+  private RoutedPath mWalkTail;
   private long mNextRequestMs;
   private long mBackoffMs = RETRY_MIN_MS;
   private int mLines;
@@ -215,10 +223,24 @@ public final class Guide
     if (!mHasFix || mPending != Want.NONE || mElapsedMs < mNextRequestMs)
       return;
     final double toLat, toLon;
-    if (want == Want.DESTINATION)
+    boolean onFoot = false;
+    mPendingToBike = false;
+    final RoutedPath main = mMainPath;
+    if (want == Want.DESTINATION && main != null && main.bikeAndWalk() && mWalkTail != null
+        && mMain.along() < main.walkFromM)
+    {
+      // Left a bike + walk path before the bike was left: by bike back to that point, then the same walk.
+      toLat = mWalkTail.line.startLat();
+      toLon = mWalkTail.line.startLon();
+      mPendingToBike = true;
+      mPendingEndAlong = 0;
+    }
+    else if (want == Want.DESTINATION)
     {
       toLat = mPlaceLat;
       toLon = mPlaceLon;
+      // After the bike was left, the way to the place is on foot.
+      onFoot = main != null && main.bikeAndWalk();
       mPendingEndAlong = 0;
     }
     else
@@ -229,7 +251,7 @@ public final class Guide
       toLon = track.lonAt(mPendingEndAlong);
     }
     mPending = want;
-    mPaths.request(mLat, mLon, toLat, toLon, mCourseDeg);
+    mPaths.request(mLat, mLon, toLat, toLon, mCourseDeg, onFoot);
   }
 
   /** The track's closest point to the rider between 200 m and 2 km past {@code along} (its end if nearer). */
@@ -271,6 +293,9 @@ public final class Guide
       e.inheritSpeed(mMain);
     mMain = e;
     mMainPath = path;
+    if (path.bikeAndWalk())
+      e.setWalkFrom(path.walkFromM);
+    mWalkTail = path.walkTail();
     mLeg = null;
     mLines++;
   }
@@ -292,7 +317,13 @@ public final class Guide
     mNextRequestMs = mElapsedMs + RETRY_MIN_MS;
     if (want == Want.DESTINATION)
     {
-      setMain(path);
+      final RoutedPath was = mMainPath;
+      if (mPendingToBike && mWalkTail != null)
+        setMain(BikeWalkPlanner.join(path, mWalkTail, 0));
+      else if (was != null && was.bikeAndWalk())
+        setMain(new RoutedPath(path.line, path.maneuvers, path.ele, 0)); // All on foot from here.
+      else
+        setMain(path);
       place(mMain);
       return;
     }
@@ -352,7 +383,10 @@ public final class Guide
 
   public double etaSeconds()
   {
-    return mMain == null ? 0 : remainingM() / mMain.speedMps();
+    if (mMain == null)
+      return 0;
+    // On the route itself its engine knows (a walked part goes at walking speed, Phase 27).
+    return mLeg == null ? mMain.etaSeconds() : remainingM() / mMain.speedMps();
   }
 
   /** The rider's place on the route (where they left it while on a leg), metres. */
