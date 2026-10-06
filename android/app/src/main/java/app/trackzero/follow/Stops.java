@@ -14,6 +14,8 @@ public final class Stops
 {
   public static final int WATER = 1;
   public static final int REPAIR = 2;
+  /** Places to spend the night (Phase 31). */
+  public static final int BIVOUAC = 3;
 
   /** Searched this far either side of the route. */
   public static final double MAX_OFF_ROUTE_M = 1000;
@@ -81,15 +83,25 @@ public final class Stops
     return out;
   }
 
+  /** Places to sleep: around the rider within 5 km, or this far when there are none (Phase 31). */
+  public static final double BIVOUAC_WIDE_M = 20_000;
+
   /** The places within 5 km of the rider, nearest first. */
   @NonNull
   public static List<Row> near(double lat, double lon, @NonNull List<Stop> places)
+  {
+    return near(lat, lon, places, FREE_RADIUS_M);
+  }
+
+  /** The places within {@code radiusM} of the rider, nearest first. */
+  @NonNull
+  public static List<Row> near(double lat, double lon, @NonNull List<Stop> places, double radiusM)
   {
     final List<Row> out = new ArrayList<>();
     for (Stop s : places)
     {
       final double d = Geo.distance(lat, lon, s.lat, s.lon);
-      if (d <= FREE_RADIUS_M)
+      if (d <= radiusM)
         out.add(new Row(s, Double.NaN, Double.NaN, d));
     }
     out.sort(Comparator.comparingDouble(row -> row.distanceM));

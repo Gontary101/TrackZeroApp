@@ -264,12 +264,10 @@
   <string name="tz_search_chip_water">Water</string>
   <string name="tz_search_chip_bike">Bike repair</string>
   <string name="tz_search_chip_cafe">Café</string>
-  <string name="tz_search_chip_shelter">Shelter</string>
   <!-- Category queries: the search engine's English category names (it always understands English). -->
   <string name="tz_search_category_water" translatable="false">Water</string>
   <string name="tz_search_category_bike" translatable="false">bike</string>
   <string name="tz_search_category_cafe" translatable="false">Cafe</string>
-  <string name="tz_search_category_shelter" translatable="false">Shelter</string>
   <string name="tz_search_caption">Searching offline map data</string>
   <string name="tz_search_caption_region">Searching offline map data · %1$s</string>
   <string name="tz_search_nothing">Nothing found in the downloaded maps</string>
@@ -394,6 +392,22 @@
   <string name="tz_stop_note_free">A free ride has no route to add it to: head there yourself.</string>
   <string name="tz_stop_failed">Can\'t route to this stop. Your route is unchanged.</string>
   <string name="tz_stop_plus">+%1$s</string>
+  <!-- Bivouac (Phase 31). Never "authorised", "allowed" or "legal" for a place that is not confirmed. -->
+  <string name="tz_stops_bivouac">Bivouac</string>
+  <string name="tz_stop_campsite">Campsite</string>
+  <string name="tz_stop_hut">Hut</string>
+  <string name="tz_stop_shelter">Shelter</string>
+  <string name="tz_badge_verified">Verified</string>
+  <string name="tz_badge_not_confirmed">Not confirmed</string>
+  <string name="tz_bivouac_unconfirmed">No source says sleeping here is allowed.</string>
+  <string name="tz_bivouac_footer">Verified means the map marks it as a campsite or hut. Rules can change: check signs on site.</string>
+  <string name="tz_bivouac_hours">Open %1$s</string>
+  <string name="tz_bivouac_fee">Fee</string>
+  <string name="tz_bivouac_no_fee">No fee</string>
+  <string name="tz_bivouac_private">Private access</string>
+  <string name="tz_search_chip_bivouac">Bivouac</string>
+  <string name="tz_search_bivouac_caption">Within %1$s of you · offline map</string>
+  <string name="tz_search_bivouac_none">No campsite, hut or shelter on the map within %1$s.</string>
   <string name="tz_loop_title">LOOP</string>
   <string name="tz_loop_start">Start</string>
   <string name="tz_loop_my_location">My location</string>

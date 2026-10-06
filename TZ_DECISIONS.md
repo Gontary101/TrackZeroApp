@@ -840,3 +840,27 @@ with the stock weights, so near region borders the profile applies a little less
 - **Checked on the emulator.** See the Phase 30 progress entry. Not checked there: a stop that cannot be routed (the
   emulator's map routes everywhere tried); `GuideTest` covers it.
 
+## D56 · Bivouac places (Phase 31, FEAT-010)
+- **What counts as verified.** Offline the map is the only source. VERIFIED means the map says the place is for
+  staying the night: a campsite or a (wilderness or alpine) hut. Shelters of every kind are NOT CONFIRMED, and so is
+  a campsite or hut whose access is private. Caravan sites and picnic sites are not listed; no place is made up.
+- **Shelters for waiting are left out.** Bus shelters are often mapped as a plain `amenity=shelter` on the stop or
+  platform, without the public_transport subtype. On the Aydat loop, the station's platform shelters ("Quai A-C",
+  "Busstop for Gare …") came first in the list. A shelter that is also a bus stop, bus station, halt or platform
+  (or has the public_transport subtype) is not a bivouac and is not listed. One named after a stop but not on it
+  can still appear, NOT CONFIRMED.
+- **Restrictions from the map.** CoMaps keeps opening hours (`FMD_OPEN_HOURS`) and fee as types (`fee-yes`,
+  `fee-no`); there is no fee or access metadata, and no access type on points. "Private access" can only come from
+  `hwtag-private`, which these places do not carry in practice. Shown when known: "Open {hours as the map gives
+  them}", "Fee" / "No fee", "Private access".
+- **Copy.** Not confirmed reads exactly "No source says sleeping here is allowed." Nothing says "authorised",
+  "allowed" (except that sentence, which says no source does), "legal" or "wild camping". The footer explains
+  VERIFIED and says rules change.
+- **B2.** The Bivouac chip replaces the Shelter chip, third in the row as on the board (Water, Bike repair, Bivouac,
+  Café). The search engine's "Shelter" category also listed bus shelters with no badge; the chip now uses the same
+  query and labels as S1 (the rider as a one-point line, 5 km, then 20 km when there are none). A tap opens the
+  route there by bike (B5), not the map's place card. The card comes from the search engine's own results, which
+  these places are not.
+- **Badge.** Components v2: 22dp high, radius 11, 11sp bold, tracking 1.2; VERIFIED surface3 / text1 / check 14
+  (never mint: it is not live data); NOT CONFIRMED amberBg / amber / warning 14.
+

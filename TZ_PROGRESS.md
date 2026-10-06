@@ -69,6 +69,11 @@ Collected from the v2 phases; each says what to do, what to look at and what cou
   (S1 › the row › REMOVE); B5's pin button (the whole route; a row shows the place on the preview); a free ride's
   STOPS (within 5 km, no ADD STOP). Pass: the stop is reached and the route continues; nothing searches while S1 is
   closed.
+- **N31 · Bivouac places (FEAT-010, Phase 31).** Search › Bivouac where you know the campsites, and R6 › STOPS ›
+  Bivouac on a route through them. Are the campsites and huts there (VERIFIED), is every shelter NOT CONFIRMED with
+  "No source says sleeping here is allowed.", are the hours and fees right where the map has them, and are there no
+  bus shelters? Tap one in Search: the route there (B5). Pass: no shelter is ever shown VERIFIED and the list helps
+  you find a place for the night.
 - **N18 · Immersive ride (FEAT-001, Phase 18).** On a ride, no status bar or navigation bar on all three pages and with
   the controls open. Swipe from the top or bottom edge: the bars appear briefly over the ride and nothing moves. Tap the
   handle 10 times: it opens the controls every time. A quick upward swipe from just above the handle opens them too.
@@ -655,4 +660,27 @@ it led to).
   uses its check path, two in route order, ridden past / removed), `RideSessionTest` (+1: stops in the journal).
   258 tests pass.
 - Smoke test: all steps pass, no crashes.
+
+## Phase 31 — Bivouac places (FEAT-010)
+
+- `nativePoisAlong` category 3: campsite (`tourism-camp_site`), hut (`tourism-wilderness_hut`, `alpine_hut`),
+  shelter (`amenity-shelter` and subtypes, but not `public_transport` and not one that is also a bus stop, bus
+  station, halt or platform). Also returns `FMD_OPEN_HOURS` and flags: fee (`fee-yes` / `fee-no`), private
+  (`hwtag-private`). `Stop` gains `hours` and `flags`.
+- `follow/Bivouac` (pure): VERIFIED only for a campsite or hut that is not private; restrictions in order private,
+  hours, fee / no fee. `TzStopKinds.bindBadge` (Components v2 Badge: VERIFIED surface3 / text1 / check; NOT
+  CONFIRMED amberBg / amber / warning; 22dp, radius 11, 11sp bold) and `bivouacNote` ("Open May-Oct · Fee"; not
+  confirmed: exactly "No source says sleeping here is allowed.").
+- S1: the Bivouac chip, the badge under the subtitle, the note lines, and the footer "Verified means the map marks it
+  as a campsite or hut. Rules can change: check signs on site." S2: badge and limits above the numbers; ADD STOP as
+  in Phase 30. B2: the Bivouac chip replaces Shelter (third, as on the board). It lists the same places around the
+  rider within 5 km, or 20 km when there are none, with S1's rows; a tap opens the route there (B5).
+- On a free ride, S2 frames the rider and the place together.
+- Checked on the emulator (D56): Aydat loop › S1 › Bivouac, only real shelters, all NOT CONFIRMED, with the footer.
+  The first try listed the station's platform shelters ("Quai A-C", "Busstop for …"), now left out. B2 at Lac
+  d'Aydat: Domaine du lac, Camping du Lac d'Aydat (Fee), La Clairière, Camping Les volcans (Open Jun-Sep · Fee)
+  VERIFIED; Gite de Montlosier (hut) VERIFIED; Observatoire and an unnamed shelter NOT CONFIRMED. Free ride S1 and
+  S2 with the badge (`shots/S1_bivouac.png`, `B2_bivouac.png`, `S2_bivouac.png`).
+- Tests: `BivouacTest` (3: type to badge, private overrides, restrictions). 261 tests pass.
+- Smoke test: all steps pass, no crashes (B2 shows the Bivouac chip).
 

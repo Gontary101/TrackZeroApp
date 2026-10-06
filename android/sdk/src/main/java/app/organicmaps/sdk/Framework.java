@@ -155,9 +155,10 @@ public class Framework
   @NonNull
   public static native int[] nativeRoadSurfaces(double[] lat, double[] lon, double radiusM);
 
-  /// TrackZero (Phase 30): the places of a category (1 water, 2 bicycle repair) within radiusM of the line, as
-  /// {String[] names, double[] lats, double[] lons, int[] kinds}; kinds 1 drinking water, 2 water point, 3 tap,
-  /// 4 spring, 5 repair station, 6 bicycle shop. Safe off the main thread.
+  /// TrackZero (Phase 30): the places of a category (1 water, 2 bicycle repair, 3 bivouac) within radiusM of the line,
+  /// as {String[] names, double[] lats, double[] lons, int[] kinds, String[] openingHours, int[] flags}; kinds
+  /// 1 drinking water, 2 water point, 3 tap, 4 spring, 5 repair station, 6 bicycle shop, 7 campsite, 8 hut, 9 shelter;
+  /// flags 1 fee, 2 no fee, 4 private. Safe off the main thread.
   @NonNull
   public static native Object[] nativePoisAlong(double[] lat, double[] lon, double radiusM, int category);
 

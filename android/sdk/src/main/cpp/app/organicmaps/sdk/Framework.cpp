@@ -1145,8 +1145,10 @@ jintArray ClosestRoadCodes(JNIEnv * env, jdoubleArray lats, jdoubleArray lons, d
 }
 
 // TrackZero (Phase 30): the places of a category near a line, as {String[] names, double[] lats, double[] lons,
-// int[] kinds}. Kinds: 1 drinking water, 2 water point, 3 water tap, 4 spring (category 1); 5 bicycle repair station,
-// 6 bicycle shop (category 2). Taps, springs and water points the map marks as not drinkable are left out. The line
+// int[] kinds, String[] openingHours, int[] flags}. Kinds: 1 drinking water, 2 water point, 3 water tap, 4 spring
+// (category 1); 5 bicycle repair station, 6 bicycle shop (category 2); 7 campsite, 8 hut (wilderness or alpine),
+// 9 shelter (category 3, Phase 31; not one that is a stop or platform: those are for waiting, not sleeping). Flags: 1 a fee, 2 no fee, 4 private access.
+// Taps, springs and water points the map marks as not drinkable are left out. The line
 // is read 2 km at a time (its box grown by radiusM), country maps only; point and area features, each once. Map data
 // only: safe off the main thread.
 jobjectArray PoisAlong(JNIEnv * env, jdoubleArray lats, jdoubleArray lons, double radiusM, jint category)
@@ -1162,8 +1164,21 @@ jobjectArray PoisAlong(JNIEnv * env, jdoubleArray lats, jdoubleArray lons, doubl
     m[c.GetTypeByPath({"natural", "spring"})] = 4;
     m[c.GetTypeByPath({"amenity", "bicycle_repair_station"})] = 5;
     m[c.GetTypeByPath({"shop", "bicycle"})] = 6;
+    m[c.GetTypeByPath({"tourism", "camp_site"})] = 7;
+    m[c.GetTypeByPath({"tourism", "wilderness_hut"})] = 8;
+    m[c.GetTypeByPath({"tourism", "alpine_hut"})] = 8;
+    m[c.GetTypeByPath({"amenity", "shelter"})] = 9;
     return m;
   }();
+  static uint32_t const kBusShelter = c.GetTypeByPath({"amenity", "shelter", "public_transport"});
+  // A shelter mapped on a stop or platform (often without its public_transport subtype) is for waiting.
+  static std::vector<uint32_t> const kTransport = {
+      c.GetTypeByPath({"highway", "bus_stop"}),          c.GetTypeByPath({"amenity", "bus_station"}),
+      c.GetTypeByPath({"railway", "halt"}),              c.GetTypeByPath({"railway", "platform"}),
+      c.GetTypeByPath({"public_transport", "platform"})};
+  static uint32_t const kFeeYes = c.GetTypeByPath({"fee", "yes"});
+  static uint32_t const kFeeNo = c.GetTypeByPath({"fee", "no"});
+  static uint32_t const kPrivate = c.GetTypeByPath({"hwtag", "private"});
   static std::vector<uint32_t> const kNotDrinkable = {
       c.GetTypeByPath({"man_made", "water_tap", "drinking_water_no"}),
       c.GetTypeByPath({"natural", "spring", "drinking_water_no"}),
@@ -1173,6 +1188,15 @@ jobjectArray PoisAlong(JNIEnv * env, jdoubleArray lats, jdoubleArray lons, doubl
     for (uint32_t const t : kNotDrinkable)
       if (types.Has(t))
         return 0;
+    if (types.Has(kBusShelter))
+      return 0;
+    for (uint32_t t : types)
+    {
+      if (ftype::GetLevel(t) > 2)
+        ftype::TruncValue(t, 2);
+      if (std::find(kTransport.begin(), kTransport.end(), t) != kTransport.end())
+        return 0;
+    }
     for (uint32_t t : types)
     {
       if (ftype::GetLevel(t) > 2)
@@ -1181,7 +1205,7 @@ jobjectArray PoisAlong(JNIEnv * env, jdoubleArray lats, jdoubleArray lons, doubl
       if (it == kKinds.end())
         continue;
       jint const kind = it->second;
-      if ((category == 1 && kind <= 4) || (category == 2 && kind >= 5 && kind <= 6))
+      if ((category == 1 && kind <= 4) || (category == 2 && kind >= 5 && kind <= 6) || (category == 3 && kind >= 7))
         return kind;
     }
     return 0;
@@ -1201,6 +1225,8 @@ jobjectArray PoisAlong(JNIEnv * env, jdoubleArray lats, jdoubleArray lons, doubl
   std::vector<std::string> names;
   std::vector<jdouble> outLat, outLon;
   std::vector<jint> kinds;
+  std::vector<std::string> hours;
+  std::vector<jint> flags;
   auto const & dataSource = frm()->GetDataSource();
   for (jsize first = 0; first < n;)
   {
@@ -1220,7 +1246,8 @@ jobjectArray PoisAlong(JNIEnv * env, jdoubleArray lats, jdoubleArray lons, doubl
       if (ft.GetGeomType() == feature::GeomType::Line ||
           ft.GetID().m_mwmId.GetInfo()->GetType() != MwmInfo::COUNTRY || seen.count(ft.GetID()) != 0)
         return;
-      jint const kind = kindOf(feature::TypesHolder(ft));
+      feature::TypesHolder const types(ft);
+      jint const kind = kindOf(types);
       if (kind == 0)
         return;
       seen.insert(ft.GetID());
@@ -1229,6 +1256,8 @@ jobjectArray PoisAlong(JNIEnv * env, jdoubleArray lats, jdoubleArray lons, doubl
       outLat.push_back(ll.m_lat);
       outLon.push_back(ll.m_lon);
       kinds.push_back(kind);
+      hours.emplace_back(ft.GetMetadata(feature::Metadata::FMD_OPEN_HOURS));
+      flags.push_back((types.Has(kFeeYes) ? 1 : 0) | (types.Has(kFeeNo) ? 2 : 0) | (types.Has(kPrivate) ? 4 : 0));
     }, box, scales::GetUpperScale());
     // The next piece starts where this one ended, so no stretch of the line is left out.
     first = last == n ? n : last - 1;
@@ -1241,11 +1270,16 @@ jobjectArray PoisAlong(JNIEnv * env, jdoubleArray lats, jdoubleArray lons, doubl
   env->SetDoubleArrayRegion(jlon, 0, found, outLon.data());
   jintArray jkinds = env->NewIntArray(found);
   env->SetIntArrayRegion(jkinds, 0, found, kinds.data());
-  jobjectArray out = env->NewObjectArray(4, env->FindClass("java/lang/Object"), nullptr);
+  jintArray jflags = env->NewIntArray(found);
+  env->SetIntArrayRegion(jflags, 0, found, flags.data());
+  jobjectArray out = env->NewObjectArray(6, env->FindClass("java/lang/Object"), nullptr);
   env->SetObjectArrayElement(out, 0, jni::TScopedLocalObjectArrayRef(env, jni::ToJavaStringArray(env, names)).get());
   env->SetObjectArrayElement(out, 1, jlat);
   env->SetObjectArrayElement(out, 2, jlon);
   env->SetObjectArrayElement(out, 3, jkinds);
+  env->SetObjectArrayElement(out, 4, jni::TScopedLocalObjectArrayRef(env, jni::ToJavaStringArray(env, hours)).get());
+  env->SetObjectArrayElement(out, 5, jflags);
+  env->DeleteLocalRef(jflags);
   env->DeleteLocalRef(jlat);
   env->DeleteLocalRef(jlon);
   env->DeleteLocalRef(jkinds);

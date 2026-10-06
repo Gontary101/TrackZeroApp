@@ -42,6 +42,8 @@ public class TzStopScreen extends TzScreen implements TzMap.TouchObserver
 {
   static final String ARG_NAME = "stopName";
   static final String ARG_KIND = "stopKind";
+  static final String ARG_HOURS = "stopHours";
+  static final String ARG_FLAGS = "stopFlags";
   static final String ARG_LAT = "stopLat";
   static final String ARG_LON = "stopLon";
   static final String ARG_ALONG = "stopAlong";
@@ -73,13 +75,20 @@ public class TzStopScreen extends TzScreen implements TzMap.TouchObserver
   public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState)
   {
     final Bundle a = requireArguments();
-    mStop = new Stop(a.getString(ARG_NAME, ""), a.getInt(ARG_KIND), a.getDouble(ARG_LAT), a.getDouble(ARG_LON));
+    mStop = new Stop(a.getString(ARG_NAME, ""), a.getInt(ARG_KIND), a.getDouble(ARG_LAT), a.getDouble(ARG_LON),
+                     a.getString(ARG_HOURS, ""), a.getInt(ARG_FLAGS));
     mAlong = a.getDouble(ARG_ALONG, Double.NaN);
     mOffRoute = a.getDouble(ARG_OFF_ROUTE, Double.NaN);
     mDistance = a.getDouble(ARG_DISTANCE, 0);
     mPins = view.findViewById(R.id.tz_stop_pins);
     view.findViewById(R.id.tz_stop_back).setOnClickListener(v -> back());
     ((TextView) view.findViewById(R.id.tz_stop_name)).setText(mStop.name);
+    // A place to sleep (Phase 31): its badge and limits above the numbers.
+    TzStopKinds.bindBadge(view.findViewById(R.id.tz_stop_badge), mStop);
+    final String note = TzStopKinds.bivouacNote(requireContext(), mStop);
+    final TextView restrictions = view.findViewById(R.id.tz_stop_restrictions);
+    restrictions.setText(note);
+    restrictions.setVisibility(note.isEmpty() ? View.GONE : View.VISIBLE);
     // Framed once the card has its height.
     view.findViewById(R.id.tz_stop_card).addOnLayoutChangeListener((v, l, t, r, b, ol, ot, or, ob) -> frame());
     super.onViewCreated(view, savedInstanceState);
@@ -284,6 +293,15 @@ public class TzStopScreen extends TzScreen implements TzMap.TouchObserver
       maxLat = Math.max(maxLat, route.latAt(mAlong));
       minLon = Math.min(minLon, route.lonAt(mAlong));
       maxLon = Math.max(maxLon, route.lonAt(mAlong));
+    }
+    else if (service != null && service.session() != null && service.session().lastFix() != null)
+    {
+      // A free ride: the dots start at the rider.
+      final TzFix fix = service.session().lastFix();
+      minLat = Math.min(minLat, fix.lat);
+      maxLat = Math.max(maxLat, fix.lat);
+      minLon = Math.min(minLon, fix.lon);
+      maxLon = Math.max(maxLon, fix.lon);
     }
     final double padLat = MIN_FRAME_M / Geo.M_PER_DEG;
     final double padLon = padLat / Math.cos(Math.toRadians(mStop.lat));

@@ -17,7 +17,10 @@ public final class TzPois
 {
   private TzPois() {}
 
-  /** The places of {@code category} ({@code Stops.WATER}, {@code Stops.REPAIR}) within {@code radiusM} of the line. */
+  /**
+   * The places of {@code category} ({@code Stops.WATER}, {@code Stops.REPAIR}, {@code Stops.BIVOUAC}) within
+   * {@code radiusM} of the line.
+   */
   public static void along(@NonNull Context c, @NonNull double[] lat, @NonNull double[] lon, double radiusM,
                            int category, @NonNull TzIo.Callback<List<Stop>> callback)
   {
@@ -60,9 +63,11 @@ public final class TzPois
     final double[] lats = (double[]) r[1];
     final double[] lons = (double[]) r[2];
     final int[] kinds = (int[]) r[3];
+    final String[] hours = (String[]) r[4];
+    final int[] flags = (int[]) r[5];
     final List<Stop> out = new ArrayList<>(kinds.length);
     for (int i = 0; i < kinds.length; i++)
-      out.add(new Stop(names[i], kinds[i], lats[i], lons[i]));
+      out.add(new Stop(names[i], kinds[i], lats[i], lons[i], hours[i], flags[i]));
     return out;
   }
 }

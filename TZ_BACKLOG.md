@@ -112,6 +112,9 @@ Once the app is complete and ready to showcase, create a **sleek, professional m
   screen to switch between free and guided; decide with the owner whether it is wanted.
 - **A stop leg ignored reads as off route.** A rider who keeps to the route past a stop's turn-off gets "off route"
   from the stop's leg until the stop is 500 m behind and is dropped (D55). Removing it in S1 is the quick way out.
+- **Bivouac: no access information offline.** The maps carry no access tag for campsites or huts (no metadata, no
+  type), so "private access overrides VERIFIED" can only work if a place carries `hwtag-private`; in practice it
+  never does (D56). Shelters on a bus stop or platform are left out; a few named after a stop may remain.
 
 ## Fixed and verified
 
@@ -128,6 +131,9 @@ _No bugs marked as fixed yet._
   under the island on every page. Field check: NEEDS OWNER N18 (handle part).
 - **FEAT-005** — Phase 20. Research in `TZ_RESEARCH_ROUTE_VISIBILITY.md`; 8dp line with a black casing (D45).
   Field check: NEEDS OWNER N20 (choose among four candidates).
+- **FEAT-010** — Phase 31. Bivouac places from the map: campsites and huts VERIFIED, shelters NOT CONFIRMED, with
+  hours and fee when the map has them; S1 chip and B2 chip (5 km, 20 km when none) (D56). Field check: NEEDS
+  OWNER N31.
 - **FEAT-007** — Phase 30. Water and bicycle repair along the route from the offline map (S1, from R6 and B5); add
   one to the ride (S2): routed at once, led there 2 km before it, back onto the route after (D55). Field check:
   NEEDS OWNER N30.

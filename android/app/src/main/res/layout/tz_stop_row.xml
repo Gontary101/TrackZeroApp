@@ -47,6 +47,14 @@
       android:ellipsize="end"
       android:maxLines="1" />
     <TextView
+      android:id="@+id/tz_stop_row_badge"
+      style="@style/TzText.Badge"
+      android:layout_width="wrap_content"
+      android:layout_height="@dimen/tz_badge_h"
+      android:layout_marginTop="@dimen/tz_space_8"
+      android:gravity="center_vertical"
+      android:visibility="gone" />
+    <TextView
       android:id="@+id/tz_stop_row_note"
       style="@style/TzText.ResultSubtitle"
       android:layout_width="wrap_content"

@@ -50,6 +50,12 @@
       android:layout_height="wrap_content"
       android:layout_marginStart="@dimen/tz_space_8"
       android:text="@string/tz_stops_repair" />
+    <app.trackzero.ui.TzCategoryChip
+      android:id="@+id/tz_stops_chip_bivouac"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_marginStart="@dimen/tz_space_8"
+      android:text="@string/tz_stops_bivouac" />
   </LinearLayout>
 
   <TextView

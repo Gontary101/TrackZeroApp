@@ -83,6 +83,14 @@
         android:layout_marginStart="@dimen/tz_space_8"
         android:text="@string/tz_search_chip_bike" />
 
+      <!-- Bivouac (Phase 31, board B2): places to sleep within 5 km (20 km when none), with their badges. -->
+      <app.trackzero.ui.TzCategoryChip
+        android:id="@+id/tz_search_chip_bivouac"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/tz_space_8"
+        android:text="@string/tz_search_chip_bivouac" />
+
       <app.trackzero.ui.TzCategoryChip
         android:id="@+id/tz_search_chip_cafe"
         android:layout_width="wrap_content"
@@ -90,12 +98,6 @@
         android:layout_marginStart="@dimen/tz_space_8"
         android:text="@string/tz_search_chip_cafe" />
 
-      <app.trackzero.ui.TzCategoryChip
-        android:id="@+id/tz_search_chip_shelter"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="@dimen/tz_space_8"
-        android:text="@string/tz_search_chip_shelter" />
     </LinearLayout>
   </HorizontalScrollView>
 

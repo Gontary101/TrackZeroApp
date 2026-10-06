@@ -174,4 +174,9 @@
   <dimen name="tz_pin_place_w">32dp</dimen>
   <dimen name="tz_pin_place_h">40dp</dimen>
   <dimen name="tz_stop_row_icon">44dp</dimen>
+  <!-- Phase 31 · Badge: 22 high, radius 11, icon 14 -->
+  <dimen name="tz_badge_h">22dp</dimen>
+  <dimen name="tz_badge_icon">14dp</dimen>
+  <dimen name="tz_badge_pad">8dp</dimen>
+  <dimen name="tz_badge_icon_gap">4dp</dimen>
 </resources>

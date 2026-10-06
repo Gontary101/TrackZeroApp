@@ -1,6 +1,7 @@
 package app.trackzero.screens;
 
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -71,10 +72,13 @@ public class TzStopsScreen extends TzScreen
     view.findViewById(R.id.tz_stops_back).setOnClickListener(v -> back());
     final TzCategoryChip water = view.findViewById(R.id.tz_stops_chip_water);
     final TzCategoryChip repair = view.findViewById(R.id.tz_stops_chip_repair);
+    final TzCategoryChip bivouac = view.findViewById(R.id.tz_stops_chip_bivouac);
     water.setIcon(R.drawable.ic_tz_water);
     repair.setIcon(R.drawable.ic_tz_wrench);
+    bivouac.setIcon(R.drawable.ic_tz_tent);
     water.setOnClickListener(v -> choose(Stops.WATER));
     repair.setOnClickListener(v -> choose(Stops.REPAIR));
+    bivouac.setOnClickListener(v -> choose(Stops.BIVOUAC));
     bindChips();
     if (mRouteId != null)
     {
@@ -158,6 +162,7 @@ public class TzStopsScreen extends TzScreen
     final View v = requireView();
     ((TzCategoryChip) v.findViewById(R.id.tz_stops_chip_water)).setChecked(mCategory == Stops.WATER);
     ((TzCategoryChip) v.findViewById(R.id.tz_stops_chip_repair)).setChecked(mCategory == Stops.REPAIR);
+    ((TzCategoryChip) v.findViewById(R.id.tz_stops_chip_bivouac)).setChecked(mCategory == Stops.BIVOUAC);
   }
 
   // ---- The search ----
@@ -238,7 +243,10 @@ public class TzStopsScreen extends TzScreen
   {
     final LinearLayout list = requireView().findViewById(R.id.tz_stops_rows);
     list.removeAllViews();
-    setNote(rows.isEmpty() ? getString(onRoute ? R.string.tz_stops_empty_route : R.string.tz_stops_empty_free) : "");
+    if (rows.isEmpty())
+      setNote(getString(onRoute ? R.string.tz_stops_empty_route : R.string.tz_stops_empty_free));
+    else
+      setNote(mCategory == Stops.BIVOUAC ? getString(R.string.tz_bivouac_footer) : "");
     final List<Stop> added = addedStops();
     final TzFormat.Units units = TzPrefs.units(requireContext());
     final Locale locale = Locale.getDefault();
@@ -258,17 +266,18 @@ public class TzStopsScreen extends TzScreen
           .setText(row.stop.name.isEmpty()
                        ? where
                        : getString(R.string.tz_stop_kind_where, getString(TzStopKinds.label(row.stop.kind)), where));
-      final TextView note = v.findViewById(R.id.tz_stop_row_note);
+      TzStopKinds.bindBadge(v.findViewById(R.id.tz_stop_row_badge), row.stop);
+      final List<String> lines = new ArrayList<>();
       if (isAdded)
-      {
-        note.setText(R.string.tz_stop_added);
-        note.setVisibility(View.VISIBLE);
-      }
-      else if (row.stop.kind == Stop.SPRING)
-      {
-        note.setText(R.string.tz_stop_spring_note);
-        note.setVisibility(View.VISIBLE);
-      }
+        lines.add(getString(R.string.tz_stop_added));
+      if (row.stop.kind == Stop.SPRING)
+        lines.add(getString(R.string.tz_stop_spring_note));
+      final String bivouac = TzStopKinds.bivouacNote(requireContext(), row.stop);
+      if (!bivouac.isEmpty())
+        lines.add(bivouac);
+      final TextView note = v.findViewById(R.id.tz_stop_row_note);
+      note.setText(TextUtils.join("\n", lines));
+      note.setVisibility(lines.isEmpty() ? View.GONE : View.VISIBLE);
       ((TzMetricView) v.findViewById(R.id.tz_stop_row_distance))
           .setValue(TzFormat.distance(row.distanceM, units, locale));
       v.setOnClickListener(x -> open(row));
@@ -307,6 +316,8 @@ public class TzStopsScreen extends TzScreen
     final Bundle args = new Bundle();
     args.putString(TzStopScreen.ARG_NAME, TzStopKinds.name(requireContext(), row.stop));
     args.putInt(TzStopScreen.ARG_KIND, row.stop.kind);
+    args.putString(TzStopScreen.ARG_HOURS, row.stop.hours);
+    args.putInt(TzStopScreen.ARG_FLAGS, row.stop.flags);
     args.putDouble(TzStopScreen.ARG_LAT, row.stop.lat);
     args.putDouble(TzStopScreen.ARG_LON, row.stop.lon);
     args.putDouble(TzStopScreen.ARG_ALONG, row.alongM);

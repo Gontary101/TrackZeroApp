@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Badge VERIFIED (Components v2): surface3, radius 11; never mint (not live data). -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+  <solid android:color="@color/tz_surface3" />
+  <corners android:radius="11dp" />
+</shape>
