@@ -764,3 +764,38 @@ with the stock weights, so near region borders the profile applies a little less
   bookmark. Save: the star, and B3 lists it as "Planned · Gravel". Export GPX › share to TrackZero: re-imported at the
   same 1.9 km and 31 m. A plan previewed and ridden without saving: R8 shows SAVE ROUTE. Back with points: "Discard
   this plan?". The test routes were deleted afterwards.
+
+## D54 · Proposing loops (Phase 29, FEAT-004)
+- **Shape.** A loop is asked as a triangle start → A → B → start: A and B 60° apart around a direction, at a radius
+  from the distance (perimeter about 3r in a straight line, roads about 1.3× longer). Eight directions, 45° apart.
+  With a point to pass through: four candidates start → via → C, with C beside the way to the via point. Triangles
+  rather than out-and-back points: the router has no "loop" mode, and two corners make the way back a different
+  road in almost every network.
+- **Budget.** Every candidate is routed once (8 requests). A corner with no road near it (a lake, a forest) is moved
+  15 % closer once; a loop more than 25 % off the distance is resized once. At most 4 such retries. All requests go
+  through the one `TzRouter`, one at a time, and each answer starts the next, so a cancel stops everything at once.
+  On the emulator 30 km takes about 5 s per request, about 45 s in all.
+- **Score and choice.** A loop is kept within ±30 % of the distance and when at most 25 % of it rides the same road
+  again. Retrace is measured by sampling every 25 m and finding a point within 25 m at least 300 m further along.
+  Score (lower is better): distance error share + 0.5 × climb error share (target 0 / 5 / 13 / 25 m per km; Any
+  ignores climb) + 2 × retrace share. The best three at least 90° apart are shown. TRY OTHER LOOPS turns all directions by 22.5°.
+- **Names.** "{direction} · {town}": the direction the candidate was aimed (between its two corners), and the nearest locality to
+  its farthest point (`Framework.nativeGetPlaceName`, the engine's `CityFinder`, main thread, cheap). The board's
+  "Volvic side" / "Chaîne des Puys" are free text; a town name is what the offline data gives reliably. The saved
+  route is "Loop {direction} · {town} · {distance}".
+- **Only on request.** Nothing runs before PROPOSE LOOPS. Leaving L1 or L2, choosing a loop or tapping the button
+  again cancels the planner and the router request in flight; leaving the screen also releases the router's graphs.
+  A chosen loop is the temp route of D53: preview, save, export and ride come from there.
+- **Picking points.** The screen is opaque (the map is not drawn behind it). While a point is picked, its panels hide,
+  the map is drawn and framed on the start (zoom 14 / 13 / 12 / 11 for ≤10 / 20 / 40 / more km), and a tap
+  (`TzMapTap`) sets the point. The picker's CANCEL becomes REMOVE when a point to pass through is already set.
+- **Base asserts.** Loop routes reached three debug-only `ASSERT`s in the turn post-processing
+  (`CorrectCandidatesSegmentByOutgoing` twice, `FixupCarTurns`'s roundabout check). They fired when a path through a
+  waypoint turned back on its own segment or stopped inside a roundabout. Release builds compile them out and the
+  code after them already recovers, so they are now `LOG(LWARNING)`, marked TrackZero. Real `CHECK`s are untouched:
+  a global assert handler cannot tell the two apart.
+- **Checked on the emulator.** Clermont-Ferrand, 30 km Rolling Gravel: North · Sayat 29.9 km 359 m 93 %, South-west ·
+  Laschamps 34.9 km 671 m 99 %, South-east · La Roche-Blanche 35.4 km 727 m 94 %, in 47 s. Through Royat: 2 loops,
+  68 s. Cancel mid-search: the button resets and no result follows. A loop opens in B5 as "Planned · Gravel". The
+  temp route was not saved, so the library still holds the three routes.
+

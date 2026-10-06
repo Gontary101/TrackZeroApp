@@ -94,6 +94,15 @@ public class TzRouteCard extends LinearLayout
     setFavorite(favorite);
   }
 
+  /** A proposed loop (L2, Phase 29): a chevron instead of the star; the card opens it. */
+  public void showChevron()
+  {
+    mStar.setImageResource(R.drawable.ic_tz_chev);
+    ImageViewCompat.setImageTintList(mStar, ContextCompat.getColorStateList(getContext(), R.color.tz_text2));
+    mStar.setClickable(false);
+    mStar.setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_NO);
+  }
+
   /** Rides have no favorites: their cards hide the star. */
   public void setStarVisible(boolean visible)
   {

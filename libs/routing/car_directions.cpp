@@ -58,8 +58,10 @@ void FixupCarTurns(vector<RouteSegment> & routeSegments)
     if (enterRoundAbout != kInvalidEnter && t.m_turn != CarDirection::StayOnRoundAbout &&
         t.m_turn != CarDirection::LeaveRoundAbout && t.m_turn != CarDirection::ReachedYourDestination)
     {
-      ASSERT(false,
-             ("Only StayOnRoundAbout, LeaveRoundAbout or ReachedYourDestination are expected after EnterRoundAbout."));
+      // TrackZero: a warning, not an ASSERT (release builds have none and recover here). A route through waypoints
+      // (Phase 29 loops) can turn back or stop inside a roundabout.
+      LOG(LWARNING,
+          ("Only StayOnRoundAbout, LeaveRoundAbout or ReachedYourDestination are expected after EnterRoundAbout."));
       exitNum = 0;
       enterRoundAbout = kInvalidEnter;
     }

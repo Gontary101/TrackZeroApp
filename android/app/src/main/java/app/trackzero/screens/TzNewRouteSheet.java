@@ -23,7 +23,7 @@ import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 
 /**
  * N1 · New route sheet (Phase 28), from B3's NEW and B4's NEW ROUTE: import a GPX file, plan on the map, or propose a
- * loop (shown once Phase 29 exists). A tap closes the sheet and tells the screen that opened it.
+ * loop (Phase 29). A tap closes the sheet and tells the screen that opened it.
  */
 public class TzNewRouteSheet extends BottomSheetDialogFragment
 {
@@ -35,6 +35,8 @@ public class TzNewRouteSheet extends BottomSheetDialogFragment
     void onImportChosen();
 
     void onPlanChosen();
+
+    void onLoopChosen();
   }
 
   public static <T extends Fragment & Listener> void show(@NonNull T parent)
@@ -79,6 +81,10 @@ public class TzNewRouteSheet extends BottomSheetDialogFragment
     addRow(rows, R.drawable.ic_tz_pin, R.string.tz_new_plan, R.string.tz_new_plan_desc, () -> {
       if (getParentFragment() instanceof Listener l)
         l.onPlanChosen();
+    });
+    addRow(rows, R.drawable.ic_tz_loop, R.string.tz_new_loop, R.string.tz_new_loop_desc, () -> {
+      if (getParentFragment() instanceof Listener l)
+        l.onLoopChosen();
     });
     final int bottom = view.getPaddingBottom();
     ViewCompat.setOnApplyWindowInsetsListener(view, (v, insets) -> {

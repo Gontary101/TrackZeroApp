@@ -353,4 +353,52 @@
   <string name="tz_plan_cd_destination">Destination. Tap to remove, hold to move</string>
   <string name="tz_plan_cd_reorder">Drag to reorder</string>
   <string name="tz_plan_cd_remove">Remove</string>
+
+  <!-- Propose a loop (Phase 29, boards L1, L2) -->
+  <string name="tz_loop_title">LOOP</string>
+  <string name="tz_loop_start">Start</string>
+  <string name="tz_loop_my_location">My location</string>
+  <string name="tz_loop_picked">Picked point</string>
+  <string name="tz_loop_distance_km">Distance · km</string>
+  <string name="tz_loop_distance_mi">Distance · mi</string>
+  <string name="tz_loop_distance_caption">Loops within about a quarter of this are fine.</string>
+  <string name="tz_loop_climbing">Climbing</string>
+  <string name="tz_loop_any">Any</string>
+  <string name="tz_loop_flat">Flat</string>
+  <string name="tz_loop_rolling">Rolling</string>
+  <string name="tz_loop_hilly">Hilly</string>
+  <string name="tz_loop_climb_any">Any: climbing does not count in the choice.</string>
+  <string name="tz_loop_climb_caption">%1$s: about %2$s up and down over %3$s.</string>
+  <string name="tz_loop_profile">Profile</string>
+  <string name="tz_loop_via">Pass through</string>
+  <string name="tz_loop_optional">Optional</string>
+  <string name="tz_loop_propose">Propose loops</string>
+  <string name="tz_loop_looking">Looking… %1$d/%2$d</string>
+  <string name="tz_loop_pick_start">Tap the map where the loop starts.</string>
+  <string name="tz_loop_pick_via">Tap the map at a place to pass through.</string>
+  <string name="tz_loop_no_gps">Waiting for your position…</string>
+  <plurals name="tz_loop_found">
+    <item quantity="one">%d LOOP</item>
+    <item quantity="other">%d LOOPS</item>
+  </plurals>
+  <string name="tz_loop_none_title">NO LOOP</string>
+  <string name="tz_loop_request">%1$s · %2$s · about %3$s · %4$s</string>
+  <string name="tz_loop_from_here">From my location</string>
+  <string name="tz_loop_from_point">From the picked point</string>
+  <string name="tz_loop_new_roads">%d %% new roads</string>
+  <string name="tz_loop_estimates">Distance and climbing are estimates from the offline map. Tap a loop to preview it, then save it or ride it.</string>
+  <string name="tz_loop_none">No loop this size from here. Try another distance or profile.</string>
+  <string name="tz_loop_other">Try other loops</string>
+  <string name="tz_loop_card_name">%1$s · %2$s</string>
+  <string name="tz_loop_name">Loop %1$s · %2$s</string>
+  <string-array name="tz_loop_directions">
+    <item>North</item>
+    <item>North-east</item>
+    <item>East</item>
+    <item>South-east</item>
+    <item>South</item>
+    <item>South-west</item>
+    <item>West</item>
+    <item>North-west</item>
+  </string-array>
 </resources>

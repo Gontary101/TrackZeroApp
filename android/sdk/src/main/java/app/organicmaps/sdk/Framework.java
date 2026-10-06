@@ -155,6 +155,10 @@ public class Framework
   @NonNull
   public static native int[] nativeRoadSurfaces(double[] lat, double[] lon, double radiusM);
 
+  /// TrackZero (Phase 29): the town or village nearest the point, "" when none. Main thread.
+  @NonNull
+  public static native String nativeGetPlaceName(double lat, double lon);
+
   /// TrackZero (Phase 26): per point, 1 if the closest way within radiusM is a path the map grades difficult or expert,
   /// 0 if not, -1 without a map. Safe off the main thread.
   @NonNull

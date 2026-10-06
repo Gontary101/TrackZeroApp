@@ -8,6 +8,7 @@ import android.view.Gravity;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import androidx.annotation.DrawableRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
@@ -20,6 +21,8 @@ public class TzListRow extends LinearLayout
   /** The detail keeps at least this share of the row next to a long title. */
   private static final float MIN_DETAIL_SHARE = 0.35f;
 
+  @NonNull
+  private final ImageView mIcon;
   @NonNull
   private final TextView mTitle;
   @NonNull
@@ -39,6 +42,7 @@ public class TzListRow extends LinearLayout
 
     final TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.TzListRow);
     final ImageView icon = new ImageView(context);
+    mIcon = icon;
     icon.setImageResource(a.getResourceId(R.styleable.TzListRow_tzIcon, 0));
     ImageViewCompat.setImageTintList(icon, ContextCompat.getColorStateList(context, R.color.tz_text2));
     icon.setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_NO);
@@ -88,6 +92,11 @@ public class TzListRow extends LinearLayout
       mDetail.setMaxWidth(Math.max(width - title, (int) (width * MIN_DETAIL_SHARE)));
     }
     super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+  }
+
+  public void setIcon(@DrawableRes int icon)
+  {
+    mIcon.setImageResource(icon);
   }
 
   public void setDetail(@Nullable CharSequence detail)

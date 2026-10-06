@@ -86,6 +86,7 @@
 
 #include "drape/accessibility_data.hpp"
 
+#include "search/city_finder.hpp"  // TrackZero
 #include "search/mwm_context.hpp"
 #include "search/reverse_geocoder.hpp"
 
@@ -1246,6 +1247,14 @@ JNIEXPORT jstring JNICALL Java_app_organicmaps_sdk_Framework_nativeGetSummitName
     }
   }, mercator::RectByCenterXYAndSizeInMeters(center, 2 * radiusM), scales::GetUpperScale(), mwmId);
   return jni::ToJavaString(env, best);
+}
+
+// TrackZero (Phase 29): the town or village nearest the point (a loop's far side), "" when none. Main thread.
+JNIEXPORT jstring JNICALL Java_app_organicmaps_sdk_Framework_nativeGetPlaceName(JNIEnv * env, jclass, jdouble lat,
+                                                                               jdouble lon)
+{
+  static search::CityFinder finder(frm()->GetDataSource());
+  return jni::ToJavaString(env, finder.GetCityReadableName(mercator::FromLatLon(lat, lon)));
 }
 
 JNIEXPORT void JNICALL Java_app_organicmaps_sdk_Framework_nativeClearApiPoints(JNIEnv * env, jclass clazz)

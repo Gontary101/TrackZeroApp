@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- L1 · Loop setup and L2 · Loop results (Phase 29); a point picker over the map in between. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:app="http://schemas.android.com/apk/res-auto"
+  android:id="@+id/tz_loop_root"
+  android:layout_width="match_parent"
+  android:layout_height="match_parent"
+  android:background="@color/tz_bg">
+
+  <!-- L1 -->
+  <LinearLayout
+    android:id="@+id/tz_loop_setup"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:paddingStart="@dimen/tz_gutter"
+    android:paddingEnd="@dimen/tz_gutter">
+    <LinearLayout
+      android:id="@+id/tz_loop_header"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:gravity="center_vertical"
+      android:orientation="horizontal">
+      <ImageButton
+        android:id="@+id/tz_loop_back"
+        android:layout_width="@dimen/tz_touch_min_browse"
+        android:layout_height="@dimen/tz_touch_min_browse"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/tz_cd_back"
+        android:src="@drawable/ic_tz_back"
+        app:tint="@color/tz_text1" />
+      <TextView
+        style="@style/TzText.DotXL"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/tz_space_12"
+        android:text="@string/tz_loop_title" />
+    </LinearLayout>
+    <LinearLayout style="@style/TzListGroup" android:layout_marginTop="@dimen/tz_space_20">
+      <app.trackzero.ui.TzListRow android:id="@+id/tz_loop_start" style="@style/TzListRow"
+        app:tzIcon="@drawable/ic_tz_locate" app:tzTitle="@string/tz_loop_start" />
+    </LinearLayout>
+    <TextView
+      android:id="@+id/tz_loop_distance_label"
+      style="@style/TzText.Label"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_marginStart="@dimen/tz_space_4"
+      android:layout_marginTop="@dimen/tz_space_24"
+      android:text="@string/tz_loop_distance_km" />
+    <LinearLayout
+      android:id="@+id/tz_loop_distances"
+      android:layout_width="match_parent"
+      android:layout_height="@dimen/tz_loop_chip_h"
+      android:layout_marginTop="@dimen/tz_space_12"
+      android:orientation="horizontal" />
+    <TextView
+      android:id="@+id/tz_loop_distance_caption"
+      style="@style/TzText.Caption"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_marginStart="@dimen/tz_space_4"
+      android:layout_marginTop="@dimen/tz_space_12"
+      android:text="@string/tz_loop_distance_caption" />
+    <TextView
+      style="@style/TzText.Label"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_marginStart="@dimen/tz_space_4"
+      android:layout_marginTop="@dimen/tz_space_24"
+      android:text="@string/tz_loop_climbing" />
+    <app.trackzero.ui.TzSegmented
+      android:id="@+id/tz_loop_climb"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_marginTop="@dimen/tz_space_12" />
+    <TextView
+      android:id="@+id/tz_loop_climb_caption"
+      style="@style/TzText.Caption"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_marginStart="@dimen/tz_space_4"
+      android:layout_marginTop="@dimen/tz_space_12" />
+    <LinearLayout style="@style/TzListGroup" android:layout_marginTop="@dimen/tz_space_24">
+      <app.trackzero.ui.TzListRow android:id="@+id/tz_loop_profile" style="@style/TzListRow"
+        app:tzIcon="@drawable/ic_tz_road" app:tzTitle="@string/tz_loop_profile" />
+      <app.trackzero.ui.TzListRow android:id="@+id/tz_loop_via" style="@style/TzListRow"
+        app:tzIcon="@drawable/ic_tz_plus" app:tzTitle="@string/tz_loop_via" />
+    </LinearLayout>
+    <Space
+      android:layout_width="match_parent"
+      android:layout_height="0dp"
+      android:layout_weight="1" />
+    <com.google.android.material.button.MaterialButton
+      android:id="@+id/tz_loop_propose"
+      style="@style/TzButton.Primary"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:text="@string/tz_loop_propose"
+      app:icon="@drawable/ic_tz_loop" />
+  </LinearLayout>
+
+  <!-- L2 -->
+  <LinearLayout
+    android:id="@+id/tz_loop_results"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:paddingStart="@dimen/tz_gutter"
+    android:paddingEnd="@dimen/tz_gutter"
+    android:visibility="gone">
+    <LinearLayout
+      android:id="@+id/tz_loop_results_header"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:gravity="center_vertical"
+      android:orientation="horizontal">
+      <ImageButton
+        android:id="@+id/tz_loop_results_back"
+        android:layout_width="@dimen/tz_touch_min_browse"
+        android:layout_height="@dimen/tz_touch_min_browse"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/tz_cd_back"
+        android:src="@drawable/ic_tz_back"
+        app:tint="@color/tz_text1" />
+      <TextView
+        android:id="@+id/tz_loop_results_title"
+        style="@style/TzText.DotXL"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/tz_space_12" />
+    </LinearLayout>
+    <TextView
+      android:id="@+id/tz_loop_request"
+      style="@style/TzText.Caption"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_marginStart="@dimen/tz_space_4"
+      android:layout_marginTop="@dimen/tz_space_16" />
+    <LinearLayout
+      android:id="@+id/tz_loop_cards"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:orientation="vertical" />
+    <TextView
+      android:id="@+id/tz_loop_note"
+      style="@style/TzText.Caption"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_marginStart="@dimen/tz_space_4"
+      android:layout_marginTop="@dimen/tz_space_20"
+      android:text="@string/tz_loop_estimates" />
+    <Space
+      android:layout_width="match_parent"
+      android:layout_height="0dp"
+      android:layout_weight="1" />
+    <com.google.android.material.button.MaterialButton
+      android:id="@+id/tz_loop_other"
+      style="@style/TzButton.Secondary"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:text="@string/tz_loop_other"
+      app:icon="@drawable/ic_tz_loop" />
+  </LinearLayout>
+
+  <!-- Picking a point on the map (the start, a point to pass through). -->
+  <LinearLayout
+    android:id="@+id/tz_loop_picker"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_gravity="top"
+    android:layout_marginStart="@dimen/tz_gutter"
+    android:layout_marginEnd="@dimen/tz_gutter"
+    android:background="@drawable/tz_bg_surface2_r28"
+    android:elevation="@dimen/tz_elev2"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:padding="@dimen/tz_space_16"
+    android:visibility="gone">
+    <TextView
+      android:id="@+id/tz_loop_picker_text"
+      style="@style/TzText.RowTitle"
+      android:layout_width="0dp"
+      android:layout_height="wrap_content"
+      android:layout_weight="1" />
+    <TextView
+      android:id="@+id/tz_loop_picker_cancel"
+      style="@style/TzText.Label"
+      android:layout_width="wrap_content"
+      android:layout_height="@dimen/tz_plan_row_h"
+      android:gravity="center"
+      android:paddingStart="@dimen/tz_space_12"
+      android:text="@string/tz_cancel" />
+  </LinearLayout>
+</FrameLayout>

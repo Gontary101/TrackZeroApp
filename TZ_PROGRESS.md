@@ -55,6 +55,13 @@ Collected from the v2 phases; each says what to do, what to look at and what cou
   ride a little; end the ride and tap SAVE ROUTE. The route is in ROUTES as "Planned · Gravel". Long-press it › Export
   GPX. Also: a long-press on the map (B1) opens the planner with that point. Pass: all of these feel right with a
   finger on a real screen.
+- **N29 · Propose a loop (FEAT-004, Phase 29).** ROUTES › NEW › Propose a loop. With your position: 30 km, Rolling,
+  Gravel, PROPOSE LOOPS. Note how long "LOOKING… n/8" takes (the emulator: about 45 s). Look at the three loops: do
+  they go out and come back by different roads, are they rideable on a gravel bike, are the names (direction · town)
+  sensible? Tap one: the preview, then save it (bookmark) or START RIDE. Also: Pass through › tap a place on the map ›
+  PROPOSE LOOPS (every loop goes through it); TRY OTHER LOOPS; tap the button while it is looking (it stops); a walk
+  at 10 km. Pass: at least two loops you would actually ride, found in under a minute, and nothing keeps working
+  (battery) once you leave the screen.
 - **N18 · Immersive ride (FEAT-001, Phase 18).** On a ride, no status bar or navigation bar on all three pages and with
   the controls open. Swipe from the top or bottom edge: the bars appear briefly over the ride and nothing moves. Tap the
   handle 10 times: it opens the controls every time. A quick upward swipe from just above the handle opens them too.
@@ -592,3 +599,26 @@ it led to).
   instead. 240 tests pass.
 - Smoke test: all steps pass, no crashes. The emulator was set back to Road.
 
+## Phase 29 — Propose a loop (FEAT-004)
+
+- `routes/LoopPlanner` (pure; the router is an interface): eight candidate triangles start → A → B → start in eight
+  directions (or four start → via → C → start with a point to pass through). Each candidate is routed once, moved
+  closer once if a point has no road, and resized once if more than 25 % off. Candidates are scored on size, climb and
+  retraced share; at most 25 % retraced is kept. Three are picked at least 90° apart. Budget: 8 tries + 4 retries.
+- `screens/TzLoopScreen` (navigator screen LOOP, opaque): L1 (start, distance chips 20–80 km or 5–30 on foot,
+  climbing Any / Flat / Rolling / Hilly with its target, profile sheet, pass through) and L2 (up to three cards
+  "{direction} · {town}", "{n} % new roads", the request line, TRY OTHER LOOPS turned 22.5°). A point is picked on the
+  map with the screen's panels hidden and the map drawn, framed on the start for the loop's size. PROPOSE LOOPS reads
+  "LOOKING… n/8"; a tap cancels. A card becomes the temp route (Phase 28) and opens in the preview. Leaving the
+  screen cancels the search and releases the router.
+- `Framework.nativeGetPlaceName` (the engine's `CityFinder`) names the loop's far side; `TzListRow.setIcon`;
+  `TzRouteCard.showChevron`; N1 gets "Propose a loop".
+- Three debug-only `ASSERT`s in the base turn code (`turns_generator.cpp` ×2, `car_directions.cpp`) fired on loop
+  routes. A path through waypoints can turn back on its own segment or end inside a roundabout. Release builds skip
+  them and already recover, so they are now warnings (D54).
+- Checked on the emulator (D54): Clermont, 30 km Rolling Gravel: 3 loops in 47 s (29.9 / 34.9 / 35.4 km, 93–99 % new
+  roads); through Royat: 2 loops in 68 s; cancel; preview of a loop (`shots/L1.png`, `L2.png`, `L2_via.png`,
+  `L_pick.png`, `B5_loop.png`).
+- Tests: `LoopPlannerTest` (8: three closed loops within the size, three directions, out-and-back rejected, retrace
+  of an out-and-back ≈ 0.5, the try budget, cancel, the via point, direction names). 248 tests pass.
+- Smoke test: all steps pass, no crashes. The emulator was set back to Road.

@@ -164,4 +164,8 @@
 
   <!-- Planner rows (P1 start row, P2 PlanPoint rows) -->
   <dimen name="tz_plan_row_h">48dp</dimen>
+
+  <!-- L1 distance chips (Phase 29) -->
+  <dimen name="tz_loop_chip_h">56dp</dimen>
+  <dimen name="tz_loop_chip_gap">8dp</dimen>
 </resources>

@@ -163,6 +163,12 @@ public class TzRoutesScreen extends TzScreen implements TzNewRouteSheet.Listener
     TzNavigator.show(TzNavigator.Screen.PLAN, null);
   }
 
+  @Override
+  public void onLoopChosen()
+  {
+    TzNavigator.show(TzNavigator.Screen.LOOP, null);
+  }
+
   private void pickGpx()
   {
     if (mPicker != null)
