@@ -18,6 +18,11 @@ public:
   SpeedKMpH const & GetOffroadSpeed() const override;
 
   static PedestrianModel const & AllLimitsInstance();
+
+private:
+  // TrackZero (Phase 26): built for the Hike profile; the map's expert path type.
+  bool m_hike = false;
+  uint32_t m_expertPathType = 0;
 };
 
 class PedestrianModelFactory : public VehicleModelFactory

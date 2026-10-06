@@ -1163,6 +1163,18 @@ JNIEXPORT jintArray JNICALL Java_app_organicmaps_sdk_Framework_nativeRoadSurface
   });
 }
 
+// TrackZero (Phase 26): whether the closest way within radiusM is a demanding trail per the map: -1 no map, 0 not (or
+// no way), 1 a path the map grades difficult or expert (from sac_scale and trail_visibility).
+JNIEXPORT jintArray JNICALL Java_app_organicmaps_sdk_Framework_nativeRoadDifficulty(JNIEnv * env, jclass,
+                                                                                   jdoubleArray lats, jdoubleArray lons,
+                                                                                   jdouble radiusM)
+{
+  static uint32_t const kDifficult = classif().GetTypeByPath({"highway", "path", "difficult"});
+  static uint32_t const kExpert = classif().GetTypeByPath({"highway", "path", "expert"});
+  return ClosestRoadCodes(env, lats, lons, radiusM, [](feature::TypesHolder const & types)
+  { return types.Has(kDifficult) || types.Has(kExpert) ? 1 : 0; });
+}
+
 // TrackZero (Phase 24, the profile comparison): the class of the closest road within radiusM of each point: -1 no
 // map, 0 no road, 1 motorway or trunk, 2 primary, 3 secondary, 4 tertiary, 5 minor road (unclassified, residential,
 // living street, service, road), 6 track, 7 path, cycleway, bridleway, footway, pedestrian street or steps.

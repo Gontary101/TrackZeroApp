@@ -43,6 +43,13 @@ public final class TzRoads
     return Framework.nativeRoadSurfaces(lat, lon, SURFACE_RADIUS_M);
   }
 
+  /** Per point, 1 on a demanding trail per the map (difficult or expert path), 0 not, -1 no map. Blocking, ready. */
+  @NonNull
+  public static int[] difficulty(@NonNull double[] lat, @NonNull double[] lon)
+  {
+    return Framework.nativeRoadDifficulty(lat, lon, SURFACE_RADIUS_M);
+  }
+
   /**
    * Per point, the class of the road there (the profile comparison, Phase 24): -1 no map, 0 no road, 1 motorway or
    * trunk, 2 primary, 3 secondary, 4 tertiary, 5 minor road, 6 track, 7 path and the like. Blocking, once ready.

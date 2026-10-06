@@ -48,6 +48,7 @@ public enum Profile
     on.add(ROAD);
     on.add(GRAVEL);
     on.add(WALK);
+    on.add(HIKE);
     return Collections.unmodifiableList(on);
   }
 }

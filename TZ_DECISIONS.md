@@ -675,3 +675,32 @@ with the stock weights, so near region borders the profile applies a little less
   road), the router can start the way back on a road over 60 m away. The leg's card then reads "Head to start" with
   an arrow towards the leg's first point. That is the leg engine's behaviour since Phase 15, and the wording ("start")
   fits a leg back onto the track badly. It is in the backlog for Phase 38, not changed here.
+
+## D51 · Hiking profile (Phase 26, FEAT-013)
+- **Model.** `PedestrianModel` is built with Hike's factors when the router is made for it: trunk (+link) 0.3,
+  primary 0.4, secondary 0.5, tertiary 0.7, residential / unclassified / service / living street 0.8, paths, tracks,
+  footways, bridleways and steps 1.0. Surfaces are stock (unpaved_bad 0.8). Applied on top of the country model's
+  own speeds, like Phase 24.
+- **Demanding trails.** The map has them: `highway|path|difficult` and `highway|path|expert`, made by the generator from
+  `sac_scale` and `trail_visibility` (`data/mapcss-mapping.csv`; alpine and harder grades are `expert`). The base model
+  sees both as paths: it truncates types to two levels before it reads speeds and surface factors, so the factor
+  could not go in the surface list. `PedestrianModel::GetSpeed` halves the weight of `path|expert` on a hike, so it is
+  used only when there is no reasonable alternative. `difficult` keeps its weight. Both count as demanding for the
+  preview's line. It is read along the path with `Framework.nativeRoadDifficulty`, the Phase 23 sampler. In the
+  comparison, demanding sections were at most 1 % of a path.
+- **Times.** A hike: `t = max(th, tv) + min(th, tv) / 2`, `th = km / 4`, `tv = up / 300 + down / 500` hours
+  (`FootTime.hikeSeconds`). D+ and D− come from `RouteStats.ascentDescent`: the gain's smoothing and hysteresis, and
+  the descent is the gain read backwards. Without altitudes the time is from distance only, both show `—`, and the
+  caption "No elevation data: time is approximate" appears.
+- **Preview.** A Hike path shows DISTANCE, CLIMB, DESCENT; the label line reads "Hike · about 1:04". The demanding line
+  sits under the surface legend when it applies. It is shown for paths to a place routed with Hike, not for a GPX
+  route previewed with Hike selected: that route is followed as drawn, whatever the profile.
+- **Copy rule** ("never safe, easy or accessible"): no string has "safe" or "accessible". The one "easy" is Gravel's
+  description, "Quiet roads, gravel, easy tracks", taken word for word from board N2. design.html is law, and it
+  describes how rough the tracks are, not a safety claim about trails. Kept. If the rule is meant to cover it too, the
+  board text should change (owner's call, noted in N26).
+- **Check** (About › Compare profiles, two trips added). Orcines → Puy de Dôme summit: Hike and Walk climb by trail,
+  6.9 km, 626 m up, 65 % path, 18 % rough; Road and Gravel find no way, which is BUG-001's case (Phase 27). Place de
+  Jaude → Gare de Clermont: Walk 1.8 km on streets, pedestrian streets and footways, no track. Hike and Walk differ
+  where trails exist, for example Royat – Col de Ceyssat (track 52 % against 35 %), Clermont – Gergovie (secondary
+  0 % against 42 %), Issoire – Saint-Nectaire (track 71 % against 34 %).

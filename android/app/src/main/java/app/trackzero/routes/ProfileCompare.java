@@ -36,6 +36,10 @@ public final class ProfileCompare
       // One-way westwards with cycling both ways (oneway:bicycle=no, OSM way 4080952), 300 m: against the one-way,
       // the path should be the street itself, not a detour (plan v2 24.5).
       {"Contraflow: Rue Rameau eastwards", 45.7755983, 3.0752260, 45.7758832, 3.0790987},
+      // Phase 26: a hike should take a trail up the Puy de Dome (the Chemin des Muletiers or another), a walk between
+      // two addresses in town should stay on streets.
+      {"Orcines - Puy de Dome summit", 45.7833, 3.0128, 45.7722, 2.9643},
+      {"Place de Jaude - Gare de Clermont", 45.7772, 3.0820, 45.7786, 3.1006},
   };
   /** The profiles switched on, in the sheet's order. */
   private static final Profile[] PROFILES = Profile.available().toArray(new Profile[0]);
@@ -49,7 +53,7 @@ public final class ProfileCompare
   public static void run(@NonNull Context context, @NonNull Runnable done)
   {
     log("trip | profile | km | D+ m | paved/poor/gravel/rough/none % | none/trunk/primary/secondary/tertiary/minor/"
-        + "track/path %");
+        + "track/path % | demanding %");
     next(context.getApplicationContext(), 0, done);
   }
 
@@ -95,6 +99,10 @@ public final class ProfileCompare
       lon[i] = line.lonAt(at);
     }
     final int[] classes = TzRoads.classes(lat, lon);
+    int demanding = 0;
+    for (int d : TzRoads.difficulty(lat, lon))
+      if (d == 1)
+        demanding++;
     final int[] count = new int[CLASSES.length];
     for (int c : classes)
       count[Math.max(0, c)]++;
@@ -107,6 +115,7 @@ public final class ProfileCompare
     sb.append(" |");
     for (int c : count)
       sb.append(' ').append(Math.round(100.0 * c / n));
+    sb.append(" | ").append(Math.round(100.0 * demanding / n));
     return sb.toString();
   }
 

@@ -1,4 +1,5 @@
 #include "routing_common/pedestrian_model.hpp"
+#include "routing_common/tz_profile.hpp"
 
 #include "indexer/classificator.hpp"
 
@@ -141,6 +142,33 @@ VehicleModel::SurfaceInitList const kPedestrianSurface = {
     // no dedicated sidewalk, doesn't mean that foot is not allowed, just lower weight
     {{"hwtag", "nosidewalk"}, {0.8, 0.8}},
 };
+
+// TrackZero (Phase 26): Hike takes trails first. Applied on top of a country model's own speeds. The base model keeps
+// a reference to its factors: a table for the life of the process.
+HighwayBasedFactors const & TzProfileFactors(TzProfile profile)
+{
+  static HighwayBasedFactors const kHike = []
+  {
+    auto f = kDefaultFactors;
+    auto const set = [&f](std::initializer_list<HighwayType> types, double factor)
+    {
+      for (auto t : types)
+        f.at(t) = InOutCityFactor(factor);
+    };
+    set({HighwayType::HighwayTrunk, HighwayType::HighwayTrunkLink}, 0.3);
+    set({HighwayType::HighwayPrimary, HighwayType::HighwayPrimaryLink}, 0.4);
+    set({HighwayType::HighwaySecondary, HighwayType::HighwaySecondaryLink}, 0.5);
+    set({HighwayType::HighwayTertiary, HighwayType::HighwayTertiaryLink}, 0.7);
+    set({HighwayType::HighwayResidential, HighwayType::HighwayUnclassified, HighwayType::HighwayService,
+         HighwayType::HighwayLivingStreet},
+        0.8);
+    return f;
+  }();
+  return profile == TzProfile::Hike ? kHike : kDefaultFactors;
+}
+
+// Expert (alpine) paths, per the map, weigh half on a hike: used only when there is no reasonable alternative.
+double constexpr kHikeExpertFactor = 0.5;
 }  // namespace pedestrian_model
 
 namespace routing
@@ -152,7 +180,11 @@ PedestrianModel::PedestrianModel(VehicleModel::LimitsInitList const & limits)
 {}
 
 PedestrianModel::PedestrianModel(VehicleModel::LimitsInitList const & limits, HighwayBasedSpeeds const & speeds)
-  : VehicleModel(classif(), limits, pedestrian_model::kPedestrianSurface, {speeds, pedestrian_model::kDefaultFactors})
+  // TrackZero: Hike's factors when the router is being built for it (Phase 26).
+  : VehicleModel(classif(), limits, pedestrian_model::kPedestrianSurface,
+                 {speeds, pedestrian_model::TzProfileFactors(GetTzProfile())})
+  , m_hike(GetTzProfile() == TzProfile::Hike)
+  , m_expertPathType(classif().GetTypeByPath({"highway", "path", "expert"}))
 {
   using namespace pedestrian_model;
 
@@ -175,7 +207,11 @@ PedestrianModel::PedestrianModel(VehicleModel::LimitsInitList const & limits, Hi
 
 SpeedKMpH PedestrianModel::GetSpeed(FeatureTypes const & types, SpeedParams const & speedParams) const
 {
-  return GetTypeSpeedImpl(types, speedParams, false /* isCar */);
+  SpeedKMpH speed = GetTypeSpeedImpl(types, speedParams, false /* isCar */);
+  // TrackZero (Phase 26): the base model sees highway|path|expert as a path; a hike avoids it where it can.
+  if (m_hike && types.Has(m_expertPathType))
+    speed.m_weight *= pedestrian_model::kHikeExpertFactor;
+  return speed;
 }
 
 SpeedKMpH const & PedestrianModel::GetOffroadSpeed() const

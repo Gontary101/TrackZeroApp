@@ -108,6 +108,12 @@
   <string name="tz_preview_distance">Distance</string>
   <string name="tz_preview_gain">Gain</string>
   <string name="tz_preview_high">High point</string>
+  <!-- A hike's path (Phase 26): D+ and D−, the time in the label line; no "safe", "easy" or "accessible" -->
+  <string name="tz_preview_climb">Climb</string>
+  <string name="tz_preview_descent">Descent</string>
+  <string name="tz_preview_hike">Hike · about %1$s</string>
+  <string name="tz_preview_no_ele">No elevation data: time is approximate</string>
+  <string name="tz_preview_demanding">Includes demanding trail sections according to the map. Check conditions yourself.</string>
   <string name="tz_start_ride">Start ride</string>
   <string name="tz_cd_back_to_routes">Back to routes</string>
   <string name="tz_cd_show_details">Show route details</string>
@@ -189,6 +195,7 @@
   <string name="tz_free_ride_name">Free ride %1$s</string>
   <!-- A free ride with the Walk profile (Phase 25) -->
   <string name="tz_free_walk_name">Walk %1$s</string>
+  <string name="tz_free_hike_name">Hike %1$s</string>
   <string name="tz_ride_speed_title">SPEED</string>
   <string name="tz_ride_elevation_title">ELEVATION</string>
   <string name="tz_unit_kmh_dot">KM/H</string>

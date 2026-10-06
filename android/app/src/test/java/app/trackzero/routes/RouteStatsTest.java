@@ -11,6 +11,28 @@ import static org.junit.Assert.*;
 public class RouteStatsTest
 {
   @Test
+  public void ascentAndDescent()
+  {
+    // Up 100 m, down 60 m, in 10 m steps (smoothing keeps a plateau's level).
+    final double[] ele = new double[41];
+    for (int i = 0; i <= 10; i++)
+      ele[i] = 400 + 10 * i;
+    for (int i = 11; i <= 20; i++)
+      ele[i] = 500;
+    for (int i = 21; i <= 26; i++)
+      ele[i] = 500 - 10 * (i - 20);
+    for (int i = 27; i <= 40; i++)
+      ele[i] = 440;
+    final double[] upDown = RouteStats.ascentDescent(ele);
+    org.junit.Assert.assertNotNull(upDown);
+    // The same smoothing as the gain: the edges of a short climb are rounded off a little.
+    assertEquals(100, upDown[0], 15);
+    assertEquals(60, upDown[1], 15);
+    org.junit.Assert.assertTrue(upDown[0] > upDown[1]);
+    org.junit.Assert.assertNull(RouteStats.ascentDescent(new double[] {Double.NaN, Double.NaN}));
+  }
+
+  @Test
   public void measuresParisToLondon()
   {
     double[] lat = {48.8566, 51.5074}, lon = {2.3522, -0.1278};

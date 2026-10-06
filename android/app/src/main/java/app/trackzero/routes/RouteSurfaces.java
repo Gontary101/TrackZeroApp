@@ -62,6 +62,36 @@ public final class RouteSurfaces
     }, callback);
   }
 
+  /**
+   * Whether a path crosses demanding trail sections per the map (a hike, Phase 26): delivered on the main thread,
+   * false before the maps load.
+   */
+  public static void demanding(@NonNull Context context, @NonNull FollowRoute line,
+                               @NonNull TzIo.Callback<Boolean> callback)
+  {
+    if (!TzRoads.ready(context))
+    {
+      callback.onResult(false);
+      return;
+    }
+    TzIo.submit(() -> {
+      final double step = SurfaceProfile.step(line.totalM());
+      final int n = SurfaceProfile.samples(line.totalM(), step);
+      final double[] lat = new double[n];
+      final double[] lon = new double[n];
+      for (int i = 0; i < n; i++)
+      {
+        final double at = SurfaceProfile.at(i, line.totalM(), step);
+        lat[i] = line.latAt(at);
+        lon[i] = line.lonAt(at);
+      }
+      for (int c : TzRoads.difficulty(lat, lon))
+        if (c == 1)
+          return true;
+      return false;
+    }, callback);
+  }
+
   /** {@link SurfaceProfile} of cached codes. */
   @Nullable
   static SurfaceProfile of(@NonNull RouteGeometry g, double lengthM)

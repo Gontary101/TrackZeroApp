@@ -38,7 +38,9 @@ public final class TzRide
       final Profile profile = TzPrefs.profile(activity);
       final String date = DateFormat.getDateInstance(DateFormat.MEDIUM).format(new Date());
       final String name = route != null ? route.name
-                          : activity.getString(profile.foot ? R.string.tz_free_walk_name : R.string.tz_free_ride_name,
+                          : activity.getString(profile == Profile.HIKE ? R.string.tz_free_hike_name
+                                               : profile.foot ? R.string.tz_free_walk_name
+                                                              : R.string.tz_free_ride_name,
                                                date);
       TzRideService.start(activity, route == null ? null : route.id, name, profile);
       TzNavigator.show(TzNavigator.Screen.RIDE, null);

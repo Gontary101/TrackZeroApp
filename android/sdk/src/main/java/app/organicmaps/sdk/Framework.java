@@ -147,6 +147,11 @@ public class Framework
   @NonNull
   public static native int[] nativeRoadSurfaces(double[] lat, double[] lon, double radiusM);
 
+  /// TrackZero (Phase 26): per point, 1 if the closest way within radiusM is a path the map grades difficult or expert,
+  /// 0 if not, -1 without a map. Safe off the main thread.
+  @NonNull
+  public static native int[] nativeRoadDifficulty(double[] lat, double[] lon, double radiusM);
+
   /// TrackZero (profile comparison): per point, the class of the closest road within radiusM: -1 no map, 0 no road,
   /// 1 motorway/trunk, 2 primary, 3 secondary, 4 tertiary, 5 minor road, 6 track, 7 path and the like.
   @NonNull

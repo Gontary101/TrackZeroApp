@@ -269,15 +269,30 @@ public class TzPreviewScreen extends TzScreen
       if (path == mPath)
         onSurfaces(p);
     });
+    if (mProfile == Profile.HIKE)
+      RouteSurfaces.demanding(requireContext(), line, demanding -> {
+        if (path == mPath && getView() != null && demanding)
+        {
+          TransitionManager.beginDelayedTransition(mCard, new ChangeBounds().setDuration(TzMotion.GROW_MS));
+          requireView().findViewById(R.id.tz_preview_demanding).setVisibility(View.VISIBLE);
+        }
+      });
   }
 
-  /** "Route by bike", or on foot with the walking time (Phase 25). */
+  /** "Route by bike", or on foot with the walking (Phase 25) or hiking (Phase 26) time. */
   @NonNull
   private String placeLabel(@NonNull RoutedPath path)
   {
     if (!mProfile.foot)
       return getString(R.string.tz_preview_to_place);
     final FollowRoute line = path.line;
+    if (mProfile == Profile.HIKE)
+    {
+      final double[] upDown = path.ele == null ? null : RouteStats.ascentDescent(path.ele);
+      return getString(R.string.tz_preview_hike, TzFormat.hoursMinutes(
+          FootTime.hikeSeconds(line.totalM(), upDown == null ? Double.NaN : upDown[0],
+                               upDown == null ? Double.NaN : upDown[1])));
+    }
     final double ascent = path.ele == null ? Double.NaN : RouteStats.compute(line.lats(), line.lons(), path.ele).gainM;
     return getString(R.string.tz_preview_on_foot,
                      TzFormat.hoursMinutes(FootTime.walkSeconds(line.totalM(), ascent)));
@@ -306,6 +321,7 @@ public class TzPreviewScreen extends TzScreen
     final View v = requireView();
     v.findViewById(R.id.tz_preview_surfaces).setVisibility(View.GONE);
     v.findViewById(R.id.tz_preview_surfaces_none).setVisibility(View.GONE);
+    v.findViewById(R.id.tz_preview_demanding).setVisibility(View.GONE);
   }
 
   @Override
@@ -347,6 +363,14 @@ public class TzPreviewScreen extends TzScreen
     final TzMetricView stat2 = v.findViewById(R.id.tz_preview_stat2);
     final TzElevationProfileView profile = v.findViewById(R.id.tz_preview_profile);
     final RoutedPath path = mPath;
+    // A hike shows what it climbs and descends (D+, D−); the others gain and high point.
+    final boolean hike = mProfile == Profile.HIKE;
+    ((TextView) v.findViewById(R.id.tz_preview_stat1_label)).setText(hike ? R.string.tz_preview_climb
+                                                                           : R.string.tz_preview_gain);
+    ((TextView) v.findViewById(R.id.tz_preview_stat2_label)).setText(hike ? R.string.tz_preview_descent
+                                                                           : R.string.tz_preview_high);
+    v.findViewById(R.id.tz_preview_ele_note).setVisibility(hike && path != null && path.ele == null ? View.VISIBLE
+                                                                                                     : View.GONE);
     if (path == null)
     {
       stat0.setValue(TzFormat.UNKNOWN, "");
@@ -367,7 +391,18 @@ public class TzPreviewScreen extends TzScreen
       final RouteStats stats = RouteStats.compute(line.lats(), line.lons(), path.ele);
       final TzFormat.Value gain = TzFormat.elevation(stats.gainM, units, locale);
       stat1.setValue(gain);
-      stat2.setValue(TzFormat.elevation(stats.highM, units, locale));
+      if (hike)
+      {
+        final double[] upDown = RouteStats.ascentDescent(path.ele);
+        if (upDown == null)
+          stat2.setValue(TzFormat.UNKNOWN, "");
+        else
+          stat2.setValue(TzFormat.elevation(upDown[1], units, locale));
+      }
+      else
+      {
+        stat2.setValue(TzFormat.elevation(stats.highM, units, locale));
+      }
       peek += " · " + gain;
       final double[] d = line.distances();
       final float[] pd = new float[d.length];

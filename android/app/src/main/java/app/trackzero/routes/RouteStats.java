@@ -1,5 +1,6 @@
 package app.trackzero.routes;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import app.trackzero.TzConfig;
@@ -117,6 +118,20 @@ public final class RouteStats
       smoothed[i] = sum / (end - start + 1);
     }
     return smoothed;
+  }
+
+  /** Up and down along {@code ele} (smoothed, with the gain's hysteresis), metres; null without enough altitudes. */
+  @Nullable
+  public static double[] ascentDescent(@NonNull double[] ele)
+  {
+    final double[] smoothed = smoothedElevation(ele);
+    if (smoothed == null)
+      return null;
+    final double[] reversed = new double[smoothed.length];
+    for (int i = 0; i < smoothed.length; i++)
+      reversed[i] = smoothed[smoothed.length - 1 - i];
+    // Going down is going up backwards.
+    return new double[] {gain(smoothed, TzConfig.ELE_HYSTERESIS_M), gain(reversed, TzConfig.ELE_HYSTERESIS_M)};
   }
 
   static double gain(double[] smoothed, double hysteresisM)

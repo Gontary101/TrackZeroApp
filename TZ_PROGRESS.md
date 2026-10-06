@@ -40,6 +40,11 @@ Collected from the v2 phases; each says what to do, what to look at and what cou
   the map stays at the same close zoom, the ride pauses by itself when you stand still for about 10 s and goes on when
   you walk again. After 30 minutes, note the battery used and compare with a 30-minute ride. Pass: all of these, and
   the battery use is reasonable.
+- **N26 · Hiking (FEAT-013, Phase 26).** Choose Hike on a place you would hike to (search › NAVIGATE HERE): the path
+  should take trails where they exist, the card shows CLIMB and DESCENT and "Hike · about H:MM". Is the time about
+  right for you? If the map grades part of the way as demanding, a line says so under the surface legend. Also: the
+  plan says no text may say "safe", "easy" or "accessible", but board N2's Gravel text says "easy tracks"; I kept the
+  board's words (D51). Tell me if it should change. Pass: trails taken, times plausible.
 - **N18 · Immersive ride (FEAT-001, Phase 18).** On a ride, no status bar or navigation bar on all three pages and with
   the controls open. Swipe from the top or bottom edge: the bars appear briefly over the ride and nothing moves. Tap the
   handle 10 times: it opens the controls every time. A quick upward swipe from just above the handle opens them too.
@@ -524,4 +529,19 @@ it led to).
   emulator's Android system hung during step 26 (clock jump, Play services died, then no activity service; `adb
   reboot` did nothing), so the emulator was restarted and the smoke test run again with Road: all steps pass, no
   crashes.
+
+## Phase 26 — Hiking profile (FEAT-013)
+
+- `PedestrianModel` with Hike's factors, and `path|expert` at half weight on a hike (D51). Hike already got the
+  pedestrian router in Phase 25.
+- `Framework.nativeRoadDifficulty` (difficult or expert path per the map, the shared sampler), `TzRoads.difficulty`,
+  `RouteSurfaces.demanding`.
+- `FootTime.hikeSeconds`, `RouteStats.ascentDescent`. The Hike place preview shows DISTANCE / CLIMB / DESCENT, "Hike ·
+  about H:MM", the no-elevation caption and the demanding line when they apply. Free hikes are named "Hike {date}".
+  All four profiles are switched on (`shots/N2.png`, `shots/B5_hike.png`).
+- Check (D51): Hike from Orcines to the Puy de Dôme summit takes the trail (65 % path); Walk in town stays on streets;
+  Hike and Walk differ where trails exist. A Hike place preview: "Hike · about 1:04", climb 58 m, descent 30 m.
+- Tests: `FootTimeTest` (hiking time), `RouteStatsTest` (ascent and descent), `ProfileTest`. 222 tests pass.
+- Smoke test with Hike selected (both rides `profile=hike`, free hike "Hike Oct 6, 2026"): all steps pass, no crashes.
+  The emulator was set back to Road.
 
