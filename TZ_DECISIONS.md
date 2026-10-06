@@ -956,3 +956,47 @@ with the stock weights, so near region borders the profile applies a little less
   background.
 - **Measured, not promised.** The emulator run (2-minute windows, the baseline's tool, instead of the plan's
   30-minute replays) is in TZ_BASELINE; the real numbers are N35. No battery-life figure appears in the app.
+
+## D61 · Light appearance (Phase 36, FEAT-015)
+- **Resources only.** `values/tz_colors.xml` is Light (Appendix B, the same as Tokens v2), `values-night/` is Dark,
+  moved unchanged. The four `tz_saver_*` colours are the same in both, so they live only in `values/`; with nothing to
+  override, the night file falls back to them (one definition, no drift). `TzTheme` is DayNight; the dialog overlay
+  keeps its parent (an overlay, its colours are all tokens). A `tz_light_bars` bool (true in values, false in
+  values-night) gives the splash, first run and sheets dark bar icons in Light.
+- **The rider's choice, never the system's.** `TzPrefs.light` ("dark" by default, so installs stay Dark). The night
+  mode is set in `MwmApplication.onCreate` before the first activity (the splash reads it), and `ThemeSwitcher.restart`
+  with TrackZero on now takes the setting for both the UI theme and the map (`MapAppearance.Light` / `Dark`), still
+  applying the map appearance itself (the D8 fix). No time-of-day or system switching, no `MODE_NIGHT_FOLLOW_SYSTEM`.
+  The edge-to-edge bars choose `SystemBarStyle.light` / `dark` by the setting.
+- **More › Appearance** (B7, above Units): one tap toggles and recreates the activity; `TzNavigator` brings More
+  back, the map keeps its camera (checked at zoom 16 and 13).
+- **Light map.** `data/styles/trackzero/light/{colors,drape_colors}.mapcss`, imported by `cycling/light/style.mapcss`
+  like the dark ones (D7), with the Tokens v2 values; `drules_proto_cycling_light.bin` added to the SDK assets; the
+  light rider dot is signal green with a white ring. Unlisted map colours follow the same logic: landuse a step off
+  the ground, buildings `#E4E5DF`, tracks and paths `#8E928C` (visible for gravel), label halos the ground colour.
+  Minor-road casings are drawn by the base include at 10 % opacity, so the base's black gives about `#DCDCD7` on the
+  ground, the nearest to the token's `#D5D8D2` without editing the include. Route line: core `#005F35`, white casing
+  and chevrons, off route `#7FA890`. Debug-only line candidates in Light: A's glow `#C8D9CE` (the green at 18 % on
+  the ground), C's bright core `#00804A`.
+- **Audit.** No hex colour, `Color.BLACK/WHITE/parseColor` or `0xFF…` literal in TrackZero's Java, layouts or
+  drawables; icon vectors are white and tinted where used. No colour is cached in a static field, so a switch needs
+  no listener: Light costs nothing once chosen.
+- **Contrast** (`contrast.py --pairs`, plus on-signal, amber text 2, wells, the danger fill and the attribution read
+  from the colour files): nothing LOW in either appearance. The surface bar's classes differ in lightness in Light
+  (paved 0.004, poor 0.085, rough 0.111, gravel 0.175, none 0.571) except poor and rough, close (1.19:1); in Dark,
+  as built, poor, gravel and rough are within 1.12:1. The tokens are the design's; every class is named with its
+  swatch in the legend, so colour is never the only cue. Left as designed and noted for N36.
+- **Saver.** X2 stays black in Light (its own colours); X1 is a normal sheet and follows the appearance.
+- **A fourth routing assert (found taking the shots).** Proposing loops from the emulator's position aborted the
+  debug build in `FixupCarTurns`: `ASSERT(exitNum == 0)` at an `EnterRoundAbout`. A route that starts on a roundabout
+  or passes a loop corner on one counts `StayOnRoundAbout` turns with no entry before them and no exit after, so the
+  count is not zero at the next entry. Release builds have no assert and set the count on the next line. Now a
+  warning, like the three in D54 (marked TrackZero). The other assert there (a second entry before an exit) cannot
+  fire: the branch before it already resets on any other turn.
+- **A ride-screen crash (found taking the shots).** R6 › STOPS collapses the sheet and shows S1 at once, replacing
+  the ride screen. The sheet's settle animation went on after the view was gone, and its slide callback read
+  resources from the detached fragment (`IllegalStateException` in `applySlide`). The callback is now a field and
+  `onDestroyView` removes it. Seen once in four runs; Phase 30 never hit the timing.
+- **Not checked here.** Accessibility Scanner is not on the emulator (it would mean installing an app): N36. B4
+  (needs the routes deleted), B6 (a frame mid-drag) and B5W (a walking route) were not shot in Light; they use the
+  same tokens as B3 and B5.

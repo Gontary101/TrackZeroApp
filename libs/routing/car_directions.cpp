@@ -70,7 +70,11 @@ void FixupCarTurns(vector<RouteSegment> & routeSegments)
       ASSERT(enterRoundAbout == kInvalidEnter,
              ("It's not expected to find new EnterRoundAbout until previous EnterRoundAbout was leaved."));
       enterRoundAbout = idx;
-      ASSERT(exitNum == 0, ("exitNum is reset at start and after LeaveRoundAbout."));
+      // TrackZero: a warning, not an ASSERT (release builds have none, and exitNum is set just below). A route that
+      // starts or passes a waypoint on a roundabout counts StayOnRoundAbout turns with no EnterRoundAbout before them
+      // and no LeaveRoundAbout after (Phase 29 loops).
+      if (exitNum != 0)
+        LOG(LWARNING, ("exitNum is reset at start and after LeaveRoundAbout, found", exitNum));
       exitNum = t.m_exitNum;  // Normally it is 0, but sometimes it can be 1.
     }
     else if (t.m_turn == CarDirection::StayOnRoundAbout)

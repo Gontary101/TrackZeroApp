@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
-  <style name="TzTheme" parent="Theme.MaterialComponents.NoActionBar">
+<resources xmlns:tools="http://schemas.android.com/tools">
+  <!-- DayNight (Phase 36): values-night holds Dark, values Light; the app sets the mode (More › Appearance). -->
+  <style name="TzTheme" parent="Theme.MaterialComponents.DayNight.NoActionBar">
     <item name="android:windowBackground">@color/tz_bg</item>
     <item name="android:colorBackground">@color/tz_bg</item>
     <!-- Mint is reserved for live data and the start CTAs (§X1); system widgets use text1. -->
@@ -17,14 +18,19 @@
     <item name="android:fontFamily">@font/barlow_medium</item>
   </style>
 
-  <!-- Start screens: black from the very first frame (the system splash uses the window background). -->
+  <!-- Start screens: the ground colour from the very first frame (the system splash uses the window background),
+       with bar icons that read on it (dark icons in Light). -->
   <style name="TzTheme.Splash">
     <item name="android:statusBarColor">@color/tz_bg</item>
     <item name="android:navigationBarColor">@color/tz_bg</item>
+    <item name="android:windowLightStatusBar" tools:targetApi="23">@bool/tz_light_bars</item>
+    <item name="android:windowLightNavigationBar" tools:targetApi="27">@bool/tz_light_bars</item>
   </style>
   <style name="TzTheme.FirstRun">
     <item name="android:statusBarColor">@color/tz_bg</item>
     <item name="android:navigationBarColor">@color/tz_bg</item>
+    <item name="android:windowLightStatusBar" tools:targetApi="23">@bool/tz_light_bars</item>
+    <item name="android:windowLightNavigationBar" tools:targetApi="27">@bool/tz_light_bars</item>
   </style>
 
   <style name="ThemeOverlay.TrackZero.Dialog" parent="ThemeOverlay.MaterialComponents.MaterialAlertDialog">

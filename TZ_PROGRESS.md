@@ -91,6 +91,11 @@ Collected from the v2 phases; each says what to do, what to look at and what cou
   start and end of each (battery % per hour). In the saver: did every turn give its tones in time (none missed, none
   late)? Off route: the warning plays? Unlock mid-ride: X2 shows at once, EXIT SAVER brings the map back at once.
   Pass: no missed turn, and the saver ride uses clearly less battery per hour (the numbers go in TZ_BASELINE).
+- **N36 · Light appearance (FEAT-015, Phase 36).** More › Appearance switches Dark / Light in one tap and comes back
+  to More. Midday sun, phone on the handlebar at arm's length: look at R2, R4 and B5 in both appearances. Which is
+  read faster at a glance? Does anything disappear in Light (the route line and its chevrons, the rider, the turn
+  card, the surface bar's classes, the stats)? If a computer is at hand, run Accessibility Scanner on B1, B3, B5, R2, R4 and R6 in Light. Pass: you
+  can name the faster one, and nothing disappears.
 - **N18 · Immersive ride (FEAT-001, Phase 18).** On a ride, no status bar or navigation bar on all three pages and with
   the controls open. Swipe from the top or bottom edge: the bars appear briefly over the ride and nothing moves. Tap the
   handle 10 times: it opens the controls every time. A quick upward swipe from just above the handle opens them too.
@@ -791,3 +796,28 @@ it led to).
   its turn), `GuideTest` (+2, rerouting off and back on), `RideStatsTest` (+1, 3 s fixes), `RideSessionTest` (+1,
   the journaled flag). 294 tests pass.
 - Smoke test: all steps pass, no crashes.
+
+## Phase 36 — Light appearance (FEAT-015)
+
+- Colours: `values/tz_colors.xml` is Light (Appendix B), `values-night/tz_colors.xml` is Dark, moved unchanged; the
+  saver's colours are defined once in `values/`. `TzTheme` is DayNight. `tz_light_bars` (bool) gives the splash,
+  first run and sheets dark bar icons in Light; `TzActivity` picks `SystemBarStyle.light` or `dark`.
+- `TzPrefs.light` ("dark" by default). The night mode is set in `MwmApplication.onCreate` and by
+  `ThemeSwitcher.restart`, which with TrackZero on takes the setting for the UI and the map (`MapAppearance.Light` /
+  `Dark`). Never the system's setting or the time of day.
+- More › Appearance (B7, above Units): one tap toggles; the activity is recreated and comes back to More with the
+  map's camera unchanged.
+- Map: `data/styles/trackzero/light/{colors,drape_colors}.mapcss` (Tokens v2 "Map style · Light"), imported by
+  `cycling/light/style.mapcss`; `drules_proto_cycling_light.bin` in the SDK assets; the light rider dot is signal
+  green with a white ring. Styles and symbols regenerated.
+- Audit: no hard-coded colour left in TrackZero's Java, layouts or drawables; no colour cached statically (switching
+  adds no listener or work). Contrast: `contrast.py --pairs` and the extra pairs: nothing LOW (D61).
+- Found and fixed taking the shots: a debug routing assert on loops (`FixupCarTurns`, now a warning like D54's) and
+  a ride-screen crash when R6 › STOPS replaced the screen while the sheet settled (D61).
+- Shots: `shots/light/` and `shots/dark/`, 27 screens each (B1 B2 B3 B5 B5_place B7, R1 R2 R3/R3_leg R3W R4 R5 R6 R7
+  R8, N1 N2 P1 P2 L1 L2 S1 S2 M1 E1 X1 X2), from the smoke test and `tools/trackzero/screens_v2.sh` (new) run in
+  each appearance. Dark compared with Phase 35's smoke shots: identical apart from the new row and the moving map.
+  States seen in Light: imminent turn (filled glyph well), wrong way, the off-route leg, paused, hold to end,
+  toggles, selected chips and segments, favourite stars, the surface bar, X2 black.
+- Tests: 294 pass (no new pure code).
+- Smoke test: all steps pass in Dark and in Light, no crashes.

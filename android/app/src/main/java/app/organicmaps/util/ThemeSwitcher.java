@@ -15,6 +15,7 @@ import app.organicmaps.sdk.routing.RoutingController;
 import app.organicmaps.sdk.util.Config;
 import app.organicmaps.sdk.util.concurrency.UiThread;
 import app.trackzero.TzConfig;
+import app.trackzero.TzPrefs;
 import java.util.Calendar;
 
 public enum ThemeSwitcher
@@ -68,11 +69,13 @@ public enum ThemeSwitcher
   {
     if (TzConfig.ENABLED)
     {
-      // TrackZero is dark-only: dark UI theme and dark map style, regardless of time or settings.
-      // setTheme() skips the map when it has to recreate the activity, so apply the map appearance here too.
+      // TrackZero: the rider's appearance (More › Appearance, Phase 36) for the UI theme and the map style,
+      // never the time of day or the system's setting. setTheme() skips the map when it has to recreate the
+      // activity, so apply the map appearance here too.
       UiThread.cancelDelayedTasks(mAutoThemeChecker);
-      setTheme(Config.UiTheme.NIGHT);
-      SetMapAppearance(MapAppearance.Dark);
+      final boolean light = TzPrefs.light(mContext);
+      setTheme(light ? Config.UiTheme.DEFAULT : Config.UiTheme.NIGHT);
+      SetMapAppearance(light ? MapAppearance.Light : MapAppearance.Dark);
       return;
     }
 

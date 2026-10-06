@@ -21,6 +21,7 @@ public final class TzPrefs
   private static final String TRACE = "trace";
   private static final String LINE_STYLE = "lineStyle";
   private static final String PROFILE = "profile";
+  private static final String APPEARANCE = "appearance";
 
   private TzPrefs() {}
 
@@ -45,6 +46,21 @@ public final class TzPrefs
   public static void setUnits(@NonNull Context c, @NonNull TzFormat.Units units)
   {
     prefs(c).edit().putString(UNITS, units == TzFormat.Units.IMPERIAL ? "imperial" : "metric").apply();
+  }
+
+  /**
+   * The Light appearance (Phase 36, FEAT-015): "dark" (the default, so existing installs stay dark) or "light". The
+   * rider's choice only: never the system's setting or the time of day.
+   */
+  public static boolean light(@NonNull Context c)
+  {
+    return "light".equals(prefs(c).getString(APPEARANCE, "dark"));
+  }
+
+  /** Written at once: the activity is recreated right after and reads it again. */
+  public static void setLight(@NonNull Context c, boolean light)
+  {
+    prefs(c).edit().putString(APPEARANCE, light ? "light" : "dark").commit();
   }
 
   public static boolean voice(@NonNull Context c)

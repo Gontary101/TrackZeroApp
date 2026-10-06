@@ -28,6 +28,8 @@
         app:tzIcon="@drawable/ic_tz_history" app:tzTitle="@string/tz_more_history" />
     </LinearLayout>
     <LinearLayout style="@style/TzListGroup" android:layout_marginTop="@dimen/tz_space_16">
+      <app.trackzero.ui.TzListRow android:id="@+id/tz_more_appearance" style="@style/TzListRow"
+        app:tzIcon="@drawable/ic_tz_appearance" app:tzTitle="@string/tz_more_appearance" />
       <app.trackzero.ui.TzListRow android:id="@+id/tz_more_units" style="@style/TzListRow"
         app:tzIcon="@drawable/ic_tz_ruler" app:tzTitle="@string/tz_more_units" />
       <app.trackzero.ui.TzListRow android:id="@+id/tz_more_voice" style="@style/TzListRow"

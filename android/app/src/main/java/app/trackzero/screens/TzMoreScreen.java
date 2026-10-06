@@ -9,6 +9,7 @@ import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import app.organicmaps.R;
+import app.organicmaps.util.ThemeSwitcher;
 import app.trackzero.TzConfig;
 import app.trackzero.TzNavigator;
 import app.trackzero.TzPrefs;
@@ -29,6 +30,7 @@ public class TzMoreScreen extends TzScreen
   private View mContent;
   private TzListRow mOffline;
   private TzListRow mHistory;
+  private TzListRow mAppearance;
   private TzListRow mUnits;
   private TzListRow mVoice;
   private TzListRow mDisplay;
@@ -48,6 +50,7 @@ public class TzMoreScreen extends TzScreen
     mContent = view.findViewById(R.id.tz_more_content);
     mOffline = view.findViewById(R.id.tz_more_offline);
     mHistory = view.findViewById(R.id.tz_more_history);
+    mAppearance = view.findViewById(R.id.tz_more_appearance);
     mUnits = view.findViewById(R.id.tz_more_units);
     mVoice = view.findViewById(R.id.tz_more_voice);
     mDisplay = view.findViewById(R.id.tz_more_display);
@@ -56,6 +59,11 @@ public class TzMoreScreen extends TzScreen
 
     mOffline.setOnClickListener(v -> TzNavigator.show(TzNavigator.Screen.MAPS, null));
     mHistory.setOnClickListener(v -> TzNavigator.show(TzNavigator.Screen.HISTORY, null));
+    mAppearance.setOnClickListener(v -> {
+      // The only theme control (Phase 36). The night-mode change recreates the activity, which comes back here.
+      TzPrefs.setLight(requireContext(), !TzPrefs.light(requireContext()));
+      ThemeSwitcher.INSTANCE.restart(true);
+    });
     mUnits.setOnClickListener(v -> {
       final Context c = requireContext();
       TzPrefs.setUnits(c, TzPrefs.units(c) == TzFormat.Units.METRIC ? TzFormat.Units.IMPERIAL
@@ -109,6 +117,7 @@ public class TzMoreScreen extends TzScreen
       if (getView() != null)
         mHistory.setDetail(getResources().getQuantityString(R.plurals.tz_more_rides, rides.size(), rides.size()));
     });
+    mAppearance.setDetail(getString(TzPrefs.light(c) ? R.string.tz_appearance_light : R.string.tz_appearance_dark));
     final TzFormat.Units units = TzPrefs.units(c);
     mUnits.setDetail(getString(units == TzFormat.Units.METRIC ? R.string.tz_units_metric : R.string.tz_units_imperial));
     // Sounds (Phase 32): what plays on a ride.

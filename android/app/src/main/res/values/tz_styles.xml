@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Component styles built on the plan's TzText styles (tz_type.xml). -->
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
   <style name="TzText.IslandLabel.Ride">
     <item name="android:fontFamily">@font/barlow_bold</item>
     <item name="android:letterSpacing">0.13</item>
@@ -99,6 +99,7 @@
   <style name="ThemeOverlay.TrackZero.BottomSheet" parent="ThemeOverlay.MaterialComponents.BottomSheetDialog">
     <item name="bottomSheetStyle">@style/TzBottomSheet</item>
     <item name="android:navigationBarColor">@color/tz_surface1</item>
+    <item name="android:windowLightNavigationBar" tools:targetApi="27">@bool/tz_light_bars</item>
     <item name="elevationOverlayEnabled">false</item>
   </style>
   <style name="TzBottomSheet" parent="Widget.MaterialComponents.BottomSheet.Modal">

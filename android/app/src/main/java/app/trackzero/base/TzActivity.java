@@ -130,8 +130,10 @@ public class TzActivity extends BaseMwmFragmentActivity
 
   private void setUpEdgeToEdge()
   {
-    // Transparent bars with light icons over the black map.
-    EdgeToEdge.enable(this, SystemBarStyle.dark(Color.TRANSPARENT), SystemBarStyle.dark(Color.TRANSPARENT));
+    // Transparent bars over the map: light icons in Dark, dark icons in Light (Phase 36).
+    final SystemBarStyle bars = TzPrefs.light(this) ? SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT)
+                                                    : SystemBarStyle.dark(Color.TRANSPARENT);
+    EdgeToEdge.enable(this, bars, bars);
     // The map and the immersive ride reach into a camera cutout at the top; TrackZero content keeps clear of it.
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P)
     {

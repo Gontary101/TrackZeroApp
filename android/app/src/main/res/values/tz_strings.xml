@@ -146,6 +146,7 @@
   <string name="tz_more_offline_maps">Offline maps</string>
   <string name="tz_more_manage">Manage</string>
   <string name="tz_more_history">Ride history</string>
+  <string name="tz_more_appearance">Appearance</string>
   <string name="tz_more_units">Units</string>
   <string name="tz_more_display">Display</string>
   <string name="tz_more_auto_pause">Auto-pause</string>
@@ -156,6 +157,8 @@
   </plurals>
   <string name="tz_more_maps_one">%1$s · %2$s</string>
   <string name="tz_more_maps_many">%1$s +%2$d · %3$s</string>
+  <string name="tz_appearance_dark">Dark</string>
+  <string name="tz_appearance_light">Light</string>
   <string name="tz_units_metric">Metric</string>
   <string name="tz_units_imperial">Imperial</string>
   <string name="tz_display_on">Always on in ride</string>

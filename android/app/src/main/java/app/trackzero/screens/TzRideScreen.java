@@ -348,26 +348,7 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener, Tz
     mSheetBehavior.setHideable(false);
     mSheetBehavior.setSkipCollapsed(false);
     mSheetBehavior.setFitToContents(true);
-    mSheetBehavior.addBottomSheetCallback(new BottomSheetBehavior.BottomSheetCallback() {
-      @Override
-      public void onStateChanged(@NonNull View sheet, int state)
-      {
-        final boolean collapsed = state == BottomSheetBehavior.STATE_COLLAPSED;
-        mScrim.setVisibility(collapsed ? View.GONE : View.VISIBLE);
-        if (collapsed)
-          applySlide(0);
-        else if (state == BottomSheetBehavior.STATE_EXPANDED)
-          applySlide(1);
-        render();
-      }
-
-      @Override
-      public void onSlide(@NonNull View sheet, float offset)
-      {
-        mScrim.setVisibility(View.VISIBLE);
-        applySlide(Math.max(0, offset));
-      }
-    });
+    mSheetBehavior.addBottomSheetCallback(mSheetCallback);
     mScrim.setOnClickListener(v -> mSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED));
     // X1, then X2 (Phase 35); the tile turns the saver off again without asking.
     mSheet.findViewById(R.id.tz_ride_saver).setOnClickListener(v -> {
@@ -391,6 +372,31 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener, Tz
     mHandle.setOnClickListener(v -> mSheetBehavior.setState(BottomSheetBehavior.STATE_EXPANDED));
     applySlide(0);
   }
+
+  /**
+   * The sheet's settle animation outlives the view (S1 replaces this screen while R6 closes), so this is removed in
+   * onDestroyView.
+   */
+  private final BottomSheetBehavior.BottomSheetCallback mSheetCallback = new BottomSheetBehavior.BottomSheetCallback() {
+    @Override
+    public void onStateChanged(@NonNull View sheet, int state)
+    {
+      final boolean collapsed = state == BottomSheetBehavior.STATE_COLLAPSED;
+      mScrim.setVisibility(collapsed ? View.GONE : View.VISIBLE);
+      if (collapsed)
+        applySlide(0);
+      else if (state == BottomSheetBehavior.STATE_EXPANDED)
+        applySlide(1);
+      render();
+    }
+
+    @Override
+    public void onSlide(@NonNull View sheet, float offset)
+    {
+      mScrim.setVisibility(View.VISIBLE);
+      applySlide(Math.max(0, offset));
+    }
+  };
 
   /** Collapsed: only the transparent page handle. Expanded: the R6 panel on surface1 over a scrim. */
   private void applySlide(float offset)
@@ -452,6 +458,7 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener, Tz
   public void onDestroyView()
   {
     super.onDestroyView();
+    mSheetBehavior.removeBottomSheetCallback(mSheetCallback);
     // The ride ended (or the screen went) in the saver: the compass is the activity's again.
     if (requireActivity() instanceof TzActivity a)
       a.pauseCompass(false);

@@ -1,0 +1,203 @@
+/* TrackZero map palette, Light (Phase 36, design.html "Tokens v2 · Map style · Light"), applied on top of
+   default/light/colors.mapcss. A pale warm ground, white roads with grey casings, a strong green cycleway, soft water
+   and parks, one label grey. Only colours change here; geometry, widths and visibility come from the base styles.
+   Minor-road casings: the base draws them at 10 % opacity, so black (the base value) gives about #DCDCD7 on the
+   ground, the nearest the include allows to the token's #D5D8D2. */
+
+/* Basemap / boundaries */
+@background0: #F4F4EF;
+@background1: #F4F4EF;
+@border_country: #9BA0A6;
+@border_region: #B9BDB6;
+
+/* Natural */
+@glacier: #FFFFFF;
+@water: #B9D6F2;
+@water_bad: #B9D6F2;
+@wetland_tidal: #DCE6EC;
+@wetland_tidal_saltmarsh: #DCE6EC;
+@wetland_saltmarsh: #DCE6EC;
+@wetland_marsh: #DCE6EC;
+@wetland_fen: #DCE6EC;
+@wetland_bog: #DCE6EC;
+@wetland_reedbed: #DCE6EC;
+@wetland_swamp: #DCE6EC;
+@wetland_mangrove: #DCE6EC;
+@beach: #ECEDE6;
+@sand: #ECEDE6;
+@barerock: #ECEDE6;
+@scree: #ECEDE6;
+@desert: #ECEDE6;
+
+/* Vegetation: one park/forest tone */
+@residential_garden: #F4F4EF;
+@residential_garden_13: #F4F4EF;
+@residential_garden_12: #F4F4EF;
+@park: #D9E8CF;
+@park_13: #D9E8CF;
+@park_12: #D9E8CF;
+@park_11: #D9E8CF;
+@park_10: #D9E8CF;
+@heath: #D9E8CF;
+@heath_13: #D9E8CF;
+@heath_12: #D9E8CF;
+@heath_11: #D9E8CF;
+@grass: #D9E8CF;
+@grass_13: #D9E8CF;
+@grass_12: #D9E8CF;
+@grass_11: #D9E8CF;
+@flowers: #D9E8CF;
+@flowers_13: #D9E8CF;
+@flowers_12: #D9E8CF;
+@flowers_11: #D9E8CF;
+@flowers_10: #D9E8CF;
+@golf: #D9E8CF;
+@golf_13: #D9E8CF;
+@golf_12: #D9E8CF;
+@allotments: #D9E8CF;
+@allotments_13: #D9E8CF;
+@allotments_12: #D9E8CF;
+@scrubs: #D9E8CF;
+@scrubs_13: #D9E8CF;
+@scrubs_12: #D9E8CF;
+@scrubs_11: #D9E8CF;
+@woods: #D9E8CF;
+@woods_13: #D9E8CF;
+@woods_12: #D9E8CF;
+@woods_11: #D9E8CF;
+@woods_10: #D9E8CF;
+@protected_nature: #E3EEDB;
+
+/* Landuse: close to the ground */
+@general_area: #EEEEE8;
+@pedestrian_area: #ECEEE9;
+@railway_platform: #E4E6E1;
+@university: #EEEEE8;
+@hospital: #EEEEE8;
+@industrial: #EAEAE4;
+@construction_area: #EAEAE4;
+@sport0: #E1EDD8;
+@sport1: #E1EDD8;
+@sport2: #E1EDD8;
+@playground: #E1EDD8;
+@parking: #ECEEE9;
+@military: #FCE4E2;
+@prison: #E4E6E1;
+@farmland: #F1F1EA;
+@farmyard: #F1F1EA;
+@aerodrome0: #ECEEE9;
+@aerodrome1: #ECEEE9;
+@aerodrome2: #ECEEE9;
+@aerodrome3: #ECEEE9;
+@aerodrome4: #ECEEE9;
+@aerodrome5: #ECEEE9;
+@fence: #C5C8C2;
+@hedge: #C9DDBD;
+@cliff: #B4B8B1;
+@building0: #E4E5DF;
+@building1: #E4E5DF;
+@building_border0: #D0D2CB;
+@building_border1: #D0D2CB;
+@historic_wall: #C5C8C2;
+
+/* Roads: major and minor white, casings #B9BDB6 / #D5D8D2, cycleways #2E7D4F */
+@motorway0: #FFFFFF;
+@motorway1: #FFFFFF;
+@trunk0: #FFFFFF;
+@trunk1: #FFFFFF;
+@primary0: #FFFFFF;
+@primary1: #FFFFFF;
+@primary2: #FFFFFF;
+@secondary0: #FFFFFF;
+@secondary1: #FFFFFF;
+@tertiary: #FFFFFF;
+@residential: #FFFFFF;
+@pedestrian: #FFFFFF;
+@footway: #FFFFFF;
+@cycleway: #2E7D4F;
+@construction: #E4E6E1;
+@track: #8E928C;
+@path: #8E928C;
+@path_expert: #B4B8B1;
+@bridleway: #B4B8B1;
+@motorway1_border: #B9BDB6;
+@trunk1_border: #B9BDB6;
+@primary1_border: #B9BDB6;
+@primary2_border: #B9BDB6;
+@secondary0_border: #B9BDB6;
+@secondary1_border: #B9BDB6;
+@minor_road_border: #000000;
+@bridge_background: #E4E6E1;
+@bridge_casing: #B9BDB6;
+@bridge_minor_road_border: #D5D8D2;
+@motorway_tunnel: #ECEEE9;
+@motorway_tunnel_casing: #B4B8B1;
+@trunk_tunnel: #ECEEE9;
+@trunk_tunnel_casing: #B4B8B1;
+@primary_tunnel: #ECEEE9;
+@primary_tunnel_casing: #B4B8B1;
+@secondary_tunnel: #ECEEE9;
+@secondary_tunnel_casing: #B4B8B1;
+@tertiary_tunnel: #F4F5F2;
+@tertiary_tunnel_casing: #C5C8C2;
+@residential_tunnel: #F4F5F2;
+@residential_tunnel_casing: #C5C8C2;
+
+/* Transport */
+@railway_light: #B4B8B1;
+@railway: #9BA0A6;
+@railway_tourism: #9BA0A6;
+@railway_tunnel: #D5D8D2;
+@railway_dash: #FFFFFF;
+@aerialway: #9BA0A6;
+@powerline: #C5C8C2;
+@tram: #9BA0A6;
+@ferry: #8FB5DA;
+
+/* Labels: one grey (#50555B), light halos */
+@label_dark: #50555B;
+@label_medium: #50555B;
+@label_light: #50555B;
+@label_halo_medium: #F4F4EF;
+@label_halo_light: #F4F4EF;
+@park_label: #50555B;
+@halo_park_label: #F4F4EF;
+@city_label: #50555B;
+@country_label: #6B7076;
+@state_label: #6B7076;
+@district_label: #50555B;
+@housenumber: #7A7F85;
+@building_label: #7A7F85;
+@poi_label: #50555B;
+@subway_label: #50555B;
+@indigenous_label: #50555B;
+@shop_label: #50555B;
+@industry_label: #50555B;
+@food_label: #50555B;
+@entertainment_label: #50555B;
+@culture_label: #50555B;
+@hotel_label: #50555B;
+@sport_label: #50555B;
+@nature_label: #50555B;
+@water_label: #50555B;
+@water_light_label: #50555B;
+@neutral_label: #50555B;
+@healthcare_label: #50555B;
+@public_transport_label: #50555B;
+@emergency_label: #50555B;
+@shield_text: #50555B;
+@shield_text_halo: #FFFFFF;
+@shield: #FFFFFF;
+@shield_outline: #B9BDB6;
+
+/* Contour lines */
+@isoline1000: #E4E6E1;
+@isoline500: #E4E6E1;
+@isoline100: #E4E6E1;
+@isoline50: #E4E6E1;
+@isoline10: #E4E6E1;
+@label_isoline1000: #9BA0A6;
+@label_isoline500: #9BA0A6;
+@label_isoline100: #9BA0A6;
+@label_isoline50: #9BA0A6;
+@label_isoline10: #9BA0A6;
