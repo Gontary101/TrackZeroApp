@@ -1000,3 +1000,28 @@ with the stock weights, so near region borders the profile applies a little less
 - **Not checked here.** Accessibility Scanner is not on the emulator (it would mean installing an app): N36. B4
   (needs the routes deleted), B6 (a frame mid-drag) and B5W (a walking route) were not shot in Light; they use the
   same tokens as B3 and B5.
+
+## D62 · First-launch tutorial (Phase 37)
+- **When.** `TutorialFlow` (pure) decides: with no screen to restore the app opens on the ride if one runs,
+  otherwise on the tutorial until it is done, then on B1. The first-run map download is its own activity, so the
+  tutorial is simply TzActivity's first screen. SKIP, START and Back all mark it done (`TzPrefs.tutorial`, one key)
+  and go to B1; More › Show the tutorial replays it and returns to More, writing nothing else.
+- **The location question waits.** The map asks for location as soon as the engine wants the rider, which would put
+  the system dialog over T1 on a fresh install. While the tutorial shows, `TzActivity` holds the request and asks
+  when the tutorial ends (`onTutorialDone`).
+- **Views only.** A `ViewPager2` of four pages, all kept (offscreen limit 3). T1 and T2 are small phones made of
+  views on the tutorial frame drawable; T2's red bar is the real `TzHoldButton` in a mini mode (no label or icon,
+  12dp radius): it fills in the real 1.5 s, rests full 0.7 s and empties, confirming nothing; it keeps the touch from
+  the pager. T3 is the M1 tone grid, now one layout and one binder (`tz_tone_grid`, `ToneGrid`) for both screens; the
+  board's 10dp gap applies to M1 too (it was built at 8dp). T4's map is a small custom view (`TzTutorialMapView`)
+  drawing the board's geometry with a progress (pin drops, then the line draws); the profile pills are a picture.
+- **Motion.** On the current step only, while the screen is resumed: T1's arrows nudge 8dp three times (800 ms
+  each), T2's sheet rises 40dp and returns once, T4's pin and line once. Leaving the step or the screen puts every
+  step on its final frame. With animations off (`TzMotion.enabled`) nothing moves: T4 opens on the full picture.
+- **Screen readers.** The header reads "Step n of 4" and SKIP is traversed before it. T1, T2 and T4's pictures carry
+  the step's sentence (the sentence itself is then not read twice); T3's tiles say "Left tone" with the action "play"
+  ("Double tap to play"), in M1 as well. The titles are headings and capped at 1.3× like the other Doto titles.
+  Found on the way: TalkBack could reach the map under every opaque screen; the navigator now hides it from
+  accessibility whenever an opaque screen covers it.
+- **Sentence spacing.** The board's 1.4 line height is 25dp for 18sp; Barlow's line box is already about 1.2em, so
+  the multiplier is 1.17.

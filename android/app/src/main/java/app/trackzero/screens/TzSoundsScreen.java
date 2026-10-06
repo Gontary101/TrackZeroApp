@@ -8,18 +8,13 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
-import androidx.annotation.DrawableRes;
 import androidx.annotation.IdRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.StringRes;
 import app.organicmaps.R;
 import app.trackzero.TzNavigator;
 import app.trackzero.TzPrefs;
-import app.trackzero.ride.TonePattern;
-import app.trackzero.ride.TzTones;
 import app.trackzero.ui.TzToggleRow;
-import app.trackzero.ui.TzToneTile;
 
 /**
  * M1 · Sounds (FEAT-008, Phase 32): turn tones and spoken directions (independent, the same settings as R6's), the
@@ -28,9 +23,6 @@ import app.trackzero.ui.TzToneTile;
 public class TzSoundsScreen extends TzScreen
 {
   private static final String TTS_SETTINGS = "com.android.settings.TTS_SETTINGS";
-
-  @Nullable
-  private TzTones mTones;
 
   @Nullable
   @Override
@@ -50,14 +42,7 @@ public class TzSoundsScreen extends TzScreen
     voice.setTextAction(() -> openTtsSettings(c));
     toggle(view, R.id.tz_sounds_off_route, TzPrefs.warnOffRoute(c), on -> TzPrefs.setWarnOffRoute(c, on));
     toggle(view, R.id.tz_sounds_gps, TzPrefs.warnGps(c), on -> TzPrefs.setWarnGps(c, on));
-    tile(view, R.id.tz_tone_left, R.drawable.ic_tz_turn_left_bold, R.string.tz_tone_left, TonePattern.LEFT, false);
-    tile(view, R.id.tz_tone_straight, R.drawable.ic_tz_straight_bold, R.string.tz_tone_straight, TonePattern.STRAIGHT,
-         false);
-    tile(view, R.id.tz_tone_right, R.drawable.ic_tz_turn_right_bold, R.string.tz_tone_right, TonePattern.RIGHT, false);
-    tile(view, R.id.tz_tone_arrived, R.drawable.ic_tz_flag_bold, R.string.tz_tone_arrived, TonePattern.ARRIVE, false);
-    tile(view, R.id.tz_tone_off_route, R.drawable.ic_tz_reroute_bold, R.string.tz_tone_off_route,
-         TonePattern.OFF_ROUTE, true);
-    tile(view, R.id.tz_tone_gps, R.drawable.ic_tz_gps_off_bold, R.string.tz_tone_gps_lost, TonePattern.GPS_LOST, true);
+    new ToneGrid(view);
     super.onViewCreated(view, savedInstanceState);
   }
 
@@ -99,18 +84,6 @@ public class TzSoundsScreen extends TzScreen
     row.setChecked(on, false);
     row.setListener(l);
     return row;
-  }
-
-  private void tile(@NonNull View root, @IdRes int id, @DrawableRes int glyph, @StringRes int label,
-                    @NonNull TonePattern pattern, boolean warning)
-  {
-    final TzToneTile tile = root.findViewById(id);
-    tile.bind(glyph, label, warning);
-    tile.setOnClickListener(v -> {
-      if (mTones == null)
-        mTones = new TzTones(requireContext());
-      mTones.play(pattern);
-    });
   }
 
   /** The system text-to-speech settings: the voice and its language are chosen there. */

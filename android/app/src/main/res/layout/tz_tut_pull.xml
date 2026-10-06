@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- T2 · PULL UP: a small phone whose sheet rises and returns; the red bar is a real hold button to try. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+  android:id="@+id/tz_tut_pull"
+  android:layout_width="@dimen/tz_tut_frame_w"
+  android:layout_height="@dimen/tz_tut_frame_h"
+  android:layout_gravity="center_horizontal"
+  android:background="@drawable/tz_bg_tut_frame"
+  android:contentDescription="@string/tz_tut_pull_text"
+  android:focusable="true">
+  <ImageView
+    android:layout_width="@dimen/tz_tut_chevron"
+    android:layout_height="@dimen/tz_tut_chevron"
+    android:layout_gravity="center_horizontal"
+    android:layout_marginTop="@dimen/tz_tut_chevron_top"
+    android:importantForAccessibility="no"
+    android:src="@drawable/ic_tz_chev_up"
+    android:tint="@color/tz_mint" />
+  <FrameLayout
+    android:id="@+id/tz_tut_sheet"
+    android:layout_width="match_parent"
+    android:layout_height="@dimen/tz_tut_sheet_h"
+    android:layout_gravity="bottom"
+    android:layout_marginStart="@dimen/tz_tut_frame_stroke"
+    android:layout_marginEnd="@dimen/tz_tut_frame_stroke"
+    android:layout_marginBottom="@dimen/tz_tut_frame_stroke"
+    android:background="@drawable/tz_bg_surface1_top_r22">
+    <View
+      android:layout_width="@dimen/tz_grabber_w"
+      android:layout_height="@dimen/tz_grabber_h"
+      android:layout_gravity="center_horizontal"
+      android:layout_marginTop="@dimen/tz_tut_grabber_top"
+      android:background="@drawable/tz_bg_text3_r3"
+      android:importantForAccessibility="no" />
+    <View
+      android:layout_width="match_parent"
+      android:layout_height="@dimen/tz_tut_bar_h"
+      android:layout_gravity="bottom"
+      android:layout_marginStart="@dimen/tz_tut_bar_side"
+      android:layout_marginEnd="@dimen/tz_tut_bar_side"
+      android:layout_marginBottom="@dimen/tz_tut_grey_bar_bottom"
+      android:background="@drawable/tz_bg_surface3_r12"
+      android:importantForAccessibility="no" />
+    <app.trackzero.ui.TzHoldButton
+      android:id="@+id/tz_tut_hold"
+      android:layout_width="match_parent"
+      android:layout_height="@dimen/tz_tut_bar_h"
+      android:layout_gravity="bottom"
+      android:layout_marginStart="@dimen/tz_tut_bar_side"
+      android:layout_marginEnd="@dimen/tz_tut_bar_side"
+      android:layout_marginBottom="@dimen/tz_tut_red_bar_bottom" />
+  </FrameLayout>
+</FrameLayout>

@@ -237,4 +237,10 @@
     <item name="android:textSize">@dimen/tz_text_20</item>
     <item name="android:textColor">@color/tz_text2</item>
   </style>
+
+  <!-- T1–T4 tutorial (Phase 37): Doto 40 titles (capped like the others), an 18sp sentence, SKIP -->
+  <style name="TzText.DotTut"><item name="android:fontFamily">@font/doto</item><item name="android:textSize">40sp</item><item name="android:letterSpacing">0.05</item></style>
+  <style name="TzText.TutBody"><item name="android:fontFamily">@font/barlow_medium</item><item name="android:textSize">18sp</item><item name="android:textColor">@color/tz_text2</item><item name="android:lineSpacingMultiplier">1.17</item></style>
+  <style name="TzText.TutSkip"><item name="android:fontFamily">@font/barlow_bold</item><item name="android:textSize">15sp</item><item name="android:letterSpacing">0.067</item><item name="android:textAllCaps">true</item><item name="android:textColor">@color/tz_text2</item></style>
+  <style name="TzText.TutNumber"><item name="android:fontFamily">@font/barlow_condensed_bold</item><item name="android:textSize">@dimen/tz_tut_number</item><item name="android:textColor">@color/tz_text_hero</item></style>
 </resources>

@@ -81,6 +81,12 @@ public class TzMoreScreen extends TzScreen
       TzPrefs.setAutoPause(requireContext(), !TzPrefs.autoPause(requireContext()));
       refresh();
     });
+    // T1–T4 again (Phase 37); it comes back here.
+    view.findViewById(R.id.tz_more_tutorial).setOnClickListener(v -> {
+      final Bundle args = new Bundle();
+      args.putBoolean(TzTutorialScreen.ARG_REPLAY, true);
+      TzNavigator.show(TzNavigator.Screen.TUTORIAL, args);
+    });
     about.setDetail(getString(R.string.tz_version, TzBase.versionName()));
     about.setOnClickListener(v -> TzNavigator.show(TzNavigator.Screen.ABOUT, null));
     super.onViewCreated(view, savedInstanceState);

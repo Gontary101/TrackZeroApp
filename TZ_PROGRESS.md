@@ -96,6 +96,10 @@ Collected from the v2 phases; each says what to do, what to look at and what cou
   read faster at a glance? Does anything disappear in Light (the route line and its chevrons, the rider, the turn
   card, the surface bar's classes, the stats)? If a computer is at hand, run Accessibility Scanner on B1, B3, B5, R2, R4 and R6 in Light. Pass: you
   can name the faster one, and nothing disappears.
+- **N37 · Tutorial (Phase 37).** Install the build fresh (or clear the app's data): after the map download, T1 shows
+  before the map, and the location question comes only after it. SKIP on any step goes to the map; the next start
+  opens the map directly. More › Show the tutorial plays it again and comes back to More. With TalkBack on, each step
+  reads sensibly (step number, SKIP, the picture, the title) and the tone tiles play. Pass: all of these.
 - **N18 · Immersive ride (FEAT-001, Phase 18).** On a ride, no status bar or navigation bar on all three pages and with
   the controls open. Swipe from the top or bottom edge: the bars appear briefly over the ride and nothing moves. Tap the
   handle 10 times: it opens the controls every time. A quick upward swipe from just above the handle opens them too.
@@ -821,3 +825,19 @@ it led to).
   toggles, selected chips and segments, favourite stars, the surface bar, X2 black.
 - Tests: 294 pass (no new pure code).
 - Smoke test: all steps pass in Dark and in Light, no crashes.
+
+## Phase 37 — First-launch tutorial
+
+- `tutorial/TutorialFlow` (pure): first screen (ride, tutorial or map), finish (done; to B1, or to More after a
+  replay). `TzNavigator.Screen.TUTORIAL` (opaque, no island); `TzPrefs.tutorial`.
+- `screens/TzTutorialScreen`: dots (`TzPageHandle.showDotsOnly`), SKIP, a four-step `ViewPager2`, NEXT / START. T1
+  phone and nudging arrows; T2 phone with a rising sheet and the practice bar (`TzHoldButton.setMini`); T3 the tone
+  grid (`tz_tone_grid` + `ToneGrid`, shared with M1); T4 `ui/TzTutorialMapView` and the profile pills.
+- More › Show the tutorial (B7). `TzActivity` holds the location request while the tutorial shows. The map is
+  hidden from accessibility under opaque screens.
+- Checked on the emulator (D62): first start shows T1; SKIP from T2 goes to B1 and a cold start then opens B1;
+  replay from More, Back and START both return to More with settings unchanged; the practice bar fills, empties and
+  never swipes the pager; TalkBack's tree (compressed dump) has no map, "Step n of 4", SKIP, the pictures' sentences;
+  animations off: T4 opens on its final frame; Dark and Light (`shots/dark/T1–T4`, `shots/light/T1–T4`).
+- Tests: `TutorialFlowTest` (5). 299 tests pass.
+- Smoke test: all steps pass, no crashes.

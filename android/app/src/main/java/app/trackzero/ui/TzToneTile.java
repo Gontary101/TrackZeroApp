@@ -13,6 +13,8 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
 import androidx.core.content.ContextCompat;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.accessibility.AccessibilityNodeInfoCompat;
 import androidx.core.widget.ImageViewCompat;
 import app.organicmaps.R;
 
@@ -53,6 +55,12 @@ public class TzToneTile extends LinearLayout
     mLabel.setTextColor(ink);
     setBackgroundResource(warning ? R.drawable.tz_bg_amber_bg_r20 : R.drawable.tz_bg_surface3_r20);
     setContentDescription(getResources().getString(R.string.tz_tone_cd, mLabel.getText()));
+    // TalkBack: "Left tone. Double tap to play." (T3, M1).
+    ViewCompat.replaceAccessibilityAction(this, AccessibilityNodeInfoCompat.AccessibilityActionCompat.ACTION_CLICK,
+                                          getResources().getString(R.string.tz_tone_cd_action), (v, args) -> {
+                                            performClick();
+                                            return true;
+                                          });
   }
 
   @Override

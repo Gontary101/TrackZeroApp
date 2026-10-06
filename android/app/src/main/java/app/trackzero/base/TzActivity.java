@@ -73,6 +73,8 @@ public class TzActivity extends BaseMwmFragmentActivity
   @Nullable
   private Runnable mOnRidePermitted;
   private boolean mPermissionAsked;
+  /** The map wanted the rider's position while the tutorial showed. */
+  private boolean mPermissionAfterTutorial;
 
   // Map drawing runs only while the activity is resumed AND no opaque TrackZero screen covers the map.
   private boolean mResumed;
@@ -445,13 +447,30 @@ public class TzActivity extends BaseMwmFragmentActivity
            + (l.hasBearing() ? " brg=" + Math.round(l.getBearing()) : "");
   }
 
-  /** Asks at most once per activity instance so a refusal is never nagged about. */
+  /**
+   * Asks at most once per activity instance so a refusal is never nagged about. Not over the first-launch tutorial:
+   * it is asked when the tutorial ends ({@link #onTutorialDone}).
+   */
   void requestLocationPermission()
   {
+    if (TzNavigator.current() == TzNavigator.Screen.TUTORIAL)
+    {
+      mPermissionAfterTutorial = true;
+      return;
+    }
     if (mPermissionAsked || mLocationPermissionRequest == null)
       return;
     mPermissionAsked = true;
     mLocationPermissionRequest.launch(new String[] {ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION});
+  }
+
+  /** The tutorial ended (Phase 37): the location question it held back is asked now. */
+  public void onTutorialDone()
+  {
+    if (!mPermissionAfterTutorial)
+      return;
+    mPermissionAfterTutorial = false;
+    requestLocationPermission();
   }
 
   /**

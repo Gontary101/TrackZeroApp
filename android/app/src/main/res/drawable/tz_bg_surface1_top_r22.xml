@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- T2's mini sheet: its bottom corners follow the frame inside its 2dp edge. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+  <solid android:color="@color/tz_surface1" />
+  <corners android:topLeftRadius="@dimen/tz_tut_sheet_radius" android:topRightRadius="@dimen/tz_tut_sheet_radius"
+    android:bottomLeftRadius="@dimen/tz_tut_sheet_bottom_radius" android:bottomRightRadius="@dimen/tz_tut_sheet_bottom_radius" />
+</shape>

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The tutorial's small phone (T1, T2): the well, a 2dp surface3 edge, the feature radius. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+  <solid android:color="@color/tz_well" />
+  <stroke android:width="@dimen/tz_tut_frame_stroke" android:color="@color/tz_surface3" />
+  <corners android:radius="@dimen/tz_radius_feature" />
+</shape>

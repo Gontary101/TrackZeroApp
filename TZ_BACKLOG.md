@@ -131,6 +131,9 @@ _No bugs marked as fixed yet._
   under the island on every page. Field check: NEEDS OWNER N18 (handle part).
 - **FEAT-005** — Phase 20. Research in `TZ_RESEARCH_ROUTE_VISIBILITY.md`; 8dp line with a black casing (D45).
   Field check: NEEDS OWNER N20 (choose among four candidates).
+- **First-launch tutorial** (the requirement above, and FEAT-008's tutorial part) — Phase 37. T1–T4, four visual
+  steps before B1 the first time, SKIP on each, replay from More › Show the tutorial; tones to tap on T3 (D62).
+  Field check: NEEDS OWNER N37.
 - **FEAT-015** — Phase 36. Light appearance: More › Appearance toggles Dark / Light (the rider's choice, Dark by
   default); the same layouts with the Light colour resources and a light cycling map (D61). Field check: NEEDS OWNER
   N36.
@@ -144,7 +147,7 @@ _No bugs marked as fixed yet._
   kind (typical pace with fewer than 3), shown in R6 and as the planner's TIME (D58). Field check: NEEDS OWNER N33.
 - **FEAT-008** — Phase 32. Direction tones and warnings, generated in the app, through the phone speaker; R6
   Turn tones toggle, More › Sounds (M1) with the tones to hear, NO GPS card (D57). The first-launch tutorial part
-  is Phase 36. Field check: NEEDS OWNER N32.
+  is T3 in Phase 37. Field check: NEEDS OWNER N32.
 - **FEAT-010** — Phase 31. Bivouac places from the map: campsites and huts VERIFIED, shelters NOT CONFIRMED, with
   hours and fee when the map has them; S1 chip and B2 chip (5 km, 20 km when none) (D56). Field check: NEEDS
   OWNER N31.

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- T4 · PLAN: a mini map where a pin drops and the line draws once; the four profiles as a picture. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+  android:layout_width="match_parent"
+  android:layout_height="wrap_content"
+  android:gravity="center_horizontal"
+  android:orientation="vertical">
+  <app.trackzero.ui.TzTutorialMapView
+    android:id="@+id/tz_tut_map"
+    android:layout_width="@dimen/tz_tut_frame_w"
+    android:layout_height="@dimen/tz_tut_map_h"
+    android:contentDescription="@string/tz_tut_plan_text" />
+  <LinearLayout
+    android:id="@+id/tz_tut_profiles"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="@dimen/tz_tut_gap"
+    android:gravity="center_horizontal"
+    android:importantForAccessibility="noHideDescendants"
+    android:orientation="vertical" />
+</LinearLayout>

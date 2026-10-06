@@ -182,10 +182,65 @@
   <!-- Phase 32 · ToneTile: 104 high, glyph 36 -->
   <dimen name="tz_tone_tile_h">104dp</dimen>
   <dimen name="tz_tone_tile_glyph">36dp</dimen>
+  <dimen name="tz_tone_tile_gap">10dp</dimen>
   <!-- Phase 35 · X2 -->
   <dimen name="tz_saver_well">120dp</dimen>
   <dimen name="tz_saver_glyph">64dp</dimen>
   <dimen name="tz_saver_button_h">64dp</dimen>
   <!-- X1's rows: 34dp, as on the board -->
   <dimen name="tz_saver_row_pad">5dp</dimen>
+
+  <!-- T1–T4 first-launch tutorial (Phase 37) -->
+  <dimen name="tz_tut_pad_h">20dp</dimen>
+  <dimen name="tz_tut_pad_top">8dp</dimen>
+  <dimen name="tz_tut_pad_bottom">24dp</dimen>
+  <dimen name="tz_tut_header_h">48dp</dimen>
+  <dimen name="tz_tut_skip_pad">16dp</dimen>
+  <dimen name="tz_tut_gap">28dp</dimen>
+  <dimen name="tz_tut_text_gap">10dp</dimen>
+  <dimen name="tz_tut_text_max">320dp</dimen>
+  <dimen name="tz_tut_frame_w">190dp</dimen>
+  <dimen name="tz_tut_frame_h">300dp</dimen>
+  <dimen name="tz_tut_map_h">260dp</dimen>
+  <dimen name="tz_tut_frame_stroke">2dp</dimen>
+  <dimen name="tz_tut_arrow">28dp</dimen>
+  <dimen name="tz_tut_arrow_gap">14dp</dimen>
+  <dimen name="tz_tut_nudge">8dp</dimen>
+  <dimen name="tz_tut_inset">16dp</dimen>
+  <dimen name="tz_tut_block_top">28dp</dimen>
+  <dimen name="tz_tut_block_h">54dp</dimen>
+  <dimen name="tz_tut_number">84sp</dimen>
+  <dimen name="tz_tut_number_top">110dp</dimen>
+  <dimen name="tz_tut_number_start">20dp</dimen>
+  <dimen name="tz_tut_pill_h">44dp</dimen>
+  <dimen name="tz_tut_pill_bottom">34dp</dimen>
+  <dimen name="tz_tut_dot">7dp</dimen>
+  <dimen name="tz_tut_dot_active_w">20dp</dimen>
+  <dimen name="tz_tut_dot_gap">5dp</dimen>
+  <dimen name="tz_tut_dots_bottom">12dp</dimen>
+  <dimen name="tz_tut_sheet_h">150dp</dimen>
+  <dimen name="tz_tut_sheet_radius">22dp</dimen>
+  <dimen name="tz_tut_sheet_bottom_radius">26dp</dimen>
+  <dimen name="tz_tut_sheet_rise">40dp</dimen>
+  <dimen name="tz_tut_grabber_top">10dp</dimen>
+  <dimen name="tz_tut_bar_h">36dp</dimen>
+  <dimen name="tz_tut_bar_radius">12dp</dimen>
+  <dimen name="tz_tut_bar_side">14dp</dimen>
+  <dimen name="tz_tut_grey_bar_bottom">70dp</dimen>
+  <dimen name="tz_tut_red_bar_bottom">22dp</dimen>
+  <dimen name="tz_tut_chevron">36dp</dimen>
+  <dimen name="tz_tut_chevron_top">70dp</dimen>
+  <dimen name="tz_tut_profile_h">40dp</dimen>
+  <dimen name="tz_tut_profile_pad_start">12dp</dimen>
+  <dimen name="tz_tut_profile_pad_end">14dp</dimen>
+  <dimen name="tz_tut_profile_icon">18dp</dimen>
+  <dimen name="tz_tut_profile_gap">8dp</dimen>
+  <!-- T4's mini map, in the board's 190-wide units scaled to the frame -->
+  <dimen name="tz_tut_road_w">5dp</dimen>
+  <dimen name="tz_tut_line_w">6dp</dimen>
+  <dimen name="tz_tut_start_r">8dp</dimen>
+  <dimen name="tz_tut_pin_r">9dp</dimen>
+  <dimen name="tz_tut_pin_halo_r">22dp</dimen>
+  <dimen name="tz_tut_pin_ring">3dp</dimen>
+  <dimen name="tz_tut_pin_drop">30dp</dimen>
 </resources>

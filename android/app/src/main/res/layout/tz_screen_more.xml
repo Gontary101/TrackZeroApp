@@ -40,6 +40,8 @@
         app:tzIcon="@drawable/ic_tz_pause" app:tzTitle="@string/tz_more_auto_pause" />
     </LinearLayout>
     <LinearLayout style="@style/TzListGroup" android:layout_marginTop="@dimen/tz_space_16">
+      <app.trackzero.ui.TzListRow android:id="@+id/tz_more_tutorial" style="@style/TzListRow"
+        app:tzIcon="@drawable/ic_tz_help" app:tzTitle="@string/tz_more_tutorial" />
       <app.trackzero.ui.TzListRow android:id="@+id/tz_more_about" style="@style/TzListRow"
         app:tzIcon="@drawable/ic_tz_info" app:tzTitle="@string/tz_more_about" />
     </LinearLayout>

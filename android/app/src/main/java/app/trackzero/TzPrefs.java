@@ -5,6 +5,7 @@ import android.content.SharedPreferences;
 import androidx.annotation.NonNull;
 import app.trackzero.format.TzFormat;
 import app.trackzero.routes.Profile;
+import app.trackzero.tutorial.TutorialFlow;
 
 /** TrackZero settings in SharedPreferences "tz_prefs" (plan §9.6, Phase 13). */
 public final class TzPrefs
@@ -22,6 +23,7 @@ public final class TzPrefs
   private static final String LINE_STYLE = "lineStyle";
   private static final String PROFILE = "profile";
   private static final String APPEARANCE = "appearance";
+  private static final String TUTORIAL_DONE = "tutorialDone";
 
   private TzPrefs() {}
 
@@ -61,6 +63,26 @@ public final class TzPrefs
   public static void setLight(@NonNull Context c, boolean light)
   {
     prefs(c).edit().putString(APPEARANCE, light ? "light" : "dark").commit();
+  }
+
+  /** The first-launch tutorial (Phase 37) as its flow sees it: done once skipped or finished. */
+  @NonNull
+  public static TutorialFlow.Store tutorial(@NonNull Context c)
+  {
+    final Context app = c.getApplicationContext();
+    return new TutorialFlow.Store() {
+      @Override
+      public boolean tutorialDone()
+      {
+        return prefs(app).getBoolean(TUTORIAL_DONE, false);
+      }
+
+      @Override
+      public void setTutorialDone()
+      {
+        prefs(app).edit().putBoolean(TUTORIAL_DONE, true).apply();
+      }
+    };
   }
 
   public static boolean voice(@NonNull Context c)

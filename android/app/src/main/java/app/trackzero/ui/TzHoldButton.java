@@ -34,6 +34,8 @@ public class TzHoldButton extends View
   }
 
   private static final long RELEASE_MS = 200;
+  /** The mini bar rests full this long, then empties for another try. */
+  private static final long MINI_REST_MS = 700;
 
   private final Paint mBgPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
   private final Paint mFillPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -42,7 +44,7 @@ public class TzHoldButton extends View
   private final Path mClip = new Path();
   @NonNull
   private final Drawable mIcon;
-  private final float mRadius;
+  private float mRadius;
   private final int mIconSize;
   private final int mIconGap;
   @NonNull
@@ -58,6 +60,9 @@ public class TzHoldButton extends View
   private long mFromTime;
 
   private final Runnable mFrame = this::onFrame;
+  /** The tutorial's bar (T2): no label or icon, and it confirms nothing. */
+  private boolean mMini;
+  private final Runnable mMiniReset = this::reset;
 
   public TzHoldButton(@NonNull Context context, @Nullable AttributeSet attrs)
   {
@@ -90,10 +95,27 @@ public class TzHoldButton extends View
     mListener = listener;
   }
 
+  /**
+   * The tutorial's miniature (T2, Phase 37): the red bar alone, to try holding it. It fills in the same time as the
+   * real one, rests full for a moment and empties again; nothing else happens.
+   */
+  public void setMini()
+  {
+    mMini = true;
+    mRadius = getResources().getDimension(R.dimen.tz_tut_bar_radius);
+    setContentDescription(getResources().getString(R.string.tz_tut_cd_bar));
+    ViewCompat.replaceAccessibilityAction(this, AccessibilityActionCompat.ACTION_LONG_CLICK,
+                                          getResources().getString(R.string.tz_tut_cd_bar_action), (v, args) -> {
+                                            confirm();
+                                            return true;
+                                          });
+  }
+
   /** Back to the initial state, e.g. when the sheet is reopened. */
   public void reset()
   {
     removeCallbacks(mFrame);
+    removeCallbacks(mMiniReset);
     mHolding = false;
     mConfirmed = false;
     mProgress = 0;
@@ -185,7 +207,9 @@ public class TzHoldButton extends View
     mLabel = getResources().getString(R.string.tz_ride_saved_button);
     performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
     invalidate();
-    if (mListener != null)
+    if (mMini)
+      postDelayed(mMiniReset, MINI_REST_MS);
+    else if (mListener != null)
       mListener.onConfirmed();
   }
 
@@ -194,6 +218,9 @@ public class TzHoldButton extends View
   {
     super.onDetachedFromWindow();
     removeCallbacks(mFrame);
+    removeCallbacks(mMiniReset);
+    if (mMini)
+      mConfirmed = false;
     if (!mConfirmed)
     {
       mHolding = false;
@@ -212,6 +239,8 @@ public class TzHoldButton extends View
       canvas.drawRect(0, 0, mRect.width() * mProgress, mRect.height(), mFillPaint);
       canvas.restoreToCount(save);
     }
+    if (mMini)
+      return;
     final float textW = mTextPaint.measureText(mLabel);
     final float contentW = mIconSize + mIconGap + textW;
     final float left = (getWidth() - contentW) / 2f;

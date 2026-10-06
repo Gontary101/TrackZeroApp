@@ -13,7 +13,10 @@ import androidx.core.content.ContextCompat;
 import app.organicmaps.R;
 import java.util.Arrays;
 
-/** Ride carousel handle: grabber + exactly 3 page dots; the active dot is a 24dp mint pill. */
+/**
+ * Ride carousel handle: grabber + exactly 3 page dots; the active dot is a 24dp mint pill. {@link #showDotsOnly}
+ * makes it the tutorial's dots (Phase 37): no grabber, any number of pages, from the start edge.
+ */
 public class TzPageHandle extends View
 {
   public static final int PAGES = 3;
@@ -29,7 +32,9 @@ public class TzPageHandle extends View
   private final float mDotGap;
   private final float mRowGap;
   /** Each dot's current "activeness", 0..1, animated so widths change smoothly. */
-  private final float[] mWeights = new float[PAGES];
+  private float[] mWeights = new float[PAGES];
+  private int mPages = PAGES;
+  private boolean mDotsOnly;
   private int mPage;
   @Nullable
   private ValueAnimator mAnimator;
@@ -48,6 +53,18 @@ public class TzPageHandle extends View
     mRowGap = getResources().getDimension(R.dimen.tz_handle_row_gap);
     mWeights[0] = 1f;
     updateDescription();
+  }
+
+  /** Only the dots, {@code pages} of them, from the start edge, the first one active. */
+  public void showDotsOnly(int pages)
+  {
+    mDotsOnly = true;
+    mPages = pages;
+    mWeights = new float[pages];
+    mWeights[0] = 1f;
+    mPage = 0;
+    updateDescription();
+    requestLayout();
   }
 
   public void setPage(int page, boolean animate)
@@ -71,7 +88,7 @@ public class TzPageHandle extends View
     mAnimator.setInterpolator(TzMotion.EASE);
     mAnimator.addUpdateListener(a -> {
       final float t = (float) a.getAnimatedValue();
-      for (int i = 0; i < PAGES; i++)
+      for (int i = 0; i < mPages; i++)
         mWeights[i] = start[i] + ((i == page ? 1f : 0f) - start[i]) * t;
       invalidate();
     });
@@ -80,32 +97,42 @@ public class TzPageHandle extends View
 
   private void updateDescription()
   {
-    setContentDescription(getResources().getString(R.string.tz_cd_page_handle, mPage + 1, PAGES));
+    setContentDescription(getResources().getString(mDotsOnly ? R.string.tz_cd_tutorial_step : R.string.tz_cd_page_handle,
+                                                   mPage + 1, mPages));
   }
 
   @Override
   protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec)
   {
     setMeasuredDimension(getDefaultSize(getSuggestedMinimumWidth(), widthMeasureSpec),
-                         getResources().getDimensionPixelSize(R.dimen.tz_handle_h));
+                         mDotsOnly ? Math.round(mDotSize) : getResources().getDimensionPixelSize(R.dimen.tz_handle_h));
   }
 
   @Override
   protected void onDraw(@NonNull Canvas canvas)
   {
     final float cx = getWidth() / 2f;
-    final float contentH = mGrabberH + mRowGap + mDotSize;
-    final float top = (getHeight() - contentH) / 2f;
-    mRect.set(cx - mGrabberW / 2f, top, cx + mGrabberW / 2f, top + mGrabberH);
-    canvas.drawRoundRect(mRect, mGrabberH / 2f, mGrabberH / 2f, mGrabber);
-
-    float rowW = mDotGap * (PAGES - 1);
+    float rowW = mDotGap * (mPages - 1);
     for (float w : mWeights)
       rowW += mDotSize + (mActiveW - mDotSize) * w;
-    float x = cx - rowW / 2f;
-    final float dotTop = top + mGrabberH + mRowGap;
+    float x;
+    final float dotTop;
+    if (mDotsOnly)
+    {
+      x = getLayoutDirection() == LAYOUT_DIRECTION_RTL ? getWidth() - rowW : 0;
+      dotTop = (getHeight() - mDotSize) / 2f;
+    }
+    else
+    {
+      final float contentH = mGrabberH + mRowGap + mDotSize;
+      final float top = (getHeight() - contentH) / 2f;
+      mRect.set(cx - mGrabberW / 2f, top, cx + mGrabberW / 2f, top + mGrabberH);
+      canvas.drawRoundRect(mRect, mGrabberH / 2f, mGrabberH / 2f, mGrabber);
+      x = cx - rowW / 2f;
+      dotTop = top + mGrabberH + mRowGap;
+    }
     final float r = mDotSize / 2f;
-    for (int i = 0; i < PAGES; i++)
+    for (int i = 0; i < mPages; i++)
     {
       final float w = mDotSize + (mActiveW - mDotSize) * mWeights[i];
       mRect.set(x, dotTop, x + w, dotTop + mDotSize);

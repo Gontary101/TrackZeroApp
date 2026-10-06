@@ -32,6 +32,8 @@ import app.trackzero.screens.TzSoundsScreen;
 import app.trackzero.screens.TzStopScreen;
 import app.trackzero.screens.TzStopsScreen;
 import app.trackzero.screens.TzSummaryScreen;
+import app.trackzero.screens.TzTutorialScreen;
+import app.trackzero.tutorial.TutorialFlow;
 import app.trackzero.ui.TzBottomIsland;
 
 /**
@@ -61,7 +63,9 @@ public final class TzNavigator
     /** M1: sounds (Phase 32). */
     SOUNDS(true, TzBottomIsland.Tab.MORE),
     RIDE(false, null),
-    SUMMARY(true, null);
+    SUMMARY(true, null),
+    /** T1–T4: the first-launch tutorial (Phase 37), also from More. */
+    TUTORIAL(true, null);
 
     /** Covers the map completely: map drawing is paused while shown. */
     final boolean opaque;
@@ -153,13 +157,18 @@ public final class TzNavigator
 
     activity.getOnBackPressedDispatcher().addCallback(activity, sBack);
 
-    // After recreation FragmentManager restores the visible screen by itself; otherwise start on the map, or on
-    // the ride when one is running.
+    // After recreation FragmentManager restores the visible screen by itself; otherwise start on the map, on the
+    // ride when one is running, or on the tutorial the first time.
     final Fragment restored = fm().findFragmentById(R.id.tz_screen_container);
     if (restored != null && restored.getTag() != null)
       onShown(Screen.valueOf(restored.getTag()));
     else
-      show(TzRide.inProgress(activity) ? Screen.RIDE : Screen.MAP, null);
+      show(switch (TutorialFlow.start(TzRide.inProgress(activity), TzPrefs.tutorial(activity)))
+      {
+        case RIDE -> Screen.RIDE;
+        case TUTORIAL -> Screen.TUTORIAL;
+        default -> Screen.MAP;
+      }, null);
   }
 
   public static void detach(@NonNull FragmentActivity activity)
@@ -240,6 +249,7 @@ public final class TzNavigator
       case ABOUT -> new TzAboutScreen();
       case MAPS -> new TzMapsScreen();
       case SOUNDS -> new TzSoundsScreen();
+      case TUTORIAL -> new TzTutorialScreen();
       default -> null;
     };
   }
@@ -251,6 +261,11 @@ public final class TzNavigator
     // The ride screen pauses the map per carousel page itself.
     if (screen != Screen.RIDE)
       TzMap.setRenderingEnabled(!screen.opaque);
+    // A screen reader must not find the map under an opaque screen (it came before SKIP on the tutorial).
+    final View map = sActivity == null ? null : sActivity.findViewById(R.id.tz_map);
+    if (map != null)
+      map.setImportantForAccessibility(screen.opaque ? View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS
+                                                     : View.IMPORTANT_FOR_ACCESSIBILITY_AUTO);
     if (sIsland != null)
     {
       sIsland.setVisibility(screen.islandTab != null ? View.VISIBLE : View.GONE);
@@ -297,8 +312,9 @@ public final class TzNavigator
     // S1 and S2 go back themselves (to the ride, the preview or S1).
     case STOPS, STOP -> show(Screen.RIDE, null);
     case HISTORY, ABOUT, MAPS, SOUNDS -> show(Screen.MORE, null);
-    // Back never ends a ride: the ride screen opens its controls sheet in onBackPressed().
-    case RIDE, MAP -> {}
+    // Back never ends a ride: the ride screen opens its controls sheet in onBackPressed(). The tutorial ends
+    // itself.
+    case RIDE, MAP, TUTORIAL -> {}
     }
   }
 

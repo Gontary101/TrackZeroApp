@@ -429,7 +429,7 @@
   <string name="tz_tone_arrived">Arrived</string>
   <string name="tz_tone_off_route">Off route</string>
   <string name="tz_tone_gps_lost">GPS lost</string>
-  <string name="tz_tone_cd">Play the %1$s tone</string>
+  <string name="tz_tone_cd">%1$s tone</string>
   <!-- S1 · Stops, S2 · Add a stop (Phase 30) -->
   <string name="tz_stops_title">STOPS</string>
   <string name="tz_stops_tile">Stops</string>
@@ -528,4 +528,23 @@
     <item>West</item>
     <item>North-west</item>
   </string-array>
+
+  <!-- T1–T4 first-launch tutorial (Phase 37); one short sentence per step, as on the boards -->
+  <string name="tz_tut_skip">Skip</string>
+  <string name="tz_tut_next">Next</string>
+  <string name="tz_tut_start">Start</string>
+  <string name="tz_tut_swipe_title">SWIPE</string>
+  <string name="tz_tut_swipe_text">Map, speed, climb. Swipe sideways to change page.</string>
+  <string name="tz_tut_pull_title">PULL UP</string>
+  <string name="tz_tut_pull_text">Pull up from the bottom for controls. Hold the red button to end a ride.</string>
+  <string name="tz_tut_listen_title">LISTEN</string>
+  <string name="tz_tut_listen_text">Each turn has its own tone. Tap one to hear it.</string>
+  <string name="tz_tut_plan_title">PLAN</string>
+  <string name="tz_tut_plan_text">Press and hold the map to plan a route. Pick how you travel.</string>
+  <string name="tz_tut_speed" translatable="false">32.4</string>
+  <string name="tz_tut_cd_bar">Practice end button. Touch and hold to fill it; it ends nothing.</string>
+  <string name="tz_tut_cd_bar_action">fill</string>
+  <string name="tz_cd_tutorial_step">Step %1$d of %2$d</string>
+  <string name="tz_tone_cd_action">play</string>
+  <string name="tz_more_tutorial">Show the tutorial</string>
 </resources>
