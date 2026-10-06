@@ -9,6 +9,7 @@ import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import app.organicmaps.sdk.routing.BicyclePath;
 import app.organicmaps.sdk.routing.CarDirection;
+import app.organicmaps.sdk.routing.PedestrianTurnDirection;
 import app.trackzero.follow.FollowRoute;
 import app.trackzero.follow.Maneuver;
 import app.trackzero.follow.RouteManeuver;
@@ -138,15 +139,15 @@ public final class TzRouter
   @Nullable
   private static RoutedPath toPath(@NonNull BicyclePath p)
   {
-    return toPath(p.lat, p.lon, p.ele, p.turnPoint, p.turnDirection, p.turnExit, p.turnStreet);
+    return toPath(p.lat, p.lon, p.ele, p.turnPoint, p.turnDirection, p.turnPedestrian, p.turnExit, p.turnStreet);
   }
 
   /** CoMaps' path in TrackZero's terms: repeated points dropped, its turns as maneuvers ending with ARRIVE. */
   @VisibleForTesting
   @Nullable
   static RoutedPath toPath(@NonNull double[] lat, @NonNull double[] lon, @Nullable double[] ele,
-                           @NonNull int[] turnPoint, @NonNull int[] turnDirection, @NonNull int[] turnExit,
-                           @NonNull String[] turnStreet)
+                           @NonNull int[] turnPoint, @NonNull int[] turnDirection, @NonNull int[] turnPedestrian,
+                           @NonNull int[] turnExit, @NonNull String[] turnStreet)
   {
     final int n = lat.length;
     final int[] kept = new int[n];
@@ -174,7 +175,7 @@ public final class TzRouter
     final List<RouteManeuver> maneuvers = new ArrayList<>();
     for (int t = 0; t < turnPoint.length; t++)
     {
-      final Maneuver m = maneuver(turnDirection[t]);
+      final Maneuver m = turnPedestrian[t] != 0 ? Turns.pedestrian(turnPedestrian[t]) : Turns.car(turnDirection[t]);
       if (m == null || turnPoint[t] < 0 || turnPoint[t] >= n)
         continue;
       final double at = line.distanceAt(kept[turnPoint[t]]);
@@ -186,25 +187,48 @@ public final class TzRouter
     return new RoutedPath(line, maneuvers, kEle == null ? null : trim(kEle, count));
   }
 
-  /** CoMaps' turn as a TrackZero maneuver; null for the ones not announced (straight on, roundabout entry...). */
-  @Nullable
-  private static Maneuver maneuver(int direction)
+  /** CoMaps' turns as TrackZero maneuvers (a class of its own: loadable without the router's main-thread Handler). */
+  static final class Turns
   {
-    final CarDirection[] all = CarDirection.values();
-    if (direction < 0 || direction >= all.length)
-      return null;
-    return switch (all[direction])
+    private Turns() {}
+
+    /** CoMaps' turn as a TrackZero maneuver; null for the ones not announced (straight on, roundabout entry...). */
+    @Nullable
+    static Maneuver car(int direction)
     {
-      case GO_STRAIGHT -> Maneuver.STRAIGHT;
-      case TURN_RIGHT, TURN_SHARP_RIGHT -> Maneuver.TURN_RIGHT;
-      case TURN_SLIGHT_RIGHT, EXIT_HIGHWAY_TO_RIGHT -> Maneuver.SLIGHT_RIGHT;
-      case TURN_LEFT, TURN_SHARP_LEFT -> Maneuver.TURN_LEFT;
-      case TURN_SLIGHT_LEFT, EXIT_HIGHWAY_TO_LEFT -> Maneuver.SLIGHT_LEFT;
-      case U_TURN_LEFT, U_TURN_RIGHT -> Maneuver.UTURN;
-      case LEAVE_ROUND_ABOUT -> Maneuver.ROUNDABOUT;
-      case REACHED_YOUR_DESTINATION -> Maneuver.ARRIVE;
-      case NO_TURN, ENTER_ROUND_ABOUT, STAY_ON_ROUND_ABOUT, START_AT_THE_END_OF_STREET -> null;
-    };
+      final CarDirection[] all = CarDirection.values();
+      if (direction < 0 || direction >= all.length)
+        return null;
+      return switch (all[direction])
+      {
+        case GO_STRAIGHT -> Maneuver.STRAIGHT;
+        case TURN_RIGHT, TURN_SHARP_RIGHT -> Maneuver.TURN_RIGHT;
+        case TURN_SLIGHT_RIGHT, EXIT_HIGHWAY_TO_RIGHT -> Maneuver.SLIGHT_RIGHT;
+        case TURN_LEFT, TURN_SHARP_LEFT -> Maneuver.TURN_LEFT;
+        case TURN_SLIGHT_LEFT, EXIT_HIGHWAY_TO_LEFT -> Maneuver.SLIGHT_LEFT;
+        case U_TURN_LEFT, U_TURN_RIGHT -> Maneuver.UTURN;
+        case LEAVE_ROUND_ABOUT -> Maneuver.ROUNDABOUT;
+        case REACHED_YOUR_DESTINATION -> Maneuver.ARRIVE;
+        case NO_TURN, ENTER_ROUND_ABOUT, STAY_ON_ROUND_ABOUT, START_AT_THE_END_OF_STREET -> null;
+      };
+    }
+
+    /** A turn on foot (a walking path, Phase 25) as a TrackZero maneuver. */
+    @Nullable
+    static Maneuver pedestrian(int direction)
+    {
+      final PedestrianTurnDirection[] all = PedestrianTurnDirection.values();
+      if (direction < 0 || direction >= all.length)
+        return null;
+      return switch (all[direction])
+      {
+        case GO_STRAIGHT -> Maneuver.STRAIGHT;
+        case TURN_RIGHT -> Maneuver.TURN_RIGHT;
+        case TURN_LEFT -> Maneuver.TURN_LEFT;
+        case REACHED_YOUR_DESTINATION -> Maneuver.ARRIVE;
+        case NO_TURN -> null;
+      };
+    }
   }
 
   @NonNull

@@ -61,11 +61,12 @@ routing::IndexRouter & Router(Framework & f, int profile)
 
   static traffic::TrafficCache const kNoTraffic;
   // The models are built for the profile set now (Road: quieter roads; Gravel: minor roads, gravel and easy tracks;
-  // Phase 24) and never change: hence a new router for another profile. Walk and Hike get the pedestrian router in
-  // Phases 25 and 26; until then they ride the bicycle one.
-  routing::SetTzProfile(static_cast<routing::TzProfile>(profile));
+  // Phase 24) and never change: hence a new router for another profile. Walk and Hike route on foot (Phase 25).
+  auto const tzProfile = static_cast<routing::TzProfile>(profile);
+  routing::SetTzProfile(tzProfile);
+  bool const onFoot = tzProfile == routing::TzProfile::Walk || tzProfile == routing::TzProfile::Hike;
   g_router = std::make_unique<routing::IndexRouter>(
-      routing::VehicleType::Bicycle, true /* loadAltitudes */,
+      onFoot ? routing::VehicleType::Pedestrian : routing::VehicleType::Bicycle, true /* loadAltitudes */,
       [&storage](std::string const & id) { return storage.GetParentIdFor(id); },
       [&infoGetter](m2::PointD const & p) { return infoGetter.GetRegionCountryId(p); },
       [&infoGetter](std::string const & id) { return infoGetter.GetLimitRectForLeaf(id); }, numMwmIds,
@@ -75,11 +76,12 @@ routing::IndexRouter & Router(Framework & f, int profile)
 
 jobject MakePath(JNIEnv * env, int code, std::vector<double> const & lat, std::vector<double> const & lon,
                  std::vector<double> const & ele, std::vector<int> const & turnPoint, std::vector<int> const & turnType,
-                 std::vector<int> const & turnExit, std::vector<std::string> const & turnStreet)
+                 std::vector<int> const & turnPedestrian, std::vector<int> const & turnExit,
+                 std::vector<std::string> const & turnStreet)
 {
   static jclass const pathClass = jni::GetGlobalClassRef(env, "app/organicmaps/sdk/routing/BicyclePath");
   static jmethodID const ctor =
-      jni::GetConstructorID(env, pathClass, "(I[D[D[D[I[I[I[Ljava/lang/String;)V");
+      jni::GetConstructorID(env, pathClass, "(I[D[D[D[I[I[I[I[Ljava/lang/String;)V");
 
   auto const doubles = [env](std::vector<double> const & v)
   {
@@ -100,10 +102,11 @@ jobject MakePath(JNIEnv * env, int code, std::vector<double> const & lat, std::v
   jni::TScopedLocalRef const jEle(env, ele.empty() ? nullptr : doubles(ele));
   jni::TScopedLocalRef const jPoint(env, ints(turnPoint));
   jni::TScopedLocalRef const jType(env, ints(turnType));
+  jni::TScopedLocalRef const jPedestrian(env, ints(turnPedestrian));
   jni::TScopedLocalRef const jExit(env, ints(turnExit));
   jni::TScopedLocalRef const jStreet(env, jni::ToJavaStringArray(env, turnStreet));
   return env->NewObject(pathClass, ctor, static_cast<jint>(code), jLat.get(), jLon.get(), jEle.get(), jPoint.get(),
-                        jType.get(), jExit.get(), jStreet.get());
+                        jType.get(), jPedestrian.get(), jExit.get(), jStreet.get());
 }
 }  // namespace
 
@@ -166,7 +169,7 @@ JNIEXPORT jobject JNICALL Java_app_organicmaps_sdk_routing_BicyclePath_nativeBui
   }
 
   std::vector<double> lat, lon, ele;
-  std::vector<int> turnPoint, turnType, turnExit;
+  std::vector<int> turnPoint, turnType, turnPedestrian, turnExit;
   std::vector<std::string> turnStreet;
   if (code == routing::RouterResultCode::NoError && route.IsValid())
   {
@@ -193,6 +196,8 @@ JNIEXPORT jobject JNICALL Java_app_organicmaps_sdk_routing_BicyclePath_nativeBui
       auto const & turn = segments[step.m_index].GetTurn();
       turnPoint.push_back(static_cast<int>(turn.m_index));
       turnType.push_back(static_cast<int>(step.m_turn));
+      // A path on foot has pedestrian turns instead (Phase 25).
+      turnPedestrian.push_back(static_cast<int>(step.m_pedestrianTurn));
       turnExit.push_back(static_cast<int>(step.m_exitNum));
       turnStreet.push_back(step.m_toStreetName);
     }
@@ -201,7 +206,8 @@ JNIEXPORT jobject JNICALL Java_app_organicmaps_sdk_routing_BicyclePath_nativeBui
   {
     LOG(LINFO, ("No bicycle path:", code));
   }
-  return MakePath(env, static_cast<int>(code), lat, lon, ele, turnPoint, turnType, turnExit, turnStreet);
+  return MakePath(env, static_cast<int>(code), lat, lon, ele, turnPoint, turnType, turnPedestrian, turnExit,
+                  turnStreet);
 }
 
 // Frees the router and its loaded road graphs; call on the thread that builds paths.

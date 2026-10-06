@@ -36,6 +36,8 @@
   <string name="tz_navigate_here">Navigate here</string>
   <!-- Route preview of a ride to a place (Phase 15). -->
   <string name="tz_preview_to_place">Route by bike</string>
+  <!-- A walking path to a place (Phase 25): its time on foot, H:MM -->
+  <string name="tz_preview_on_foot">On foot · about %1$s</string>
   <string name="tz_preview_finding">Finding a route…</string>
   <string name="tz_preview_no_gps">Waiting for your position…</string>
   <string name="tz_preview_no_route">No bike route found</string>
@@ -185,6 +187,8 @@
   <!-- Ride screen (R1–R7) -->
   <string name="tz_free_ride">FREE RIDE</string>
   <string name="tz_free_ride_name">Free ride %1$s</string>
+  <!-- A free ride with the Walk profile (Phase 25) -->
+  <string name="tz_free_walk_name">Walk %1$s</string>
   <string name="tz_ride_speed_title">SPEED</string>
   <string name="tz_ride_elevation_title">ELEVATION</string>
   <string name="tz_unit_kmh_dot">KM/H</string>

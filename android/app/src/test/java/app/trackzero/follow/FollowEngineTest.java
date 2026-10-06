@@ -179,6 +179,15 @@ public class FollowEngineTest
   }
 
   @Test
+  public void onFootTheEtaStartsAtWalkingSpeed()
+  {
+    Ride ride = new Ride(longStraight());
+    ride.engine.setFoot(true);
+    ride.onRoute();
+    assertEquals(ride.engine.remainingM() / (TzConfig.ETA_FALLBACK_FOOT_KMH / 3.6), ride.engine.etaSeconds(), 1e-9);
+  }
+
+  @Test
   public void etaUsesFallbackThroughoutFirstTwoMinutesOfMovingTime()
   {
     Ride ride = new Ride(longStraight());

@@ -51,6 +51,8 @@ public final class Guide
   private final boolean mToPlace;
   private final double mPlaceLat;
   private final double mPlaceLon;
+  /** On foot (Walk, Hike): the engines it makes follow at walking speeds (Phase 25). */
+  private final boolean mFoot;
 
   @Nullable
   private FollowEngine mMain;
@@ -78,8 +80,9 @@ public final class Guide
   private long mRideMovingMs;
 
   private Guide(@NonNull Paths paths, @NonNull FollowEngine.Events events, boolean toPlace, double placeLat,
-                double placeLon)
+                double placeLon, boolean foot)
   {
+    mFoot = foot;
     mPaths = paths;
     mEvents = events;
     mToPlace = toPlace;
@@ -111,7 +114,16 @@ public final class Guide
   @NonNull
   public static Guide forTrack(@NonNull FollowEngine engine, @NonNull Paths paths, @NonNull FollowEngine.Events events)
   {
-    final Guide g = new Guide(paths, events, false, Double.NaN, Double.NaN);
+    return forTrack(engine, paths, events, false);
+  }
+
+  /** As above; {@code foot}: on foot, set on {@code engine} too. */
+  @NonNull
+  public static Guide forTrack(@NonNull FollowEngine engine, @NonNull Paths paths, @NonNull FollowEngine.Events events,
+                               boolean foot)
+  {
+    final Guide g = new Guide(paths, events, false, Double.NaN, Double.NaN, foot);
+    engine.setFoot(foot);
     g.mMain = engine;
     return g;
   }
@@ -121,7 +133,15 @@ public final class Guide
   public static Guide forPlace(double lat, double lon, @Nullable RoutedPath path, @NonNull Paths paths,
                                @NonNull FollowEngine.Events events)
   {
-    final Guide g = new Guide(paths, events, true, lat, lon);
+    return forPlace(lat, lon, path, paths, events, false);
+  }
+
+  /** As above, {@code foot}: on foot. */
+  @NonNull
+  public static Guide forPlace(double lat, double lon, @Nullable RoutedPath path, @NonNull Paths paths,
+                               @NonNull FollowEngine.Events events, boolean foot)
+  {
+    final Guide g = new Guide(paths, events, true, lat, lon, foot);
     if (path != null)
       g.setMain(path);
     return g;
@@ -134,7 +154,8 @@ public final class Guide
     mHasFix = true;
     mLat = lat;
     mLon = lon;
-    if (!Double.isNaN(courseDeg) && speedMps >= FollowEngine.COURSE_MIN_MPS)
+    if (!Double.isNaN(courseDeg)
+        && speedMps >= (mFoot ? FollowEngine.COURSE_MIN_FOOT_MPS : FollowEngine.COURSE_MIN_MPS))
       mCourseDeg = courseDeg;
     mSpeedMps = speedMps;
     mElapsedMs = elapsedMs;
@@ -245,6 +266,7 @@ public final class Guide
   private void setMain(@NonNull RoutedPath path)
   {
     final FollowEngine e = new FollowEngine(path.line, path.maneuvers(Maneuver.ARRIVE), mEvents);
+    e.setFoot(mFoot);
     if (mMain != null)
       e.inheritSpeed(mMain);
     mMain = e;
@@ -278,6 +300,7 @@ public final class Guide
     if (mMain == null || onIt(mMain))
       return;
     mLeg = new FollowEngine(path.line, path.maneuvers(Maneuver.JOIN), mLegEvents);
+    mLeg.setFoot(mFoot);
     mLegEndAlong = mPendingEndAlong;
     mLines++;
     place(mLeg);

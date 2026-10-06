@@ -111,6 +111,14 @@ public final class TzFormat
     return String.format(Locale.ROOT, "%d:%02d:%02d", s / 3600, (s / 60) % 60, s % 60);
   }
 
+  /** A time estimate: H:MM (0:42, 2:05), rounded to the minute. */
+  @NonNull
+  public static String hoursMinutes(long seconds)
+  {
+    final long m = Math.max(0, Math.round(seconds / 60.0));
+    return String.format(Locale.ROOT, "%d:%02d", m / 60, m % 60);
+  }
+
   /** Wall-clock time: 14:52 / 09:05 (HH:mm), or 2:52 PM when {@code use24h} is false. */
   @NonNull
   public static String clock(long epochMs, @NonNull TimeZone tz, boolean use24h)

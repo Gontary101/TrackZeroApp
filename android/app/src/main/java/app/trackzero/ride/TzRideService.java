@@ -430,7 +430,7 @@ public final class TzRideService extends Service
       // After a restore there is no previewed path: one is worked out from the first fix.
       final RoutedPath path = sPreviewedPath;
       sPreviewedPath = null;
-      mGuide = Guide.forPlace(s.placeLat(), s.placeLon(), path, mPaths, mFollowEvents);
+      mGuide = Guide.forPlace(s.placeLat(), s.placeLon(), path, mPaths, mFollowEvents, s.profile().foot);
       if (TzTrace.on())
         TzTrace.log("ride", "guide created (place, path " + (path == null ? "none" : Math.round(path.line.totalM()) + " m") + ")");
       mVoice = new TzVoice(this);
@@ -455,7 +455,7 @@ public final class TzRideService extends Service
         TzIo.submit(() -> prepare(g, maps), prepared -> {
           if (mSession == null || mGuide != null)
             return;
-          mGuide = Guide.forTrack(prepared.engine, mPaths, mFollowEvents);
+          mGuide = Guide.forTrack(prepared.engine, mPaths, mFollowEvents, mSession.profile().foot);
           if (TzTrace.on())
             TzTrace.log("ride", "guide created (track " + Math.round(prepared.engine.totalM()) + " m)");
           mClimbs = prepared.climbs;

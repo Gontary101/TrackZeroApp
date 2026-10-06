@@ -102,6 +102,12 @@ After completing the fixes and features above, systematically test TrackZero and
 
 Once the app is complete and ready to showcase, create a **sleek, professional marketing video lasting 1–2 minutes** that presents TrackZero beautifully and conveys its experience and distinctive capabilities. Give the creative agent broad freedom to develop the concept, visual direction, pacing, animation, sound, and editing style. It may use **any software, tools, or workflows it considers appropriate**—for example, Blender (including Blender MCP), DaVinci Resolve, or other tools—and should not be constrained by a prescribed storyboard, production method, or technical stack. For creative inspiration, study the clean, high-production-value launch films of **OpenAI, Airbnb, and other leading brands**—their restrained visual language, purposeful motion, refined typography, pacing, and clear storytelling. Use those references to understand the desired level of polish, **not to copy their footage, music, graphics, branding, or specific creative execution**. These are inspirations, not a prescribed style or storyboard: the agent retains full creative freedom to give TrackZero its own distinctive identity. **Make TrackZero’s actual interface the primary visual reference:** inspect the latest app screenshots and other imagery in the GitHub repository, as well as the finished app itself, before defining the video’s visual direction. The film should feel like a natural extension of TrackZero’s clean, minimalist, uncluttered design—reflecting its dark backgrounds, existing color accents, typography, spacing, and restrained visual hierarchy. Make **exceptional motion design a defining feature** of the video: aim for striking, cinematic choreography with impeccably timed transitions, elegant UI animation, expressive camera work, sophisticated typography in motion, and sound design synchronized to the visuals, as the creative concept warrants. Treat transitions as a standout part of the motion design: make scene changes, product reveals, and movement between UI views feel seamless, inventive, and precisely timed, choosing the techniques freely to serve the story rather than relying on generic preset effects. Pursue a genuinely memorable, high-end launch-film standard while keeping every movement purposeful, legible, and faithful to TrackZero’s minimalist identity—never adding clutter, gratuitous effects, or misleading app interactions. The agent retains full creative freedom over the techniques and execution. Show the real app accurately, without inventing UI or implying unfinished features are available. Aim for a polished, cohesive result worthy of a real app launch, using accurate representations of the finished app and appropriately licensed or original assets. Deliver the finished playable video; retain editable project/source files where practical. If preparing a commercial launch, resolve relevant rights and branding questions from the optional legal-audit phase before publication.
 
+## Observed during v2, for the Phase 38 bug hunt
+
+- **Leg back onto the track reads "Head to start".** When the router starts a leg on a road more than 60 m from the
+  rider (seen on the emulator's off-road detour, Road and Walk), the leg engine shows HEAD_TO_START: "Head to start"
+  with an arrow to the leg's first point. The wording is about the route's start, not the leg's (D50).
+
 ## Fixed and verified
 
 _No bugs marked as fixed yet._
@@ -117,6 +123,8 @@ _No bugs marked as fixed yet._
   under the island on every page. Field check: NEEDS OWNER N18 (handle part).
 - **FEAT-005** — Phase 20. Research in `TZ_RESEARCH_ROUTE_VISIBILITY.md`; 8dp line with a black casing (D45).
   Field check: NEEDS OWNER N20 (choose among four candidates).
+- **FEAT-012** — Phase 25. Walking profile: pedestrian router, walking turns, foot auto-pause, ETA and zoom, a
+  walking time on the place preview (D50). Field check: NEEDS OWNER N25.
 - **FEAT-003** — Phase 24. Gravel profile (minor roads, gravel, easy tracks; rough avoided) and quieter roads for
   Road, checked on ten trips (D49). Field check: NEEDS OWNER N24.
 - **FEAT-006** — Phase 23. Surface bar and legend on the route preview, read from the downloaded maps and cached

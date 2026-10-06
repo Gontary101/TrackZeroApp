@@ -588,6 +588,8 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
     // The ride camera places the rider in this area, so it goes out after it (BUG-004: it used the preview's area).
     if (mPage == PAGE_MAP && !mZoom.started())
     {
+      final RideSession s = session();
+      mZoom.setFoot(s != null ? s.profile().foot : TzPrefs.profile(requireContext()).foot);
       final Location here = TzMap.riderLocation();
       TzMap.startRideCamera(mZoom.start(here != null && here.hasSpeed() ? here.getSpeed() * 3.6 : 0,
                                         SystemClock.elapsedRealtime()), true);
@@ -678,6 +680,7 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
       TzTrace.log("ridescr", "first render with a session, state=" + s.state() + " guide=" + (mService != null && mService.guide() != null));
     }
     loadRoute(s);
+    mZoom.setFoot(s.profile().foot);
 
     final long now = SystemClock.elapsedRealtime();
     mRenderedAtMs = now;

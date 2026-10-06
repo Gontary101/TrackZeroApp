@@ -14,7 +14,7 @@ import java.util.Locale;
 
 /**
  * The profile check of Phase 24 (About › hidden tools › Compare profiles; see {@code tools/trackzero/profile_compare.md}):
- * ten fixed trips on the Puy-de-Dôme map, each routed with Road and with Gravel, one line per path in the log (tag
+ * ten fixed trips on the Puy-de-Dôme map, each routed with every profile switched on, one line per path in the log (tag
  * TzProfileCompare, and the trace): length, climb, surface shares (Phase 23) and road-class shares.
  */
 public final class ProfileCompare
@@ -37,7 +37,8 @@ public final class ProfileCompare
       // the path should be the street itself, not a detour (plan v2 24.5).
       {"Contraflow: Rue Rameau eastwards", 45.7755983, 3.0752260, 45.7758832, 3.0790987},
   };
-  private static final Profile[] PROFILES = {Profile.ROAD, Profile.GRAVEL};
+  /** The profiles switched on, in the sheet's order. */
+  private static final Profile[] PROFILES = Profile.available().toArray(new Profile[0]);
   private static final String[] CLASSES = {"none", "trunk", "primary", "secondary", "tertiary", "minor", "track",
                                            "path"};
 

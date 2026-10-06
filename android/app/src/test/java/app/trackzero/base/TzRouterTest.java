@@ -28,6 +28,18 @@ public class TzRouterTest
     assertEquals(TzRouter.Reason.ERROR, TzRouter.Reason.of(16)); // HasWarnings
   }
 
+  /** routing/turns.hpp PedestrianDirection: None, GoStraight, TurnRight, TurnLeft, ReachedYourDestination. */
+  @Test
+  public void pedestrianTurns()
+  {
+    assertEquals(null, TzRouter.Turns.pedestrian(0));
+    assertEquals(app.trackzero.follow.Maneuver.STRAIGHT, TzRouter.Turns.pedestrian(1));
+    assertEquals(app.trackzero.follow.Maneuver.TURN_RIGHT, TzRouter.Turns.pedestrian(2));
+    assertEquals(app.trackzero.follow.Maneuver.TURN_LEFT, TzRouter.Turns.pedestrian(3));
+    assertEquals(app.trackzero.follow.Maneuver.ARRIVE, TzRouter.Turns.pedestrian(4));
+    assertEquals(null, TzRouter.Turns.pedestrian(9));
+  }
+
   @Test
   public void codeConstantsMatchCoMaps()
   {

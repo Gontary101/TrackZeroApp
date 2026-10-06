@@ -11,6 +11,10 @@ public final class TzConfig
   public static final double AUTO_PAUSE_KMH = 3.0;
   public static final double AUTO_RESUME_KMH = 5.0;
   public static final int AUTO_PAUSE_SECONDS = 5;
+  /** On foot (Walk, Hike; Phase 25): pause below 1 km/h for 10 s, resume above 2 km/h. */
+  public static final double AUTO_PAUSE_FOOT_KMH = 1.0;
+  public static final double AUTO_RESUME_FOOT_KMH = 2.0;
+  public static final int AUTO_PAUSE_FOOT_SECONDS = 10;
 
   public static final double OFF_ROUTE_M = 40;
   public static final double BACK_ON_ROUTE_M = 20;
@@ -39,6 +43,10 @@ public final class TzConfig
   public static final long PREVIEW_REEXPAND_MS = 1500;
   public static final int ETA_WINDOW_MIN = 15;
   public static final double ETA_FALLBACK_KMH = 18;
+  /** On foot: the walking speed of the time estimates (Phase 25). */
+  public static final double ETA_FALLBACK_FOOT_KMH = 4.8;
+  /** The ride zoom on foot, whatever the speed (Phase 25). */
+  public static final int RIDE_ZOOM_FOOT = 17;
 
   public static final double REPLAY_KMH = 25;
   public static final double IGNORE_FIX_ACCURACY_M = 30;

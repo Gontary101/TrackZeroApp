@@ -47,6 +47,7 @@ public enum Profile
     final List<Profile> on = new ArrayList<>();
     on.add(ROAD);
     on.add(GRAVEL);
+    on.add(WALK);
     return Collections.unmodifiableList(on);
   }
 }

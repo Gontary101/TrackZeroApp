@@ -20,8 +20,9 @@ public final class FollowEngine
   /** The route ahead always searched; more after a gap between fixes. */
   static final double SNAP_AHEAD_M = 500;
   static final double SNAP_AHEAD_MPS = 15;
-  /** Speed under which the GPS course is noise. */
+  /** Speed under which the GPS course is noise; on foot, the lower one. */
   static final double COURSE_MIN_MPS = 2;
+  static final double COURSE_MIN_FOOT_MPS = 1;
   /** The "then" row shows a maneuver at most this far after the next one. */
   static final double THEN_MAX_M = 1000;
   /** No "in 200 m" for a maneuver closer than this to the previous one (its "now" was just spoken). */
@@ -123,6 +124,9 @@ public final class FollowEngine
   private int mEtaStart;
   private int mEtaCount;
   private double mSpeedMps = TzConfig.ETA_FALLBACK_KMH / 3.6;
+  /** On foot (Phase 25): a slower ETA until enough data, and the course read at walking speeds. */
+  private double mFallbackMps = TzConfig.ETA_FALLBACK_KMH / 3.6;
+  private double mCourseMinMps = COURSE_MIN_MPS;
 
   /** @param maneuvers from {@link ManeuverBuilder#build} for this route */
   public FollowEngine(@NonNull FollowRoute route, @NonNull List<RouteManeuver> maneuvers, @NonNull Events events)
@@ -130,6 +134,14 @@ public final class FollowEngine
     mRoute = route;
     mManeuvers = maneuvers;
     mEvents = events;
+  }
+
+  /** On foot (Walk, Hike): call before the first fix. */
+  public void setFoot(boolean foot)
+  {
+    mFallbackMps = (foot ? TzConfig.ETA_FALLBACK_FOOT_KMH : TzConfig.ETA_FALLBACK_KMH) / 3.6;
+    mCourseMinMps = foot ? COURSE_MIN_FOOT_MPS : COURSE_MIN_MPS;
+    mSpeedMps = mFallbackMps;
   }
 
   /** Maneuvers from the track's shape alone. */
@@ -147,9 +159,9 @@ public final class FollowEngine
   public void update(double lat, double lon, double courseDeg, double speedMps, long elapsedMs, double rideDistM,
                      long rideMovingMs)
   {
-    if (!Double.isNaN(courseDeg) && speedMps >= COURSE_MIN_MPS)
+    if (!Double.isNaN(courseDeg) && speedMps >= mCourseMinMps)
       mCourseDeg = courseDeg;
-    final double course = speedMps >= COURSE_MIN_MPS ? courseDeg : Double.NaN;
+    final double course = speedMps >= mCourseMinMps ? courseDeg : Double.NaN;
     sampleSpeed(rideMovingMs, rideDistM);
     snap(lat, lon, course, elapsedMs);
 
@@ -360,7 +372,7 @@ public final class FollowEngine
     }
     final long spanMs = movingMs - mEtaTime[mEtaStart];
     final double v = spanMs > 0 ? (distM - mEtaDist[mEtaStart]) / (spanMs / 1000.0) : 0;
-    mSpeedMps = spanMs >= ETA_MIN_DATA_MS && v > 0 ? v : TzConfig.ETA_FALLBACK_KMH / 3.6;
+    mSpeedMps = spanMs >= ETA_MIN_DATA_MS && v > 0 ? v : mFallbackMps;
   }
 
   // ---- Readings ----
@@ -434,6 +446,8 @@ public final class FollowEngine
     mEtaStart = from.mEtaStart;
     mEtaCount = from.mEtaCount;
     mSpeedMps = from.mSpeedMps;
+    mFallbackMps = from.mFallbackMps;
+    mCourseMinMps = from.mCourseMinMps;
   }
 
   @NonNull

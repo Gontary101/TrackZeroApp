@@ -1,7 +1,10 @@
 package app.trackzero.follow;
 
+import app.trackzero.TzConfig;
+
 /**
  * The ride map's zoom (plan §9, BUG-004): z17 below 15 km/h, z16 up to 30, z15 above; a new band must hold for 5 s.
+ * On foot (Phase 25) always z17.
  * Zooms are levels, not factors (the engine's follow command), so asking again cannot add up; the first one goes with
  * the ride camera. A zoom the map has not reached 3 s after it was asked (a follow update cut its animation short) is
  * asked again.
@@ -17,6 +20,18 @@ public final class RideZoom
   private long mAskedAtMs;
   private int mCandidate = NONE;
   private long mCandidateSince;
+  private boolean mFoot;
+
+  /** On foot: one zoom whatever the speed. */
+  public void setFoot(boolean foot)
+  {
+    mFoot = foot;
+  }
+
+  private int bandFor(double kmh)
+  {
+    return mFoot ? TzConfig.RIDE_ZOOM_FOOT : band(kmh);
+  }
 
   public static int band(double kmh)
   {
@@ -26,7 +41,7 @@ public final class RideZoom
   /** The zoom for the ride camera at this speed; from now on {@link #update} keeps it. */
   public int start(double kmh, long nowMs)
   {
-    mZoom = band(kmh);
+    mZoom = bandFor(kmh);
     mAskedAtMs = nowMs;
     mCandidate = NONE;
     return mZoom;
@@ -46,7 +61,7 @@ public final class RideZoom
   {
     if (mZoom == NONE)
       return NONE;
-    final int band = band(kmh);
+    final int band = bandFor(kmh);
     if (band == mZoom)
     {
       mCandidate = NONE;

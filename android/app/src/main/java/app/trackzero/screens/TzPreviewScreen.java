@@ -33,6 +33,7 @@ import app.trackzero.follow.RoutedPath;
 import app.trackzero.format.TzFormat;
 import app.trackzero.geo.Geo;
 import app.trackzero.ride.TzRide;
+import app.trackzero.routes.FootTime;
 import app.trackzero.routes.Profile;
 import app.trackzero.routes.Route;
 import app.trackzero.routes.RouteGeometry;
@@ -259,7 +260,7 @@ public class TzPreviewScreen extends TzScreen
       return;
     }
     mPath = path;
-    bindPlace(getString(R.string.tz_preview_to_place));
+    bindPlace(placeLabel(path));
     final FollowRoute line = path.line;
     TzRouteLayer.showPath(this, line.lats(), line.lons(), false);
     mBox = extent(line.lats(), line.lons());
@@ -268,6 +269,18 @@ public class TzPreviewScreen extends TzScreen
       if (path == mPath)
         onSurfaces(p);
     });
+  }
+
+  /** "Route by bike", or on foot with the walking time (Phase 25). */
+  @NonNull
+  private String placeLabel(@NonNull RoutedPath path)
+  {
+    if (!mProfile.foot)
+      return getString(R.string.tz_preview_to_place);
+    final FollowRoute line = path.line;
+    final double ascent = path.ele == null ? Double.NaN : RouteStats.compute(line.lats(), line.lons(), path.ele).gainM;
+    return getString(R.string.tz_preview_on_foot,
+                     TzFormat.hoursMinutes(FootTime.walkSeconds(line.totalM(), ascent)));
   }
 
   /** Surfaces known (Phase 23): the bar and legend, or the caption without a map; the card grows to them. */

@@ -142,9 +142,14 @@ public final class RideSession
   private void autoPause(@NonNull TzFix f)
   {
     final double kmh = mStats.speedKmh();
+    // On foot a stop is slower and shorter to tell from walking (Phase 25).
+    final boolean foot = mProfile.foot;
+    final double pauseKmh = foot ? TzConfig.AUTO_PAUSE_FOOT_KMH : TzConfig.AUTO_PAUSE_KMH;
+    final double resumeKmh = foot ? TzConfig.AUTO_RESUME_FOOT_KMH : TzConfig.AUTO_RESUME_KMH;
+    final int pauseS = foot ? TzConfig.AUTO_PAUSE_FOOT_SECONDS : TzConfig.AUTO_PAUSE_SECONDS;
     if (mState == State.RECORDING)
     {
-      if (kmh >= TzConfig.AUTO_PAUSE_KMH)
+      if (kmh >= pauseKmh)
       {
         mSlowSinceMs = -1;
       }
@@ -152,7 +157,7 @@ public final class RideSession
       {
         mSlowSinceMs = f.elapsedMs;
       }
-      else if (f.elapsedMs - mSlowSinceMs >= TzConfig.AUTO_PAUSE_SECONDS * 1000L)
+      else if (f.elapsedMs - mSlowSinceMs >= pauseS * 1000L)
       {
         // The stop began when the rider slowed down, not when we became sure of it.
         mStats.stopRecording(f.elapsedMs);
@@ -162,7 +167,7 @@ public final class RideSession
         mState = State.AUTO_PAUSED;
       }
     }
-    else if (mState == State.AUTO_PAUSED && kmh > TzConfig.AUTO_RESUME_KMH)
+    else if (mState == State.AUTO_PAUSED && kmh > resumeKmh)
     {
       startRecording(f.elapsedMs);
     }

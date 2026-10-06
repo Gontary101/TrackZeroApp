@@ -35,6 +35,11 @@ Collected from the v2 phases; each says what to do, what to look at and what cou
   out. Does the leg take quiet roads and easy tracks rather than main roads? Leave the route on purpose: does the way
   back avoid main roads too? Pass: the legs look like what you would choose on a gravel bike, and no rough or
   technical ground unless there is no other way.
+- **N25 · Walking (FEAT-012, Phase 25).** Choose Walk on a place preview (search › NAVIGATE HERE): the path should use
+  footpaths and pedestrian streets, and the card says "On foot · about H:MM". Start it and walk: turns are announced,
+  the map stays at the same close zoom, the ride pauses by itself when you stand still for about 10 s and goes on when
+  you walk again. After 30 minutes, note the battery used and compare with a 30-minute ride. Pass: all of these, and
+  the battery use is reasonable.
 - **N18 · Immersive ride (FEAT-001, Phase 18).** On a ride, no status bar or navigation bar on all three pages and with
   the controls open. Swipe from the top or bottom edge: the bars appear briefly over the ride and nothing moves. Tap the
   handle 10 times: it opens the controls every time. A quick upward swipe from just above the handle opens them too.
@@ -500,4 +505,23 @@ it led to).
   the start without the line; reopening it showed it framed and drawn. Emulator engine lag (D43) is the likely
   cause; noted for the phone check.
 - 216 tests pass (`ProfileTest` updated for two profiles).
+
+## Phase 25 — Walking profile (FEAT-012)
+
+- Native: Walk and Hike build the pedestrian router; `BicyclePath.turnPedestrian` (a second int per turn), mapped by
+  `TzRouter.Turns.pedestrian`.
+- On foot (D50): `RideSession` auto-pause (1 km/h for 10 s, resume above 2 km/h), `FollowEngine.setFoot` (ETA
+  fallback 4.8 km/h, course from 1 m/s, so wrong way from 1 m/s), `Guide` passes the flag to its engines,
+  `RideZoom.setFoot` (z17), free walk named "Walk {date}". `TzConfig` holds the foot constants.
+- `routes/FootTime` (4.8 km/h + 1 h per 600 m up), `TzFormat.hoursMinutes`; the place preview's label reads "On foot ·
+  about H:MM" with Walk. Walk switched on (three rows in the profile sheet).
+- Checked on the emulator: the comparison tool with Walk (D50: footpaths and tracks Road does not use); NAVIGATE HERE
+  to La table du Puy with Walk (3.4 km, about 0:49); a walk ride saved with `"profile": "walk"`; a free walk saved as
+  "Walk Oct 6, 2026"; 2-minute R2 measurement on a walk (`shots/baseline/phase25_walk.md`).
+- Tests: `TzRouterTest` (pedestrian turns), `RideSessionTest` (foot auto-pause against a bike's), `FollowEngineTest`
+  (foot ETA fallback), `FootTimeTest`, `ProfileTest`. 220 tests pass.
+- Smoke test with Walk selected: steps 1–25 pass, no app crash (free walk saved as "Walk Oct 6, 2026"). The
+  emulator's Android system hung during step 26 (clock jump, Play services died, then no activity service; `adb
+  reboot` did nothing), so the emulator was restarted and the smoke test run again with Road: all steps pass, no
+  crashes.
 

@@ -42,11 +42,16 @@ public final class BicyclePath
   /** Metres for each point; null when the path has no altitudes (or some are unknown). */
   @Nullable
   public final double[] ele;
-  /** Each turn: the index of its point, a {@link CarDirection} ordinal, the roundabout exit (0: none), the street. */
+  /**
+   * Each turn: the index of its point, a {@link CarDirection} ordinal, a {@link PedestrianTurnDirection} ordinal (a
+   * path on foot; 0 otherwise), the roundabout exit (0: none), the street.
+   */
   @NonNull
   public final int[] turnPoint;
   @NonNull
   public final int[] turnDirection;
+  @NonNull
+  public final int[] turnPedestrian;
   @NonNull
   public final int[] turnExit;
   @NonNull
@@ -55,9 +60,10 @@ public final class BicyclePath
   // Called from JNI.
   @Keep
   private BicyclePath(int code, @NonNull double[] lat, @NonNull double[] lon, @Nullable double[] ele,
-                      @NonNull int[] turnPoint, @NonNull int[] turnDirection, @NonNull int[] turnExit,
-                      @NonNull String[] turnStreet)
+                      @NonNull int[] turnPoint, @NonNull int[] turnDirection, @NonNull int[] turnPedestrian,
+                      @NonNull int[] turnExit, @NonNull String[] turnStreet)
   {
+    this.turnPedestrian = turnPedestrian;
     this.code = code;
     this.lat = lat;
     this.lon = lon;

@@ -648,3 +648,30 @@ So the starting numbers are kept. **Contraflow** (24.5): Rue Rameau, Clermont-Fe
 
 **Limit.** On long routes across map regions the router first uses crossings between regions computed in advance
 with the stock weights, so near region borders the profile applies a little less strictly.
+
+## D50 · Walking profile (Phase 25, FEAT-012)
+- **Router.** Walk (and later Hike) builds CoMaps' pedestrian `IndexRouter` with its stock weights. Each turn now
+  also carries its `PedestrianDirection`. `TzRouter.Turns.pedestrian` maps straight, right, left and destination; the
+  car direction is used when the pedestrian one is none. The mappings sit in a nested class so they load in unit
+  tests without the router's main-thread Handler.
+- **On foot** is one flag (`Profile.foot`) carried into existing classes, no forks:
+  - `RideSession`: pause after 10 s under 1 km/h, resume above 2 km/h.
+  - `FollowEngine.setFoot`: ETA fallback 4.8 km/h. The GPS course counts from 1 m/s instead of 2, and the wrong-way
+    check reads the same course, so its minimum speed is 1 m/s too.
+  - `Guide`: passes the flag to every engine it makes (paths to a place, legs).
+  - `RideZoom.setFoot`: z17 at any speed.
+  - A free walk is saved as "Walk {date}". Off route 40 / 20 m, voice and the R4 units are unchanged.
+- **Walking time** (`routes/FootTime`): 4.8 km/h plus one hour per 600 m climbed (distance only without altitudes),
+  H:MM. Boards B5/N2 have no time field. So that no layout changes, the place preview's label line carries it: "On
+  foot · about 0:49". The planner (Phase 28) will use the same function.
+- **Check.** About › Compare profiles now runs every profile switched on. Walk takes footpaths Road does not: path share
+  9–47 % against Road's 0–21 % on the ten trips, track share up to 64 %. NAVIGATE HERE to La table du Puy with Walk:
+  3.4 km, "On foot · about 0:49".
+- **Battery** (`shots/baseline/phase25_walk.md`, 2 minutes on R2 at 5 km/h, not the plan's 30: the emulator's numbers
+  do not need longer). CPU 86 %, 122 view frames, 50 threads, one GPS request at 1 s. The Road ride of Phase 22 had
+  83 %, 131 and 52. Sensors: the barometer and also the rotation vector. Below 3 m/s the compass stays awake (D38),
+  as intended for walking (the map turns with the walker). Its battery cost on a phone is part of N25.
+- Seen on the emulator, with Walk and with Road: on the smoke test's detour, which rides 80 m beside the track (off any
+  road), the router can start the way back on a road over 60 m away. The leg's card then reads "Head to start" with
+  an arrow towards the leg's first point. That is the leg engine's behaviour since Phase 15, and the wording ("start")
+  fits a leg back onto the track badly. It is in the backlog for Phase 38, not changed here.

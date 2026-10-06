@@ -10,6 +10,7 @@ import app.trackzero.TzPrefs;
 import app.trackzero.base.TzBase;
 import app.trackzero.base.TzRouteLayer;
 import app.trackzero.follow.RoutedPath;
+import app.trackzero.routes.Profile;
 import app.trackzero.routes.Route;
 import java.text.DateFormat;
 import java.util.Date;
@@ -34,11 +35,12 @@ public final class TzRide
     TzBase.requestRidePermissions(activity, () -> {
       if (lineOwner != null)
         TzRouteLayer.transfer(lineOwner, TzRouteLayer.RIDE_START);
-      final String name = route != null
-                            ? route.name
-                            : activity.getString(R.string.tz_free_ride_name,
-                                                 DateFormat.getDateInstance(DateFormat.MEDIUM).format(new Date()));
-      TzRideService.start(activity, route == null ? null : route.id, name, TzPrefs.profile(activity));
+      final Profile profile = TzPrefs.profile(activity);
+      final String date = DateFormat.getDateInstance(DateFormat.MEDIUM).format(new Date());
+      final String name = route != null ? route.name
+                          : activity.getString(profile.foot ? R.string.tz_free_walk_name : R.string.tz_free_ride_name,
+                                               date);
+      TzRideService.start(activity, route == null ? null : route.id, name, profile);
       TzNavigator.show(TzNavigator.Screen.RIDE, null);
     });
   }

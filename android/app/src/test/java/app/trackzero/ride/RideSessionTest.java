@@ -141,6 +141,45 @@ public class RideSessionTest
     assertEquals(s.stats().distanceM() + 5, r.stats().distanceM(), 0.1);
   }
 
+  /** On foot (Phase 25): a slow walk is not a stop; a stop needs 10 s under 1 km/h; walking again resumes. */
+  @Test
+  public void onFootAutoPauseIsForWalkingSpeeds()
+  {
+    final RideSession walk = new RideSession(true);
+    walk.start(1_780_000_000_000L, 0, null, "Walk", Profile.WALK);
+    final RideSession bike = new RideSession(true);
+    bike.start(1_780_000_000_000L, 0, null, "Ride", Profile.ROAD);
+    // 2 km/h: 0.556 m a second, for 30 s.
+    double north = 0;
+    int t = 0;
+    for (; t < 30; t++, north += 2 / 3.6)
+    {
+      walk.onFix(at(t, north, 400, 2));
+      bike.onFix(at(t, north, 400, 2));
+    }
+    assertEquals(RideSession.State.RECORDING, walk.state());
+    assertEquals("Under 3 km/h a bike stops", RideSession.State.AUTO_PAUSED, bike.state());
+
+    // Standing: 10 s from the first fix under 1 km/h.
+    final int stopped = t;
+    for (; t < stopped + 10; t++)
+    {
+      walk.onFix(at(t, north, 400, 0));
+      assertEquals("t=" + t, RideSession.State.RECORDING, walk.state());
+    }
+    for (; t < stopped + 12; t++)
+      walk.onFix(at(t, north, 400, 0));
+    assertEquals(RideSession.State.AUTO_PAUSED, walk.state());
+
+    // Walking on at 2.5 km/h resumes (a bike would need 5).
+    for (int k = 0; k < 4; k++, t++)
+    {
+      north += 2.5 / 3.6;
+      walk.onFix(at(t, north, 400, 2.5));
+    }
+    assertEquals(RideSession.State.RECORDING, walk.state());
+  }
+
   @Test
   public void journalFromBeforeProfilesIsRoad()
   {
