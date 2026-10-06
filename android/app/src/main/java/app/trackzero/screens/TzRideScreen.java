@@ -343,6 +343,11 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
       }
     });
     mScrim.setOnClickListener(v -> mSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED));
+    // E1 over the ride (Phase 34): the last good fix, nothing asked of the GPS.
+    mSheet.findViewById(R.id.tz_ride_share).setOnClickListener(v -> {
+      mSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
+      TzShareSheet.show(this, mService == null ? null : mService.lastGoodFix());
+    });
     // S1 over the ride (Phase 30): the ride keeps running; Back comes here.
     mSheet.findViewById(R.id.tz_ride_stops).setOnClickListener(v -> {
       mSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);

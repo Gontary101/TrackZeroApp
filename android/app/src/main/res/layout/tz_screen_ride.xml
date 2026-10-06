@@ -115,7 +115,7 @@
             android:textColor="@color/tz_text1" />
         </LinearLayout>
 
-        <!-- ActionTile row (Phase 30): STOPS now; SHARE and SAVER take the other two thirds in phases 34 and 35. -->
+        <!-- ActionTile row: STOPS (Phase 30), SHARE (Phase 34); SAVER takes the last third in Phase 35. -->
         <LinearLayout
           android:layout_width="match_parent"
           android:layout_height="@dimen/tz_action_tile_h"
@@ -145,11 +145,31 @@
               android:layout_marginTop="@dimen/tz_space_8"
               android:text="@string/tz_stops_tile" />
           </LinearLayout>
-          <Space
+          <LinearLayout
+            android:id="@+id/tz_ride_share"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_marginStart="@dimen/tz_space_8"
-            android:layout_weight="1" />
+            android:layout_weight="1"
+            android:background="@drawable/tz_bg_surface3_r20"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackground"
+            android:gravity="center"
+            android:orientation="vertical">
+            <ImageView
+              android:layout_width="@dimen/tz_action_tile_icon"
+              android:layout_height="@dimen/tz_action_tile_icon"
+              android:importantForAccessibility="no"
+              android:src="@drawable/ic_tz_share"
+              app:tint="@color/tz_text1" />
+            <TextView
+              style="@style/TzText.Tile"
+              android:layout_width="wrap_content"
+              android:layout_height="wrap_content"
+              android:layout_marginTop="@dimen/tz_space_8"
+              android:text="@string/tz_share_tile" />
+          </LinearLayout>
           <Space
             android:layout_width="0dp"
             android:layout_height="match_parent"

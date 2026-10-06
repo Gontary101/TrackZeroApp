@@ -162,7 +162,7 @@ public class Framework
   @NonNull
   public static native Object[] nativePoisAlong(double[] lat, double[] lon, double radiusM, int category);
 
-  /// TrackZero (Phase 29): the town or village nearest the point, "" when none. Main thread.
+  /// TrackZero (Phase 29): the town or village nearest the point, "" when none. Any thread.
   @NonNull
   public static native String nativeGetPlaceName(double lat, double lon);
 

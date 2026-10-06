@@ -355,6 +355,29 @@
   <string name="tz_plan_cd_remove">Remove</string>
 
   <!-- Propose a loop (Phase 29, boards L1, L2) -->
+  <!-- Share location (Phase 34). TrackZero never sends anything itself and never dials. -->
+  <string name="tz_share_tile">Share</string>
+  <string name="tz_share_title">SHARE LOCATION</string>
+  <string name="tz_share_check_in">Check-in</string>
+  <string name="tz_share_low_battery">Low battery / help</string>
+  <string name="tz_share_need_help">I need help</string>
+  <string name="tz_share_msg_check_in">All good. My position at %1$s:</string>
+  <string name="tz_share_msg_low_battery">Low battery (%1$d %%). My position at %2$s:</string>
+  <string name="tz_share_msg_help">I need help. My position at %1$s:</string>
+  <string name="tz_share_msg_coordinates">%1$s, %2$s (±%3$d m)</string>
+  <string name="tz_share_msg_near">Near %1$s</string>
+  <string name="tz_share_msg_stale">(position from %1$s, may be out of date)</string>
+  <string name="tz_share_msg_check_in_no_fix">All good. I don\'t have a GPS position right now.</string>
+  <string name="tz_share_msg_low_battery_no_fix">Low battery (%1$d %%). I don\'t have a GPS position right now.</string>
+  <string name="tz_share_msg_help_no_fix">I need help. I don\'t have a GPS position right now.</string>
+  <string name="tz_share_fix_fresh">GPS fix %1$d s ago · battery %2$d %%</string>
+  <string name="tz_share_fix_stale">Last fix %1$d min ago — may be out of date</string>
+  <string name="tz_share_no_fix">No GPS position yet</string>
+  <string name="tz_share_copy">Copy</string>
+  <string name="tz_share_share">Share</string>
+  <string name="tz_share_copied">Copied</string>
+  <string name="tz_share_caption">You choose the app and the person. Sending needs signal. In an emergency, call 112 or your local emergency number.</string>
+  <string name="tz_share_chooser">Share location</string>
   <!-- Estimate (Phase 33) -->
   <string name="tz_estimate_label">Estimated ride time</string>
   <string name="tz_estimate_typical">typical pace</string>

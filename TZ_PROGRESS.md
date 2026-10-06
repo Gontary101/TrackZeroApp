@@ -82,6 +82,10 @@ Collected from the v2 phases; each says what to do, what to look at and what cou
 - **N33 · Ride-time estimate (FEAT-009, Phase 33).** With your real ride history on the phone, start a route you know
   and open R6: "from your last n rides" and a time. Ride it, and compare with the real total time (moving and
   stopped) on R8. Does the estimate stay the same all ride? Pass: within about 15 % on a ride like your usual ones.
+- **N34 · Share location (FEAT-014, Phase 34).** On a ride, R6 › SHARE. Is the "Near …" line right? Send a
+  check-in to yourself with the messaging app you use, and open the link: the right place? Tap Low battery / help
+  twice: "I need help". In airplane mode: the text is still built and COPY works. Pass: the message reaches you and
+  its link shows where you were.
 - **N18 · Immersive ride (FEAT-001, Phase 18).** On a ride, no status bar or navigation bar on all three pages and with
   the controls open. Swipe from the top or bottom edge: the bars appear briefly over the ride and nothing moves. Tap the
   handle 10 times: it opens the controls every time. A quick upward swipe from just above the handle opens them too.
@@ -735,5 +739,27 @@ it led to).
   5 km), R6 "typical pace · 0:23" (`shots/R6_estimate.png`).
 - Tests: `RideEstimatorTest` (7: median, pooling rule, stops clamp, typical pace, foot factor, no-elevation route,
   exactly once). 279 tests pass.
+- Smoke test: all steps pass, no crashes.
+
+## Phase 34 — Share my location (FEAT-014)
+
+- `ride/ShareText` (pure): the message in three wordings (check-in, low battery with its %, I need help), the
+  coordinates with 5 decimals in US format and ± accuracy, "Near {street, town}" when known, the OpenStreetMap link.
+  A fix older than 2 min adds "(position from {time}, may be out of date)"; with no fix there are no coordinates and
+  no link. Age classes: fresh ≤ 30 s, recent ≤ 2 min, stale, none.
+- `screens/TzShareSheet` (E1): the segmented control (equal halves; a second tap on the second option switches to "I
+  need help" and back: `TzSegmented.setFill`, `setReselectListener`, `setOptionText`). It has the editable message
+  (not rewritten once the rider edits it), the fix and battery line with its dot (mint fresh, grey recent, amber
+  stale or none), COPY ("Copied"), SHARE (`ACTION_SEND` text/plain through the chooser; hidden when no app takes
+  it, with a `<queries>` entry for Android 11+), and the caption.
+- The position is the ride's last accepted fix (`TzRideService.lastGoodFix`); no new fix is asked for. Battery from
+  `BatteryManager` when the sheet opens. The place: one lookup off the main thread, street within 50 m plus the
+  town (`nativeGetPlaceName`, now safe from any thread).
+- R6: the SHARE tile in the second third.
+- Checked on the emulator (D59): from a ride, E1 with a fresh fix; Low battery (100 %), then "I need help"; SHARE
+  opens Android's sheet with the text; Back returns to the ride. The place took 569 ms on the emulator ("Mail
+  Vasarely, Aubière"). A restored ride kept its estimate (`shots/E1.png`, `E1_help.png`).
+- Tests: `TzShareTest` (5: fresh with place, both other wordings without, stale, no fix, coordinates under a French
+  locale). 284 tests pass.
 - Smoke test: all steps pass, no crashes.
 

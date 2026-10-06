@@ -73,6 +73,11 @@
       <action android:name="android.intent.action.PICK" />
       <data android:mimeType="vnd.android.cursor.dir/postal-address_v2" />
     </intent>
+    <!-- TrackZero (Phase 34): is there an app to share a location text to? (E1 hides SHARE when none.) -->
+    <intent>
+      <action android:name="android.intent.action.SEND" />
+      <data android:mimeType="text/plain" />
+    </intent>
   </queries>
 
   <!-- "android:resizeableActivity" allows free-form and split-screen modes -->

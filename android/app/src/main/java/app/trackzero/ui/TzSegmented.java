@@ -24,6 +24,9 @@ public class TzSegmented extends LinearLayout
   private int mSelected = -1;
   @Nullable
   private Listener mListener;
+  @Nullable
+  private Listener mReselect;
+  private boolean mFill;
 
   public TzSegmented(@NonNull Context context, @Nullable AttributeSet attrs)
   {
@@ -52,12 +55,17 @@ public class TzSegmented extends LinearLayout
       final int index = i;
       option.setOnClickListener(v -> {
         if (index == mSelected)
+        {
+          if (mReselect != null)
+            mReselect.onSelected(index);
           return;
+        }
         select(index);
         if (mListener != null)
           mListener.onSelected(index);
       });
-      final LayoutParams lp = new LayoutParams(LayoutParams.WRAP_CONTENT, h + 2 * inset());
+      final LayoutParams lp = mFill ? new LayoutParams(0, h + 2 * inset(), 1f)
+                                    : new LayoutParams(LayoutParams.WRAP_CONTENT, h + 2 * inset());
       if (i > 0)
         lp.setMarginStart(getResources().getDimensionPixelSize(R.dimen.tz_space_4));
       addView(option, lp);
@@ -75,6 +83,24 @@ public class TzSegmented extends LinearLayout
   public void setListener(@Nullable Listener listener)
   {
     mListener = listener;
+  }
+
+  /** A tap on the option already selected (E1's second wording, Phase 34). */
+  public void setReselectListener(@Nullable Listener listener)
+  {
+    mReselect = listener;
+  }
+
+  /** The options share the width equally (E1's two wordings, Phase 34); call before {@link #setOptions}. */
+  public void setFill(boolean fill)
+  {
+    mFill = fill;
+  }
+
+  /** Renames an option in place. */
+  public void setOptionText(int index, @NonNull CharSequence text)
+  {
+    ((TextView) getChildAt(index)).setText(text);
   }
 
   public int getSelected()

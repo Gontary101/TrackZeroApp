@@ -905,3 +905,19 @@ with the stock weights, so near region borders the profile applies a little less
 - **Fresh install.** No usable rides: "typical pace" and Road 20 / Gravel 16 effort-km/h, walking and hiking at
   their formulas, 10 % stops. The emulator's history is all smoke-test rides of 1 km, so it shows typical pace too.
 
+## D59 · Share my location (Phase 34, FEAT-014)
+- **Nothing sent by TrackZero.** The rider chooses the app and the person through Android's share sheet, or copies
+  the text. No contacts, no SMS, no app-specific integration, no network request, no live or repeated sharing, never
+  "guaranteed". The caption points to 112 and TrackZero never dials. Nothing exists before the sheet opens.
+- **The place: up to 2 s, never blocking.** The plan said to wait at most 400 ms so the sheet is never blocked. The
+  sheet does not wait at all: the message is there at once and gains its "Near" line when the lookup answers. On the
+  emulator the first lookup (street plus town; the town finder builds its cache) took 569 ms, so 400 ms would have
+  dropped it every first time. A place that comes within 2 s is added unless the rider has edited the text.
+- **Street plus town.** `nativeGetStreetName` (50 m) and the town from the engine's `CityFinder` (Phase 29), not
+  `nativeGetAddress`: the latter names buildings, so on a road it would give nothing or a house. "Near Route du Puy
+  de Dôme, Orcines" as on the board; just the town when no street is near.
+- **Wordings.** Choosing a wording rewrites the message, even an edited one: the rider asked for it. Typing marks the
+  text as theirs, and a late place does not overwrite it.
+- **Age line.** ≤ 30 s mint "GPS fix n s ago · battery n %", ≤ 2 min the same in grey, older amber "Last fix n min
+  ago — may be out of date", none amber "No GPS position yet". The message's stale note uses the fix's own time.
+

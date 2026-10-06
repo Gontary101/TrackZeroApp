@@ -131,6 +131,9 @@ _No bugs marked as fixed yet._
   under the island on every page. Field check: NEEDS OWNER N18 (handle part).
 - **FEAT-005** — Phase 20. Research in `TZ_RESEARCH_ROUTE_VISIBILITY.md`; 8dp line with a black casing (D45).
   Field check: NEEDS OWNER N20 (choose among four candidates).
+- **FEAT-014** — Phase 34. Share my location: R6 SHARE opens E1 with the last good fix as an editable message
+  (check-in, low battery, I need help), COPY or Android's share sheet; TrackZero sends nothing itself (D59). Field
+  check: NEEDS OWNER N34.
 - **FEAT-009** — Phase 33. A personal ride-time estimate made once at the start from the last 12 rides of the same
   kind (typical pace with fewer than 3), shown in R6 and as the planner's TIME (D58). Field check: NEEDS OWNER N33.
 - **FEAT-008** — Phase 32. Direction tones and warnings, generated in the app, through the phone speaker; R6

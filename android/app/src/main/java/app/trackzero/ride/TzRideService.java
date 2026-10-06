@@ -687,6 +687,13 @@ public final class TzRideService extends Service
     return mTones.play(sounds);
   }
 
+  /** The last accepted fix (E1 shares it, Phase 34), or null before the first. Never asks for a new one. */
+  @Nullable
+  public TzFix lastGoodFix()
+  {
+    return mFollowFix;
+  }
+
   /** No fix for 20 s while recording (the NO GPS card), and when the last one came (elapsed time). */
   public boolean gpsLost()
   {

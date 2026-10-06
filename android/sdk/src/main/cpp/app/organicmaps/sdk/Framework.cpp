@@ -78,6 +78,7 @@
 
 #include <limits>
 #include <map>
+#include <mutex>  // TrackZero
 #include <set>  // TrackZero
 #include <memory>
 #include <string>
@@ -1400,10 +1401,13 @@ JNIEXPORT jobjectArray JNICALL Java_app_organicmaps_sdk_Framework_nativePoisAlon
   return PoisAlong(env, lats, lons, radiusM, category);
 }
 
-// TrackZero (Phase 29): the town or village nearest the point (a loop's far side), "" when none. Main thread.
+// TrackZero (Phase 29): the town or village nearest the point (a loop's far side, E1's place), "" when none. Any
+// thread: the finder keeps a cache, so calls take turns.
 JNIEXPORT jstring JNICALL Java_app_organicmaps_sdk_Framework_nativeGetPlaceName(JNIEnv * env, jclass, jdouble lat,
                                                                                jdouble lon)
 {
+  static std::mutex mutex;
+  std::lock_guard lock(mutex);
   static search::CityFinder finder(frm()->GetDataSource());
   return jni::ToJavaString(env, finder.GetCityReadableName(mercator::FromLatLon(lat, lon)));
 }
