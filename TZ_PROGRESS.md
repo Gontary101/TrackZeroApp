@@ -841,3 +841,12 @@ it led to).
   animations off: T4 opens on its final frame; Dark and Light (`shots/dark/T1–T4`, `shots/light/T1–T4`).
 - Tests: `TutorialFlowTest` (5). 299 tests pass.
 - Smoke test: all steps pass, no crashes.
+
+## Phase 40 — Launch film (asked for by the owner on 2026-10-06, after Phase 37)
+
+- `tools/trackzero/film/`: `record.sh` (records 13 scenes of the real app on the emulator), `film.py` (timeline,
+  layout for 16:9 and 9:16, compositor, encoder), `sound.py` (score and sound design), `film.md` (story, rebuilding,
+  assets and licences).
+- Output, outside the repository: `~/Projects/TrackZero/film/out/TrackZero_launch_1080p.mp4` (1920 × 1080, 30 fps,
+  88.8 s) and `TrackZero_launch_vertical_1080x1920.mp4`; raw recordings in `~/Projects/TrackZero/film/raw` (D63).
+- Phase 38 follows.

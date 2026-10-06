@@ -1025,3 +1025,18 @@ with the stock weights, so near region borders the profile applies a little less
   accessibility whenever an opaque screen covers it.
 - **Sentence spacing.** The board's 1.4 line height is 25dp for 18sp; Barlow's line box is already about 1.2em, so
   the multiplier is 1.17.
+
+## D63 · Launch film (Phase 40)
+- **Real screens only.** Every phone screen is a recording of the built app on the emulator (`record.sh`) or one
+  of its screenshots; the words describe only what the app does. The engine's debug label ("V: Zoom … FPS", forced
+  on in debug native builds) was switched off in a local build used only for recording, never committed; SystemUI
+  demo mode gave a clean status bar.
+- **Code-driven, so editable.** One Python timeline (`film.py`) composites the recordings in a phone frame with the
+  design's tokens, Doto and Barlow, and the mark drawn from `design/logo/generate.py`; both cuts (16:9 and 9:16) come
+  from the same timeline with two layouts. Recordings are addressed by keyframes (speed ramps over waits, cuts),
+  touches are drawn as soft rings where the finger was.
+- **Sound from the app.** The score is synthesised in A major at 100 BPM because the app's tones (440, 660, 880,
+  1100 Hz) sit in it; the turn, off-route and arrival sounds are the app's `TonePattern`, note for note. No samples
+  or stock music. Loudness −14 LUFS, true peak under −1.5 dBTP.
+- **Not in the repository:** the recordings and the rendered films (about 100 MB) live in `~/Projects/TrackZero/film`;
+  `film.md` says how to rebuild them. Phase 39 has not run: the name and the mark are unchecked for publication.
