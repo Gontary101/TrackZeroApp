@@ -703,6 +703,7 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
     mResume.setVisibility(state == RideSession.State.PAUSED && mSlide < 1 ? View.VISIBLE : View.GONE);
     // Turn announcements only exist on a route.
     mVoice.setVisibility(guided(s) ? View.VISIBLE : View.GONE);
+    renderEstimate(s);
     // Tones are there on a free ride too: GPS lost.
     mTones.setSubtitle(getString(guided(s) ? R.string.tz_tones_subtitle : R.string.tz_tones_subtitle_free));
     renderPauseButton(state == RideSession.State.PAUSED);
@@ -992,6 +993,21 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener
     }
     final TzFormat.Value v = TzFormat.elevation(alt, units, locale);
     mClimbStats.setCell(0, getString(R.string.tz_stat_altitude), v.number, v.unit);
+  }
+
+  /** R6's estimate (Phase 33): made once at the start, so it never changes during the ride. */
+  private void renderEstimate(@NonNull RideSession s)
+  {
+    final View row = mSheet.findViewById(R.id.tz_ride_estimate);
+    final boolean show = guided(s) && s.estimateS() >= 0;
+    row.setVisibility(show ? View.VISIBLE : View.GONE);
+    if (!show)
+      return;
+    final int basis = s.estimateBasis();
+    TzViews.setText(row.findViewById(R.id.tz_ride_estimate_basis),
+                    basis == 0 ? getString(R.string.tz_estimate_typical)
+                               : getResources().getQuantityString(R.plurals.tz_estimate_from, basis, basis));
+    TzViews.setText(row.findViewById(R.id.tz_ride_estimate_value), TzFormat.hoursMinutes(s.estimateS()));
   }
 
   /** A route ride or a ride to a place: turn-by-turn. */

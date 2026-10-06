@@ -84,6 +84,37 @@
             android:layout_height="wrap_content" />
         </LinearLayout>
 
+        <!-- Phase 33: the estimate made at the start; hidden on a free ride. -->
+        <LinearLayout
+          android:id="@+id/tz_ride_estimate"
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content"
+          android:gravity="center_vertical"
+          android:orientation="horizontal"
+          android:paddingStart="@dimen/tz_sheet_header_pad"
+          android:paddingEnd="@dimen/tz_sheet_header_pad"
+          android:paddingBottom="@dimen/tz_space_8"
+          android:visibility="gone">
+          <TextView
+            style="@style/TzText.Label"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/tz_estimate_label" />
+          <TextView
+            android:id="@+id/tz_ride_estimate_basis"
+            style="@style/TzText.Caption"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+          <TextView
+            android:id="@+id/tz_ride_estimate_value"
+            style="@style/TzText.MetricS"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/tz_space_12"
+            android:textColor="@color/tz_text1" />
+        </LinearLayout>
+
         <!-- ActionTile row (Phase 30): STOPS now; SHARE and SAVER take the other two thirds in phases 34 and 35. -->
         <LinearLayout
           android:layout_width="match_parent"

@@ -131,6 +131,8 @@ _No bugs marked as fixed yet._
   under the island on every page. Field check: NEEDS OWNER N18 (handle part).
 - **FEAT-005** — Phase 20. Research in `TZ_RESEARCH_ROUTE_VISIBILITY.md`; 8dp line with a black casing (D45).
   Field check: NEEDS OWNER N20 (choose among four candidates).
+- **FEAT-009** — Phase 33. A personal ride-time estimate made once at the start from the last 12 rides of the same
+  kind (typical pace with fewer than 3), shown in R6 and as the planner's TIME (D58). Field check: NEEDS OWNER N33.
 - **FEAT-008** — Phase 32. Direction tones and warnings, generated in the app, through the phone speaker; R6
   Turn tones toggle, More › Sounds (M1) with the tones to hear, NO GPS card (D57). The first-launch tutorial part
   is Phase 36. Field check: NEEDS OWNER N32.

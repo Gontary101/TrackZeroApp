@@ -20,7 +20,6 @@ import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import app.organicmaps.R;
-import app.trackzero.TzConfig;
 import app.trackzero.TzNavigator;
 import app.trackzero.TzPrefs;
 import app.trackzero.TzTrace;
@@ -32,7 +31,9 @@ import app.trackzero.base.TzRouter;
 import app.trackzero.follow.FollowRoute;
 import app.trackzero.follow.RoutedPath;
 import app.trackzero.format.TzFormat;
-import app.trackzero.routes.FootTime;
+import app.trackzero.ride.Ride;
+import app.trackzero.ride.RideEstimator;
+import app.trackzero.ride.RideStore;
 import app.trackzero.routes.GpxTrack;
 import app.trackzero.routes.PlanDraft;
 import app.trackzero.routes.Profile;
@@ -103,6 +104,12 @@ public class TzPlanScreen extends TzScreen
   @Override
   public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState)
   {
+    // The past rides for TIME (Phase 33): read once; until then a typical pace.
+    RideStore.get(requireContext()).list(rides -> {
+      mRides = rides;
+      if (getView() != null && mPath != null)
+        showMetrics(mPath);
+    });
     mTop = view.findViewById(R.id.tz_plan_top);
     mCard = view.findViewById(R.id.tz_plan_card);
     mPins = view.findViewById(R.id.tz_plan_pins);
@@ -446,6 +453,9 @@ public class TzPlanScreen extends TzScreen
     });
   }
 
+  @NonNull
+  private List<Ride> mRides = new ArrayList<>();
+
   /** DISTANCE, GAIN, TIME of the path; dashes while there is none. */
   private void showMetrics(@Nullable RoutedPath path)
   {
@@ -473,17 +483,12 @@ public class TzPlanScreen extends TzScreen
     time.setValue(TzFormat.hoursMinutes(timeSeconds(line.totalM(), upDown)), "");
   }
 
-  /** The profile's default pace (until Phase 33's estimator): a bike at 18 km/h, walking and hiking by formula. */
+  /** The rider's own estimate (Phase 33, the same as a ride's), from their past rides once those are read. */
   private long timeSeconds(double distanceM, @Nullable double[] upDown)
   {
     final double up = upDown == null ? Double.NaN : upDown[0];
     final double down = upDown == null ? Double.NaN : upDown[1];
-    return switch (mProfile)
-    {
-      case WALK -> FootTime.walkSeconds(distanceM, up);
-      case HIKE -> FootTime.hikeSeconds(distanceM, up, down);
-      default -> Math.round(distanceM / (TzConfig.ETA_FALLBACK_KMH / 3.6));
-    };
+    return RideEstimator.estimate(mProfile, distanceM, up, down, mRides).totalS;
   }
 
   /** The plan as the temporary route, then the route preview on it. */

@@ -18,6 +18,7 @@ import java.util.Locale;
  * S                                         the next point starts a new segment
  * P,{time},{lat},{lon},{alt or NaN}         a recorded point
  * T,{distanceM},{movingMs},{gainM},{maxKmh},{maxGrade}   totals so far (the last one wins)
+ * E,{totalS},{basis}                       the ride-time estimate made at the start (Phase 33)
  * A,{kind},{lat},{lon},{name}              a stop added (Phase 30)
  * X,{lat},{lon}                            that stop reached or removed
  * </pre>
@@ -47,12 +48,17 @@ public final class RideJournal
     /** Stops added and not yet reached or removed (Phase 30). */
     @NonNull
     public final List<Stop> stops;
+    /** The estimate made at the start (Phase 33): seconds, -1 none; rides it came from, 0 a typical pace. */
+    public final long estimateS;
+    public final int estimateBasis;
 
     Content(long startedAt, @Nullable String routeId, @NonNull String name, @NonNull RideTrack track,
             @NonNull RideStats.Snapshot totals, double placeLat, double placeLon, @NonNull Profile profile,
-            @NonNull List<Stop> stops)
+            @NonNull List<Stop> stops, long estimateS, int estimateBasis)
     {
       this.stops = stops;
+      this.estimateS = estimateS;
+      this.estimateBasis = estimateBasis;
       this.profile = profile;
       this.startedAt = startedAt;
       this.routeId = routeId;
@@ -81,6 +87,11 @@ public final class RideJournal
   static void place(@NonNull StringBuilder out, double lat, double lon)
   {
     out.append("D,").append(lat).append(',').append(lon).append('\n');
+  }
+
+  static void estimate(@NonNull StringBuilder out, long totalS, int basis)
+  {
+    out.append("E,").append(totalS).append(',').append(basis).append('\n');
   }
 
   static void stopAdded(@NonNull StringBuilder out, @NonNull Stop stop)
@@ -138,6 +149,8 @@ public final class RideJournal
     double placeLon = Double.NaN;
     Profile profile = Profile.ROAD;
     final List<Stop> stops = new ArrayList<>();
+    long estimateS = -1;
+    int estimateBasis = 0;
     for (int i = 1; i < lines.length; i++)
     {
       if (lines[i].startsWith("A,"))
@@ -180,6 +193,14 @@ public final class RideJournal
             track.add(new RideTrack.Point(Long.parseLong(f[1]), Double.parseDouble(f[2]), Double.parseDouble(f[3]),
                                           Double.parseDouble(f[4])));
         }
+        case "E" ->
+        {
+          if (f.length == 3)
+          {
+            estimateS = Long.parseLong(f[1]);
+            estimateBasis = Integer.parseInt(f[2]);
+          }
+        }
         case "X" ->
         {
           if (f.length == 3)
@@ -202,6 +223,7 @@ public final class RideJournal
         // A record cut short by a crash: the rest of the journal is still good.
       }
     }
-    return new Content(startedAt, routeId, h[4], track, totals, placeLat, placeLon, profile, stops);
+    return new Content(startedAt, routeId, h[4], track, totals, placeLat, placeLon, profile, stops, estimateS,
+                       estimateBasis);
   }
 }

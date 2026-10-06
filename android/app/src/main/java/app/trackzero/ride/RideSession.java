@@ -53,6 +53,9 @@ public final class RideSession
   private long mSlowSinceMs = -1;
   @NonNull
   private final StringBuilder mJournal = new StringBuilder();
+  /** The ride-time estimate made at the start (Phase 33): seconds, -1 none yet; its basis (0: a typical pace). */
+  private long mEstimateS = -1;
+  private int mEstimateBasis;
   /** Stops kept in the journal of a restored ride, for the guide once it exists (Phase 30). */
   @NonNull
   private List<Stop> mRestoredStops = new ArrayList<>();
@@ -79,6 +82,8 @@ public final class RideSession
     s.mPlaceLon = c.placeLon;
     s.mProfile = c.profile;
     s.mRestoredStops = new ArrayList<>(c.stops);
+    s.mEstimateS = c.estimateS;
+    s.mEstimateBasis = c.estimateBasis;
     s.mTrack = c.track;
     s.mTrack.breakSegment();
     s.mStats.restore(c.totals);
@@ -283,6 +288,26 @@ public final class RideSession
 
   /** How the rider gets about on this ride, fixed at START. */
   @NonNull
+  /** The estimate, once, when the route is known (Phase 33); journaled so a restored ride keeps it. */
+  public void setEstimate(long totalS, int basis)
+  {
+    mEstimateS = totalS;
+    mEstimateBasis = basis;
+    RideJournal.estimate(mJournal, totalS, basis);
+  }
+
+  /** Seconds, or -1 when there is none (a free ride, or not worked out yet). */
+  public long estimateS()
+  {
+    return mEstimateS;
+  }
+
+  /** How many past rides the estimate comes from; 0: a typical pace. */
+  public int estimateBasis()
+  {
+    return mEstimateBasis;
+  }
+
   /** Journals a stop added (Phase 30). */
   public void stopAdded(@NonNull Stop stop)
   {

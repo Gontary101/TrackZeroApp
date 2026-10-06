@@ -889,3 +889,19 @@ with the stock weights, so near region borders the profile applies a little less
   location off (`cmd location set-location-enabled false`) for 25 s. It has no audio output to listen to; that
   part is N32.
 
+## D58 · Ride-time estimate (Phase 33, FEAT-009)
+- **The formula.** As the plan says. Effort-km = km + 0.8 × gain / 100 (a bike ride); the pace is the median over
+  the rider's own rides, so one odd ride does not move it. Foot rides use the Phase 25 / 26 formula as the yardstick
+  and take the rider's median ratio to it. A past ride keeps only its climbing, so its descent is taken as the same
+  (hiking formula); most rides end near where they start.
+- **Stops from the wall clock.** `rides.json` already has `startedAt` and `endedAt` (the ride's wall clock from START
+  to the end), so stops come from `endedAt − startedAt` for every ride. No `elapsedS` field was added: it would hold
+  the same number.
+- **Once.** The estimate is worked out when the route is first known: one read of `rides.json` off the main thread,
+  then nothing more. `EstimateOnce` guards it against reroutes and restores, and a ride restored from its journal
+  shows the stored estimate. A ride to a place restored without its preview path has none to show.
+- **Planner, not the loop cards.** The planner's TIME (D53's placeholder pace) now uses the estimator. The loop
+  cards (L2) show distance, climbing and new roads as on the board, with no TIME, so they have no estimate.
+- **Fresh install.** No usable rides: "typical pace" and Road 20 / Gravel 16 effort-km/h, walking and hiking at
+  their formulas, 10 % stops. The emulator's history is all smoke-test rides of 1 km, so it shows typical pace too.
+

@@ -79,6 +79,9 @@ Collected from the v2 phases; each says what to do, what to look at and what cou
   apart without looking? Are the off-route and GPS-lost sounds clearly different from turns? Note the media volume
   you needed. With earbuds or a car connected, do the tones still come from the phone? Pass: you can tell the turns
   apart by ear, and each warning plays once.
+- **N33 · Ride-time estimate (FEAT-009, Phase 33).** With your real ride history on the phone, start a route you know
+  and open R6: "from your last n rides" and a time. Ride it, and compare with the real total time (moving and
+  stopped) on R8. Does the estimate stay the same all ride? Pass: within about 15 % on a ride like your usual ones.
 - **N18 · Immersive ride (FEAT-001, Phase 18).** On a ride, no status bar or navigation bar on all three pages and with
   the controls open. Swipe from the top or bottom edge: the bars appear briefly over the ride and nothing moves. Tap the
   handle 10 times: it opens the controls every time. A quick upward swipe from just above the handle opens them too.
@@ -714,5 +717,23 @@ it led to).
   turn's 50 m, one OFF_ROUTE per detour in the smoke test. Location switched off: GPS_LOST once at 20 s and the NO
   GPS card counting; GPS_BACK 6 s after fixes returned (`shots/M1.png`, `R6_tones.png`, `R2_no_gps.png`).
 - Tests: `TzTonesTest` (4), `ToneRulesTest` (7). 272 tests pass.
+- Smoke test: all steps pass, no crashes.
+
+## Phase 33 — Personal ride-time estimate (FEAT-009)
+
+- `ride/RideEstimator` (pure): effort-km (km + 0.8 per 100 m) at the median effort pace of the last 12 bicycle rides
+  of at least 5 km, or only the profile's own when it has 3. On foot: the walking or hiking formula times the median
+  moving/formula ratio (rides of at least 2 km). Stops: the median (wall clock / moving − 1), 0–35 %. Fewer than 3
+  usable rides: Road 20 / Gravel 16 effort-km/h, factor 1, stops 10 %, basis 0. No altitudes: effort = distance.
+- `TzRideService.estimate` is the only call site. It runs when the route is first known (after `prepare()` for a
+  track, with the previewed path for a place), behind `EstimateOnce`. The past rides are read off the main thread.
+  The result goes to `RideSession` (`estimateS`, `estimateBasis`) and the journal (`E,{s},{basis}`); a restored ride
+  keeps it.
+- R6: the Estimate row under the header ("ESTIMATED RIDE TIME", "from your last n rides" / "typical pace", H:MM),
+  hidden on a free ride. The planner's TIME uses the same estimator (past rides read once when P1 opens).
+- Checked on the emulator (D58): Aubière ride, "estimate 1351 s from 0 rides" (the emulator's rides are all under
+  5 km), R6 "typical pace · 0:23" (`shots/R6_estimate.png`).
+- Tests: `RideEstimatorTest` (7: median, pooling rule, stops clamp, typical pace, foot factor, no-elevation route,
+  exactly once). 279 tests pass.
 - Smoke test: all steps pass, no crashes.
 

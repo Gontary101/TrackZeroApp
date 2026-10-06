@@ -50,6 +50,7 @@ import app.trackzero.geo.Geo;
 import app.trackzero.routes.GpxTrack;
 import app.trackzero.routes.Profile;
 import app.trackzero.routes.RouteGeometry;
+import app.trackzero.routes.RouteStats;
 import app.trackzero.routes.RouteStore;
 import java.util.List;
 import java.util.Locale;
@@ -245,6 +246,7 @@ public final class TzRideService extends Service
           return;
         }
         mSession = RideSession.restore(content, TzPrefs.autoPause(this));
+        mEstimate = new EstimateOnce();
         mRules.restart(SystemClock.elapsedRealtime());
         sRiding = true;
         updateSources();
@@ -368,6 +370,7 @@ public final class TzRideService extends Service
       TzTrace.log("ride", "startSession route=" + routeId + " profile=" + profile.id
                           + (Double.isNaN(placeLat) ? "" : " place=" + TzTrace.ll(placeLat, placeLon)));
     mSession = new RideSession(TzPrefs.autoPause(this));
+    mEstimate = new EstimateOnce();
     mRules.restart(SystemClock.elapsedRealtime());
     armGpsCheck();
     sRiding = true;
@@ -443,6 +446,11 @@ public final class TzRideService extends Service
       sPreviewedPath = null;
       mGuide = Guide.forPlace(s.placeLat(), s.placeLon(), path, mPaths, mFollowEvents, s.profile().foot);
       takeStops(mGuide, s);
+      if (path != null)
+      {
+        final double[] upDown = path.ele == null ? null : RouteStats.ascentDescent(path.ele);
+        estimate(s, path.line.totalM(), upDown);
+      }
       if (TzTrace.on())
         TzTrace.log("ride", "guide created (place, path " + (path == null ? "none" : Math.round(path.line.totalM()) + " m") + ")");
       mVoice = new TzVoice(this);
@@ -469,6 +477,7 @@ public final class TzRideService extends Service
             return;
           mGuide = Guide.forTrack(prepared.engine, mPaths, mFollowEvents, mSession.profile().foot);
           takeStops(mGuide, mSession);
+          estimate(mSession, prepared.engine.totalM(), prepared.upDown);
           if (TzTrace.on())
             TzTrace.log("ride", "guide created (track " + Math.round(prepared.engine.totalM()) + " m)");
           mClimbs = prepared.climbs;
@@ -491,11 +500,15 @@ public final class TzRideService extends Service
     final FollowEngine engine;
     @Nullable
     final ClimbTracker climbs;
+    /** The route's climbing and descent, null without altitudes (the estimate, Phase 33). */
+    @Nullable
+    final double[] upDown;
 
-    Prepared(@NonNull FollowEngine engine, @Nullable ClimbTracker climbs)
+    Prepared(@NonNull FollowEngine engine, @Nullable ClimbTracker climbs, @Nullable double[] upDown)
     {
       this.engine = engine;
       this.climbs = climbs;
+      this.upDown = upDown;
     }
   }
 
@@ -506,8 +519,13 @@ public final class TzRideService extends Service
     final FollowRoute line = new FollowRoute(g.lineLat, g.lineLon);
     final List<RouteManeuver> maneuvers = ManeuverBuilder.build(line, maps ? TzRoads::junctions : null);
     ClimbTracker climbs = null;
+    double[] upDown = null;
     if (g.ele != null)
     {
+      final double[] ele = new double[g.ele.length];
+      for (int i = 0; i < ele.length; i++)
+        ele[i] = g.ele[i];
+      upDown = RouteStats.ascentDescent(ele);
       final List<Climb> found = ClimbDetector.detect(g.ele, RouteGeometry.ELE_STEP_M, line.totalM());
       for (Climb c : found)
         c.name = summitName(line.latAt(c.summitAt), line.lonAt(c.summitAt), g.waypoints, maps);
@@ -516,7 +534,7 @@ public final class TzRideService extends Service
     Log.i(TAG, "Following " + Math.round(line.totalM()) + " m, " + maneuvers.size() + " maneuvers"
                + (maps ? "" : " (maps not loaded: every bend)")
                + (climbs == null ? ", no elevation" : ", " + climbs.climbs().size() + " climbs"));
-    return new Prepared(new FollowEngine(line, maneuvers, mFollowEvents), climbs);
+    return new Prepared(new FollowEngine(line, maneuvers, mFollowEvents), climbs, upDown);
   }
 
   /**
@@ -583,6 +601,32 @@ public final class TzRideService extends Service
   private static String emptyToNull(@NonNull String s)
   {
     return s.isEmpty() ? null : s;
+  }
+
+  // ---- Estimate (Phase 33) ----
+
+  private EstimateOnce mEstimate = new EstimateOnce();
+
+  /**
+   * The ride-time estimate, worked out once when the route is first known (the only call site): the past rides are
+   * read off the main thread, then it is kept in the session and the journal. Never during the ride.
+   */
+  private void estimate(@NonNull RideSession s, double distanceM, @Nullable double[] upDown)
+  {
+    if (s.estimateS() >= 0)
+      mEstimate.restored();
+    mEstimate.routeKnown(() -> RideStore.get(this).list(rides -> {
+      if (mSession != s)
+        return;
+      final RideEstimator.Estimate e =
+          RideEstimator.estimate(s.profile(), distanceM, upDown == null ? Double.NaN : upDown[0],
+                                 upDown == null ? Double.NaN : upDown[1], rides);
+      if (TzTrace.on())
+        TzTrace.log("ride", "estimate " + e.totalS + " s from " + e.basis + " rides");
+      s.setEstimate(e.totalS, e.basis);
+      flushJournal();
+      changed();
+    }));
   }
 
   // ---- Tones (Phase 32) ----

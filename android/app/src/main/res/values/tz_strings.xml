@@ -355,6 +355,13 @@
   <string name="tz_plan_cd_remove">Remove</string>
 
   <!-- Propose a loop (Phase 29, boards L1, L2) -->
+  <!-- Estimate (Phase 33) -->
+  <string name="tz_estimate_label">Estimated ride time</string>
+  <string name="tz_estimate_typical">typical pace</string>
+  <plurals name="tz_estimate_from">
+    <item quantity="one">from your last ride</item>
+    <item quantity="other">from your last %d rides</item>
+  </plurals>
   <!-- Tones (Phase 32) -->
   <string name="tz_tones_title">Turn tones</string>
   <string name="tz_tones_subtitle">A short tone for each turn and warning</string>
