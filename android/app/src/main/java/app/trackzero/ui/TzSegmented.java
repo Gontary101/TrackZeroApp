@@ -2,7 +2,9 @@ package app.trackzero.ui;
 
 import android.content.Context;
 import android.content.res.TypedArray;
+import android.graphics.Paint;
 import android.graphics.drawable.InsetDrawable;
+import android.text.TextUtils;
 import android.util.AttributeSet;
 import android.util.TypedValue;
 import android.view.Gravity;
@@ -11,7 +13,6 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
-import androidx.core.widget.TextViewCompat;
 import app.organicmaps.R;
 
 /** Pill segmented control (B3 filter, R5 Climb / Full route). Options are 44dp, or 40dp when compact. */
@@ -29,6 +30,9 @@ public class TzSegmented extends LinearLayout
   @Nullable
   private Listener mReselect;
   private boolean mFill;
+  /** The options' text size from their style, px: equal widths shrink every option from it alike (onMeasure). */
+  private float mTextPx;
+  private final Paint mMeasure = new Paint();
 
   public TzSegmented(@NonNull Context context, @Nullable AttributeSet attrs)
   {
@@ -47,7 +51,8 @@ public class TzSegmented extends LinearLayout
   {
     removeAllViews();
     final int h = getResources().getDimensionPixelSize(mCompact ? R.dimen.tz_segment_h_compact : R.dimen.tz_segment_h);
-    final int pad = getResources().getDimensionPixelSize(R.dimen.tz_segment_pad);
+    // Equal widths leave little room around a label (five on a 360dp phone): a small padding there.
+    final int pad = getResources().getDimensionPixelSize(mFill ? R.dimen.tz_segment_pad_fill : R.dimen.tz_segment_pad);
     for (int i = 0; i < options.length; i++)
     {
       final TextView option = new TextView(getContext(), null, 0, R.style.TzText_Option);
@@ -56,11 +61,9 @@ public class TzSegmented extends LinearLayout
       option.setPadding(pad, 0, pad, 0);
       if (mFill)
       {
-        // Equal widths: one line, the text shrinking only when a large font would not fit (L1's five climbs).
         option.setMaxLines(1);
-        TextViewCompat.setAutoSizeTextTypeUniformWithConfiguration(
-            option, getResources().getDimensionPixelSize(R.dimen.tz_segment_text_min), Math.round(option.getTextSize()),
-            1, TypedValue.COMPLEX_UNIT_PX);
+        // Past the smallest size, an ellipsis rather than a broken word.
+        option.setEllipsize(TextUtils.TruncateAt.END);
       }
       final int index = i;
       option.setOnClickListener(v -> {
@@ -82,6 +85,45 @@ public class TzSegmented extends LinearLayout
     }
     mSelected = -1;
     select(0);
+    mTextPx = options.length == 0 ? 0 : ((TextView) getChildAt(0)).getTextSize();
+  }
+
+  /**
+   * Equal widths (L1's five climbs): one line each, and if the widest label does not fit its share at this font
+   * size, every label shrinks by the same factor so they stay the same size and on one line (Phase 38).
+   */
+  @Override
+  protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec)
+  {
+    final int n = getChildCount();
+    if (mFill && n > 0 && mTextPx > 0 && MeasureSpec.getMode(widthMeasureSpec) != MeasureSpec.UNSPECIFIED)
+    {
+      final TextView first = (TextView) getChildAt(0);
+      final int gaps = (n - 1) * getResources().getDimensionPixelSize(R.dimen.tz_space_4);
+      final float share = (MeasureSpec.getSize(widthMeasureSpec) - getPaddingLeft() - getPaddingRight() - gaps)
+                        / (float) n - first.getPaddingLeft() - first.getPaddingRight();
+      mMeasure.set(first.getPaint());
+      mMeasure.setTextSize(mTextPx);
+      float widest = 0;
+      for (int i = 0; i < n; i++)
+      {
+        final TextView option = (TextView) getChildAt(i);
+        // As drawn: allCaps styles measure their capitals.
+        final CharSequence shown = option.getTransformationMethod() == null
+                                       ? option.getText()
+                                       : option.getTransformationMethod().getTransformation(option.getText(), option);
+        widest = Math.max(widest, mMeasure.measureText(shown, 0, shown.length()));
+      }
+      final float min = getResources().getDimension(R.dimen.tz_segment_text_min);
+      final float px = widest <= share || widest == 0 ? mTextPx : Math.max(min, mTextPx * share / (widest + 1));
+      for (int i = 0; i < n; i++)
+      {
+        final TextView option = (TextView) getChildAt(i);
+        if (Math.abs(option.getTextSize() - px) > 0.5f)
+          option.setTextSize(TypedValue.COMPLEX_UNIT_PX, px);
+      }
+    }
+    super.onMeasure(widthMeasureSpec, heightMeasureSpec);
   }
 
   /** The well's 4dp rim around the selected pill. */
@@ -105,6 +147,8 @@ public class TzSegmented extends LinearLayout
   public void setFill(boolean fill)
   {
     mFill = fill;
+    // Options of one size, centred: never moved to share a baseline.
+    setBaselineAligned(!fill);
   }
 
   /** Renames an option in place. */

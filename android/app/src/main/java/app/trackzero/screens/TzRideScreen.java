@@ -901,7 +901,11 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener, Tz
     mLocate.setVisibility(route || noGps ? View.GONE : View.VISIBLE);
     final Guide guide = mService == null ? null : mService.guide();
     if (guide != null)
+    {
       showLines(s, guide);
+      // The part already ridden, faded (owner request, Phase 38).
+      TzRouteLayer.setPassed(guide.placed() ? guide.along() : 0);
+    }
     // Until the guide has placed the rider, the island shows the ride so far, as on a free ride.
     final boolean following = route && guide != null && guide.placed();
     mTurn.setVisibility(following || noGps ? View.VISIBLE : View.GONE);

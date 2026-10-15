@@ -1,12 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Component styles built on the plan's TzText styles (tz_type.xml). -->
 <resources xmlns:tools="http://schemas.android.com/tools">
-  <style name="TzText.IslandLabel.Ride">
-    <item name="android:fontFamily">@font/barlow_bold</item>
-    <item name="android:letterSpacing">0.13</item>
-    <item name="android:textColor">@color/tz_on_mint</item>
-  </style>
-
   <!-- GPS / REC chip text: Barlow Condensed SemiBold 17sp, tracking 1px -->
   <style name="TzText.Chip">
     <item name="android:fontFamily">@font/barlow_condensed_semibold</item>

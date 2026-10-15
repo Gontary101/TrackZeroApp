@@ -105,6 +105,8 @@ public:
   void RemoveAllPreviewSegments();
 
   void SetSubrouteVisibility(dp::DrapeID id, bool isVisible);
+  // TrackZero: the ridden part of a subroute, drawn faded (mercator units along it; <= 0: none).
+  void SetSubroutePassed(dp::DrapeID id, double passedDistance);
 
   bool HasTransitData() const;
   bool IsRulerRoute() const;
@@ -132,6 +134,7 @@ private:
   bool m_followingEnabled;
   Subroutes m_subroutes;
   ankerl::unordered_dense::set<dp::DrapeID> m_hiddenSubroutes;
+  ankerl::unordered_dense::map<dp::DrapeID, double> m_passedSubroutes;
 
   PreviewPointsRequestCallback m_previewPointsRequest;
   std::vector<drape_ptr<CirclesPackRenderData>> m_previewRenderData;

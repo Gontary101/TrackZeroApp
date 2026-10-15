@@ -36,6 +36,9 @@ public final class TzRouteLayer
     int[] show(@NonNull double[] lat, @NonNull double[] lon, int look, int ring, int style, double chevronSpacingM);
 
     void remove(@NonNull int[] ids);
+
+    /** The ridden part of a line: drawn faded up to {@code passedMercator} along it (mercator units). */
+    default void setPassed(@NonNull int[] ids, double passedMercator) {}
   }
 
   @NonNull
@@ -53,7 +56,16 @@ public final class TzRouteLayer
     {
       Framework.nativeRemoveTrackLine(ids);
     }
+
+    @Override
+    public void setPassed(@NonNull int[] ids, double passedMercator)
+    {
+      Framework.nativeSetTrackLinePassed(ids, passedMercator);
+    }
   };
+
+  /** A new faded length is sent when it has moved this far (mercator units: about a metre at 45°). */
+  private static final double PASSED_STEP_MERCATOR = 1e-5;
 
   /** One line: its points, its ring and what the engine drew for it. */
   private static final class Line
@@ -81,6 +93,15 @@ public final class TzRouteLayer
     Object owner;
     @Nullable
     int[] ids;
+    /** Metres of it already ridden (drawn faded, Phase 38); 0: none. */
+    double passedM;
+    /** The faded length last sent for {@link #ids}, mercator units; -1: none. */
+    double sentMercator = -1;
+    /** Metres and mercator units from the start to each point, made when first needed. */
+    @Nullable
+    double[] cumM;
+    @Nullable
+    double[] cumMercator;
 
     void set(@Nullable Object owner, @Nullable double[] lat, @Nullable double[] lon, int ring, double spacingM)
     {
@@ -102,6 +123,9 @@ public final class TzRouteLayer
       this.ring = ring;
       this.spacingM = spacingM;
       dimmed = false;
+      passedM = 0;
+      cumM = null;
+      cumMercator = null;
       draw();
       if (old != null)
       {
@@ -125,10 +149,56 @@ public final class TzRouteLayer
       if (lat != null && lon != null && ids == null)
       {
         ids = sEngine.show(lat, lon, dimmed ? LOOK_DIMMED : look, ring, sStyle, dimmed ? 0 : spacingM);
+        sentMercator = -1;
+        applyPassed();
         if (TzTrace.on())
           TzTrace.log("line", name + " drawn owner=" + ownerName(owner) + " points=" + lat.length + " dimmed=" + dimmed
                               + " ids=" + Arrays.toString(ids));
       }
+    }
+
+    /** The ridden part, drawn faded (not on a dimmed line: off route the whole line is already faded). */
+    void setPassed(double m)
+    {
+      passedM = Math.max(0, m);
+      applyPassed();
+    }
+
+    private void applyPassed()
+    {
+      if (ids == null || lat == null || lon == null || dimmed)
+        return;
+      final double mercator = passedM <= 0 ? 0 : mercatorAt(passedM);
+      if (sentMercator >= 0 && Math.abs(mercator - sentMercator) < PASSED_STEP_MERCATOR)
+        return;
+      sentMercator = mercator;
+      sEngine.setPassed(ids, mercator);
+    }
+
+    /** The mercator distance along the line (as the engine measures it) at {@code m} metres along it. */
+    private double mercatorAt(double m)
+    {
+      if (cumM == null || cumMercator == null)
+      {
+        final int n = lat.length;
+        cumM = new double[n];
+        cumMercator = new double[n];
+        for (int i = 1; i < n; i++)
+        {
+          cumM[i] = cumM[i - 1] + Geo.distance(lat[i - 1], lon[i - 1], lat[i], lon[i]);
+          cumMercator[i] = cumMercator[i - 1] + Math.hypot(lon[i] - lon[i - 1], mercatorY(lat[i]) - mercatorY(lat[i - 1]));
+        }
+      }
+      final int n = cumM.length;
+      if (m >= cumM[n - 1])
+        return cumMercator[n - 1];
+      int i = Arrays.binarySearch(cumM, m);
+      if (i >= 0)
+        return cumMercator[i];
+      i = -i - 1;
+      final double seg = cumM[i] - cumM[i - 1];
+      final double t = seg <= 0 ? 0 : (m - cumM[i - 1]) / seg;
+      return cumMercator[i - 1] + (cumMercator[i] - cumMercator[i - 1]) * t;
     }
 
     void remove()
@@ -264,6 +334,19 @@ public final class TzRouteLayer
     if (TzTrace.on())
       TzTrace.log("line", "showRide owner=" + ownerName(owner) + " points=" + lat.length + (ride ? " ride" : ""));
     sRoute.set(owner, lat, lon, RING_NONE, ride ? RIDE_CHEVRON_M : previewSpacing(lat, lon));
+  }
+
+  /** On a ride: the route's first {@code m} metres are ridden, drawn at a reduced opacity (Phase 38). */
+  public static void setPassed(double m)
+  {
+    sRoute.setPassed(m);
+  }
+
+  /** CoMaps' mercator y of a latitude ({@code mercator::LatToY}), the unit the engine measures lines in. */
+  static double mercatorY(double lat)
+  {
+    final double sin = Math.sin(Math.toRadians(Math.max(-86, Math.min(86, lat))));
+    return Math.max(-180, Math.min(180, Math.toDegrees(0.5 * Math.log((1 + sin) / (1 - sin)))));
   }
 
   /** Off route (R3): the route dashed, at 45 %, without its glow. */

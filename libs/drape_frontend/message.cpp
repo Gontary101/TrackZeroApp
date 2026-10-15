@@ -49,6 +49,7 @@ std::string DebugPrint(Message::Type msgType)
   case Message::Type::FollowRoute: return "FollowRoute";
   case Message::Type::DeactivateRouteFollowing: return "DeactivateRouteFollowing";
   case Message::Type::SetSubrouteVisibility: return "SetSubrouteVisibility";
+  case Message::Type::SetSubroutePassed: return "SetSubroutePassed";
   case Message::Type::AddRoutePreviewSegment: return "AddRoutePreviewSegment";
   case Message::Type::RemoveRoutePreviewSegment: return "RemoveRoutePreviewSegment";
   case Message::Type::UpdateMapStyle: return "UpdateMapStyle";

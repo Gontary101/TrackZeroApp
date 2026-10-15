@@ -721,6 +721,25 @@ private:
   bool m_needRemoveAll = true;
 };
 
+// TrackZero: how much of a subroute has been ridden (mercator units along its polyline); drawn faded.
+class SetSubroutePassedMessage : public Message
+{
+public:
+  SetSubroutePassedMessage(dp::DrapeID subrouteId, double passedDistance)
+    : m_subrouteId(subrouteId)
+    , m_passedDistance(passedDistance)
+  {}
+
+  Type GetType() const override { return Type::SetSubroutePassed; }
+
+  dp::DrapeID GetSubrouteId() const { return m_subrouteId; }
+  double GetPassedDistance() const { return m_passedDistance; }
+
+private:
+  dp::DrapeID m_subrouteId;
+  double m_passedDistance;
+};
+
 class SetSubrouteVisibilityMessage : public Message
 {
 public:

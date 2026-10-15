@@ -7,7 +7,9 @@ import static android.Manifest.permission.POST_NOTIFICATIONS;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.res.Configuration;
 import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.location.Location;
 import android.net.Uri;
 import android.os.Build;
@@ -21,9 +23,9 @@ import androidx.activity.SystemBarStyle;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
-import androidx.lifecycle.Lifecycle;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
+import androidx.lifecycle.Lifecycle;
 import app.organicmaps.MwmActivity;
 import app.organicmaps.MwmApplication;
 import app.organicmaps.R;
@@ -49,6 +51,7 @@ import app.trackzero.TzPrefs;
 import app.trackzero.TzTrace;
 import app.trackzero.ride.TzRideService;
 import app.trackzero.routes.TzImport;
+import app.trackzero.ui.TzThemeReveal;
 
 /**
  * TrackZero's main activity: a full-screen CoMaps map with the TrackZero overlay ({@code tz_root}) on top.
@@ -73,6 +76,8 @@ public class TzActivity extends BaseMwmFragmentActivity
   @Nullable
   private Runnable mOnRidePermitted;
   private boolean mPermissionAsked;
+  /** The night mode the views were built with (Configuration.UI_MODE_NIGHT_*). */
+  private int mNightMode;
   /** The map wanted the rider's position while the tutorial showed. */
   private boolean mPermissionAfterTutorial;
 
@@ -104,6 +109,9 @@ public class TzActivity extends BaseMwmFragmentActivity
 
     setUpEdgeToEdge();
     setContentView(R.layout.tz_activity);
+    mNightMode = getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK;
+    // Recreated during an appearance switch after all: the old screen covers this one, then opens (Phase 38).
+    TzThemeReveal.play(this);
 
     mLocationPermissionRequest = registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(),
                                                            result -> onLocationPermissionsResult());
@@ -128,6 +136,28 @@ public class TzActivity extends BaseMwmFragmentActivity
     // Not called again when the activity is recreated with an already running engine.
     if (Map.isEngineCreated())
       onRenderingInitializationFinished();
+  }
+
+  /**
+   * The appearance switch (More › Appearance) changes the night mode; this activity handles it itself (manifest
+   * {@code configChanges="uiMode"}) instead of being recreated, which showed a black window and restarted the map's
+   * surface. The resources already answer with the new colours: the window, the bars, the island and the screen shown
+   * take them, the map changes its style on the same surface (ThemeSwitcher), and the reveal opens (Phase 38).
+   */
+  @Override
+  public void onConfigurationChanged(@NonNull Configuration newConfig)
+  {
+    super.onConfigurationChanged(newConfig);
+    final int night = newConfig.uiMode & Configuration.UI_MODE_NIGHT_MASK;
+    if (night == mNightMode)
+      return;
+    mNightMode = night;
+    final int bg = ContextCompat.getColor(this, R.color.tz_bg);
+    getWindow().setBackgroundDrawable(new ColorDrawable(bg));
+    findViewById(R.id.tz_activity_root).setBackgroundColor(bg);
+    setUpEdgeToEdge();
+    TzNavigator.rebuild(this);
+    TzThemeReveal.reveal(this);
   }
 
   private void setUpEdgeToEdge()

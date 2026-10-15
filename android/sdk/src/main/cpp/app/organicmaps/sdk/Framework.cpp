@@ -2446,6 +2446,21 @@ JNIEXPORT jintArray JNICALL Java_app_organicmaps_sdk_Framework_nativeShowTrackLi
   return result;
 }
 
+// TrackZero: the ridden part of a line drawn by nativeShowTrackLine (ids as it returned them), in mercator units
+// along it, is drawn at a reduced opacity (0: none ridden).
+JNIEXPORT void JNICALL Java_app_organicmaps_sdk_Framework_nativeSetTrackLinePassed(JNIEnv * env, jclass, jintArray ids,
+                                                                                    jdouble passedMercator)
+{
+  auto engine = frm()->GetDrapeEngine();
+  if (engine == nullptr)
+    return;
+  jsize const n = env->GetArrayLength(ids);
+  jint * id = env->GetIntArrayElements(ids, nullptr);
+  for (jsize i = 0; i < n; ++i)
+    engine->SetSubroutePassed(static_cast<dp::DrapeID>(id[i]), passedMercator);
+  env->ReleaseIntArrayElements(ids, id, JNI_ABORT);
+}
+
 JNIEXPORT void JNICALL Java_app_organicmaps_sdk_Framework_nativeRemoveTrackLine(JNIEnv * env, jclass, jintArray ids)
 {
   auto engine = frm()->GetDrapeEngine();

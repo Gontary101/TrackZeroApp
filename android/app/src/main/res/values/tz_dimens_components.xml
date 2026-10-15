@@ -12,9 +12,8 @@
   <dimen name="tz_radius_grabber">2dp</dimen>
 
   <dimen name="tz_island_icon">22dp</dimen>
-  <dimen name="tz_island_ride_icon">20dp</dimen>
+  <dimen name="tz_island_ride_icon">30dp</dimen> <!-- the RIDE button: the icon alone (owner, 2026-10-15) -->
   <dimen name="tz_island_label_gap">3dp</dimen>
-  <dimen name="tz_island_ride_gap">2dp</dimen>
   <dimen name="tz_divider">1dp</dimen>
   <dimen name="tz_unit_gap">3dp</dimen>
   <dimen name="tz_label_gap">6dp</dimen>
@@ -243,6 +242,7 @@
   <dimen name="tz_tut_pin_halo_r">22dp</dimen>
   <dimen name="tz_tut_pin_ring">3dp</dimen>
   <dimen name="tz_tut_pin_drop">30dp</dimen>
-  <dimen name="tz_segment_text_min">11sp</dimen>
+  <dimen name="tz_segment_text_min">9sp</dimen>
+  <dimen name="tz_segment_pad_fill">4dp</dimen>
   <dimen name="tz_island_label_min">8sp</dimen>
 </resources>

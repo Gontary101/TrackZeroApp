@@ -19,6 +19,7 @@ import app.trackzero.base.TzRoads;
 import app.trackzero.format.TzFormat;
 import app.trackzero.ride.RideStore;
 import app.trackzero.ui.TzListRow;
+import app.trackzero.ui.TzThemeReveal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -61,6 +62,10 @@ public class TzMoreScreen extends TzScreen
     mHistory.setOnClickListener(v -> TzNavigator.show(TzNavigator.Screen.HISTORY, null));
     mAppearance.setOnClickListener(v -> {
       // The only theme control (Phase 36). The night-mode change recreates the activity, which comes back here.
+      // The new appearance opens as a circle from this row over a picture of the old one (no flash).
+      final int[] at = new int[2];
+      v.getLocationInWindow(at);
+      TzThemeReveal.capture(requireActivity(), at[0] + v.getWidth() / 2f, at[1] + v.getHeight() / 2f);
       TzPrefs.setLight(requireContext(), !TzPrefs.light(requireContext()));
       ThemeSwitcher.INSTANCE.restart(true);
     });

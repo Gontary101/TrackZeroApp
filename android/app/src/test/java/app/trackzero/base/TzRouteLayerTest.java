@@ -14,6 +14,7 @@ import org.junit.Test;
 public class TzRouteLayerTest
 {
   private final List<String> mCalls = new ArrayList<>();
+  private final List<Double> mPassed = new ArrayList<>();
   private int mNextId = 1;
   private final Object mPreview = new Object();
   private final Object mRide = new Object();
@@ -38,6 +39,12 @@ public class TzRouteLayerTest
       public void remove(@NonNull int[] ids)
       {
         mCalls.add("remove " + ids[0]);
+      }
+
+      @Override
+      public void setPassed(@NonNull int[] ids, double passedMercator)
+      {
+        mPassed.add(passedMercator);
       }
     };
   }
@@ -101,5 +108,31 @@ public class TzRouteLayerTest
     TzRouteLayer.transfer(TzRouteLayer.RIDE_START, mRide); // nothing was handed over
     TzRouteLayer.hide(mPreview);
     assertEquals(List.of("show 972", "remove 1"), mCalls);
+  }
+
+  @Test
+  public void theRiddenPartIsSentInTheEnginesUnits()
+  {
+    // Due north along a meridian: mercator length is the mercator y difference.
+    final double[] lat = {45.0, 45.1};
+    final double[] lon = {3.0, 3.0};
+    TzRouteLayer.show(mRide, lat, lon, true);
+    final double total = TzRouteLayer.mercatorY(45.1) - TzRouteLayer.mercatorY(45.0);
+    final double lengthM = app.trackzero.geo.Geo.distance(45.0, 3.0, 45.1, 3.0);
+    TzRouteLayer.setPassed(lengthM / 2);
+    assertEquals(total / 2, mPassed.get(mPassed.size() - 1), total * 1e-3);
+    // Under a metre further: not sent again.
+    final int sent = mPassed.size();
+    TzRouteLayer.setPassed(lengthM / 2 + 0.5);
+    assertEquals(sent, mPassed.size());
+    // Past the end: all of it.
+    TzRouteLayer.setPassed(lengthM * 2);
+    assertEquals(total, mPassed.get(mPassed.size() - 1), total * 1e-6);
+    // Off route the line is dimmed and redrawn: nothing is faded on it; back on route the ridden part returns.
+    TzRouteLayer.setDimmed(true);
+    final int beforeBack = mPassed.size();
+    TzRouteLayer.setDimmed(false);
+    assertEquals(beforeBack + 1, mPassed.size());
+    assertEquals(total, mPassed.get(mPassed.size() - 1), total * 1e-6);
   }
 }

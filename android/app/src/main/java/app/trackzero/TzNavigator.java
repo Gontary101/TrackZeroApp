@@ -109,6 +109,40 @@ public final class TzNavigator
     root.addView(container, new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT,
                                                           FrameLayout.LayoutParams.MATCH_PARENT));
 
+    addIsland(activity, root);
+
+    ViewCompat.setOnApplyWindowInsetsListener(root, (v, windowInsets) -> {
+      final int types = WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout();
+      // The top whether the status bar shows or not: the immersive ride must not move when a swipe reveals it.
+      final int top = windowInsets.getInsetsIgnoringVisibility(types).top;
+      final int bottom = windowInsets.getInsets(types).bottom;
+      sTopInset = top;
+      sBottomInset = bottom;
+      sGestureInset = Math.max(windowInsets.getInsets(WindowInsetsCompat.Type.mandatorySystemGestures()).bottom,
+                               windowInsets.getInsetsIgnoringVisibility(WindowInsetsCompat.Type.navigationBars()).bottom);
+      applyInsets();
+      return windowInsets;
+    });
+
+    activity.getOnBackPressedDispatcher().addCallback(activity, sBack);
+
+    // After recreation FragmentManager restores the visible screen by itself; otherwise start on the map, on the
+    // ride when one is running, or on the tutorial the first time.
+    final Fragment restored = fm().findFragmentById(R.id.tz_screen_container);
+    if (restored != null && restored.getTag() != null)
+      onShown(Screen.valueOf(restored.getTag()));
+    else
+      show(switch (TutorialFlow.start(TzRide.inProgress(activity), TzPrefs.tutorial(activity)))
+      {
+        case RIDE -> Screen.RIDE;
+        case TUTORIAL -> Screen.TUTORIAL;
+        default -> Screen.MAP;
+      }, null);
+  }
+
+  /** The bottom island over the screens (built again when the appearance changes). */
+  private static void addIsland(@NonNull FragmentActivity activity, @NonNull FrameLayout root)
+  {
     final TzBottomIsland island = new TzBottomIsland(activity, null);
     island.setId(R.id.tz_island);
     island.setListener(new TzBottomIsland.Listener() {
@@ -141,34 +175,27 @@ public final class TzNavigator
     lp.rightMargin = gutter;
     root.addView(island, lp);
     sIsland = island;
+  }
 
-    ViewCompat.setOnApplyWindowInsetsListener(root, (v, windowInsets) -> {
-      final int types = WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout();
-      // The top whether the status bar shows or not: the immersive ride must not move when a swipe reveals it.
-      final int top = windowInsets.getInsetsIgnoringVisibility(types).top;
-      final int bottom = windowInsets.getInsets(types).bottom;
-      sTopInset = top;
-      sBottomInset = bottom;
-      sGestureInset = Math.max(windowInsets.getInsets(WindowInsetsCompat.Type.mandatorySystemGestures()).bottom,
-                               windowInsets.getInsetsIgnoringVisibility(WindowInsetsCompat.Type.navigationBars()).bottom);
-      applyInsets();
-      return windowInsets;
-    });
-
-    activity.getOnBackPressedDispatcher().addCallback(activity, sBack);
-
-    // After recreation FragmentManager restores the visible screen by itself; otherwise start on the map, on the
-    // ride when one is running, or on the tutorial the first time.
-    final Fragment restored = fm().findFragmentById(R.id.tz_screen_container);
-    if (restored != null && restored.getTag() != null)
-      onShown(Screen.valueOf(restored.getTag()));
-    else
-      show(switch (TutorialFlow.start(TzRide.inProgress(activity), TzPrefs.tutorial(activity)))
-      {
-        case RIDE -> Screen.RIDE;
-        case TUTORIAL -> Screen.TUTORIAL;
-        default -> Screen.MAP;
-      }, null);
+  /**
+   * The appearance changed in place (More › Appearance, Phase 38): the island and the screen shown are built again
+   * with the new colours; the screen keeps its state (detached and attached again).
+   */
+  public static void rebuild(@NonNull FragmentActivity activity)
+  {
+    if (sActivity != activity || sIsland == null)
+      return;
+    final FrameLayout root = (FrameLayout) sIsland.getParent();
+    root.removeView(sIsland);
+    addIsland(activity, root);
+    onShown(sCurrent);
+    applyInsets();
+    final Fragment f = fm().findFragmentById(R.id.tz_screen_container);
+    if (f != null && !fm().isStateSaved())
+    {
+      fm().beginTransaction().detach(f).commitNow();
+      fm().beginTransaction().attach(f).commitNow();
+    }
   }
 
   public static void detach(@NonNull FragmentActivity activity)

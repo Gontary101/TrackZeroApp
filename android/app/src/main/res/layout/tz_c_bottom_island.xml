@@ -66,13 +66,6 @@
       android:importantForAccessibility="no"
       android:src="@drawable/ic_tz_play"
       app:tint="@color/tz_on_mint" />
-    <TextView
-      style="@style/TzText.IslandLabel.Ride"
-      android:layout_width="wrap_content"
-      android:layout_height="wrap_content"
-      android:layout_marginTop="@dimen/tz_island_ride_gap"
-      android:importantForAccessibility="no"
-      android:text="@string/tz_ride" />
   </LinearLayout>
   <Space android:layout_width="@dimen/tz_space_4" android:layout_height="0dp" />
   <LinearLayout

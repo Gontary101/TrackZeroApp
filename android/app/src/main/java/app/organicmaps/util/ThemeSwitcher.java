@@ -16,6 +16,7 @@ import app.organicmaps.sdk.util.Config;
 import app.organicmaps.sdk.util.concurrency.UiThread;
 import app.trackzero.TzConfig;
 import app.trackzero.TzPrefs;
+import app.trackzero.ui.TzAppearance;
 import java.util.Calendar;
 
 public enum ThemeSwitcher
@@ -74,7 +75,16 @@ public enum ThemeSwitcher
       // activity, so apply the map appearance here too.
       UiThread.cancelDelayedTasks(mAutoThemeChecker);
       final boolean light = TzPrefs.light(mContext);
-      setTheme(light ? Config.UiTheme.DEFAULT : Config.UiTheme.NIGHT);
+      final String theme = light ? Config.UiTheme.DEFAULT : Config.UiTheme.NIGHT;
+      if (!theme.equals(Config.UiTheme.getCurrent()))
+      {
+        Config.UiTheme.setCurrent(theme);
+        DownloaderStatusIcon.clearCache();
+      }
+      // One recreation only (Phase 38): the night mode change itself recreates the started activities (no
+      // setTheme(), whose explicit recreate() on top of it made two in a row, the screen black between them).
+      TzAppearance.apply(mContext, light);
+      Framework.nativeSwitchToUsingVehicleStyle(RoutingController.get().isVehicleNavigation());
       SetMapAppearance(light ? MapAppearance.Light : MapAppearance.Dark);
       return;
     }

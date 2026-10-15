@@ -50,6 +50,7 @@ public:
     FollowRoute,
     DeactivateRouteFollowing,
     SetSubrouteVisibility,
+    SetSubroutePassed,  // TrackZero
     AddRoutePreviewSegment,
     RemoveRoutePreviewSegment,
     UpdateMapStyle,

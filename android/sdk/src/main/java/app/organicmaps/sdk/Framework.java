@@ -400,6 +400,9 @@ public class Framework
 
   public static native void nativeRemoveTrackLine(int[] ids);
 
+  /// TrackZero: the ridden part of a line (ids from nativeShowTrackLine), in mercator units along it, drawn faded.
+  public static native void nativeSetTrackLinePassed(int[] ids, double passedMercator);
+
   // Navigation.
   public static native boolean nativeIsRouteFinished();
 

@@ -668,6 +668,13 @@ void DrapeEngine::SetSubrouteVisibility(dp::DrapeID subrouteId, bool isVisible)
                                   MessagePriority::Normal);
 }
 
+void DrapeEngine::SetSubroutePassed(dp::DrapeID subrouteId, double passedDistance)
+{
+  m_threadCommutator->PostMessage(ThreadsCommutator::RenderThread,
+                                  make_unique_dp<SetSubroutePassedMessage>(subrouteId, passedDistance),
+                                  MessagePriority::Normal);
+}
+
 dp::DrapeID DrapeEngine::AddRoutePreviewSegment(m2::PointD const & startPt, m2::PointD const & finishPt)
 {
   dp::DrapeID const id = GenerateDrapeID();

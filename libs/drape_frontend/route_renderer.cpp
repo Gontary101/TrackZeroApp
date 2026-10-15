@@ -482,6 +482,20 @@ void RouteRenderer::RenderSubroute(ref_ptr<dp::GraphicsContext> context, ref_ptr
       glsl::vec2(subrouteData->m_subroute->m_headFakeDistance, subrouteData->m_subroute->m_tailFakeDistance);
   params.m_fakeColor = glsl::ToVec4(df::GetColorConstant(kRouteFakeColor));
   params.m_fakeOutlineColor = glsl::ToVec4(df::GetColorConstant(kRouteFakeOutlineColor));
+  // TrackZero: the part already ridden is the "head" in the line's own colours at a reduced opacity.
+  if (auto const passed = m_passedSubroutes.find(subrouteInfo.m_subrouteId); passed != m_passedSubroutes.end())
+  {
+    float const passedDistance = static_cast<float>(passed->second - subrouteData->m_distanceOffset);
+    if (passedDistance > params.m_fakeBorders.x)
+    {
+      float constexpr kPassedOpacity = 0.35f;
+      params.m_fakeBorders.x = passedDistance;
+      params.m_fakeColor = params.m_color;
+      params.m_fakeColor.a *= kPassedOpacity;
+      params.m_fakeOutlineColor = style.m_pattern.m_isDashed ? params.m_fakeColor : params.m_outlineColor;
+      params.m_fakeOutlineColor.a *= style.m_pattern.m_isDashed ? 1.0f : kPassedOpacity;
+    }
+  }
 
   ref_ptr<dp::GpuProgram> prg =
       mng->GetProgram(style.m_pattern.m_isDashed ? gpu::Program::RouteDash : gpu::Program::Route);
@@ -698,6 +712,7 @@ void RouteRenderer::RemoveSubrouteData(dp::DrapeID subrouteId)
   auto const it = FindSubroute(m_subroutes, subrouteId);
   if (it != m_subroutes.end())
     m_subroutes.erase(it);
+  m_passedSubroutes.erase(subrouteId);
 }
 
 void RouteRenderer::AddPreviewRenderData(ref_ptr<dp::GraphicsContext> context,
@@ -731,6 +746,7 @@ void RouteRenderer::ClearObsoleteData(int currentRecacheId)
 void RouteRenderer::Clear()
 {
   m_subroutes.clear();
+  m_passedSubroutes.clear();
   m_distanceFromBegin = kInvalidDistance;
 }
 
@@ -773,6 +789,14 @@ void RouteRenderer::RemovePreviewSegment(dp::DrapeID id)
 void RouteRenderer::RemoveAllPreviewSegments()
 {
   m_previewSegments.clear();
+}
+
+void RouteRenderer::SetSubroutePassed(dp::DrapeID id, double passedDistance)
+{
+  if (passedDistance > 0.0)
+    m_passedSubroutes[id] = passedDistance;
+  else
+    m_passedSubroutes.erase(id);
 }
 
 void RouteRenderer::SetSubrouteVisibility(dp::DrapeID id, bool isVisible)

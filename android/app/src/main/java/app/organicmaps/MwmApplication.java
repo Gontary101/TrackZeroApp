@@ -10,7 +10,6 @@ import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
-import androidx.appcompat.app.AppCompatDelegate;
 import androidx.lifecycle.DefaultLifecycleObserver;
 import androidx.lifecycle.LifecycleObserver;
 import androidx.lifecycle.LifecycleOwner;
@@ -38,6 +37,7 @@ import app.organicmaps.util.ThemeSwitcher;
 import app.organicmaps.util.Utils;
 import app.trackzero.TzConfig;
 import app.trackzero.TzPrefs;
+import app.trackzero.ui.TzAppearance;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 
@@ -134,8 +134,7 @@ public class MwmApplication extends Application implements Application.ActivityL
     sInstance = this;
     // TrackZero: the rider's appearance before the first activity (Phase 36), never the system's.
     if (TzConfig.ENABLED)
-      AppCompatDelegate.setDefaultNightMode(TzPrefs.light(this) ? AppCompatDelegate.MODE_NIGHT_NO
-                                                                : AppCompatDelegate.MODE_NIGHT_YES);
+      TzAppearance.apply(this, TzPrefs.light(this));
 
     PreferenceManager.setDefaultValues(this, R.xml.prefs_main, false);
     mOrganicMaps = new OrganicMaps(getApplicationContext(), BuildConfig.FLAVOR, BuildConfig.APPLICATION_ID,

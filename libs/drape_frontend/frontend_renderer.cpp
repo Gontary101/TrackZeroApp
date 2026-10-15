@@ -680,6 +680,13 @@ void FrontendRenderer::AcceptMessage(ref_ptr<Message> message)
     break;
   }
 
+  case Message::Type::SetSubroutePassed:
+  {
+    ref_ptr<SetSubroutePassedMessage> const msg = message;
+    m_routeRenderer->SetSubroutePassed(msg->GetSubrouteId(), msg->GetPassedDistance());
+    break;
+  }
+
   case Message::Type::SetSubrouteVisibility:
   {
     ref_ptr<SetSubrouteVisibilityMessage> const msg = message;

@@ -201,6 +201,8 @@ public:
                    bool allowRouteRotation);
   void DeactivateRouteFollowing();
   void SetSubrouteVisibility(dp::DrapeID subrouteId, bool isVisible);
+  // TrackZero: the ridden part of a subroute (mercator units along it) is drawn faded.
+  void SetSubroutePassed(dp::DrapeID subrouteId, double passedDistance);
   dp::DrapeID AddRoutePreviewSegment(m2::PointD const & startPt, m2::PointD const & finishPt);
   void RemoveRoutePreviewSegment(dp::DrapeID segmentId);
   void RemoveAllRoutePreviewSegments();
