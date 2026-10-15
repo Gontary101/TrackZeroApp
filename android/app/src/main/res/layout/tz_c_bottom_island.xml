@@ -19,7 +19,8 @@
       android:src="@drawable/ic_tz_map" />
     <TextView
       style="@style/TzText.IslandLabel"
-      android:layout_width="wrap_content"
+      android:layout_width="match_parent"
+      android:gravity="center_horizontal"
       android:layout_height="wrap_content"
       android:layout_marginTop="@dimen/tz_island_label_gap"
       android:text="@string/tz_tab_map" />
@@ -42,7 +43,8 @@
       android:src="@drawable/ic_tz_routes" />
     <TextView
       style="@style/TzText.IslandLabel"
-      android:layout_width="wrap_content"
+      android:layout_width="match_parent"
+      android:gravity="center_horizontal"
       android:layout_height="wrap_content"
       android:layout_marginTop="@dimen/tz_island_label_gap"
       android:text="@string/tz_tab_routes" />
@@ -90,7 +92,8 @@
       android:src="@drawable/ic_tz_search" />
     <TextView
       style="@style/TzText.IslandLabel"
-      android:layout_width="wrap_content"
+      android:layout_width="match_parent"
+      android:gravity="center_horizontal"
       android:layout_height="wrap_content"
       android:layout_marginTop="@dimen/tz_island_label_gap"
       android:text="@string/tz_tab_search" />
@@ -113,7 +116,8 @@
       android:src="@drawable/ic_tz_more" />
     <TextView
       style="@style/TzText.IslandLabel"
-      android:layout_width="wrap_content"
+      android:layout_width="match_parent"
+      android:gravity="center_horizontal"
       android:layout_height="wrap_content"
       android:layout_marginTop="@dimen/tz_island_label_gap"
       android:text="@string/tz_tab_more" />

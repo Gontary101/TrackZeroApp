@@ -124,6 +124,8 @@ public class TzLoopScreen extends TzScreen implements TzProfileSheet.Listener
       propose();
     });
     final TzSegmented climb = view.findViewById(R.id.tz_loop_climb);
+    // Five climbs share the row equally, also with a large font.
+    climb.setFill(true);
     climb.setOptions(getString(R.string.tz_loop_any), getString(R.string.tz_loop_flat),
                      getString(R.string.tz_loop_rolling), getString(R.string.tz_loop_hilly),
                      getString(R.string.tz_loop_climb_other));

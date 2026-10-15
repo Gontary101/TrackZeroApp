@@ -104,21 +104,22 @@ Once the app is complete and ready to showcase, create a **sleek, professional m
 
 ## Observed during v2, for the Phase 38 bug hunt
 
-- **Leg back onto the track reads "Head to start".** When the router starts a leg on a road more than 60 m from the
-  rider (seen on the emulator's off-road detour, Road and Walk), the leg engine shows HEAD_TO_START: "Head to start"
-  with an arrow to the leg's first point. The wording is about the route's start, not the leg's (D50).
-- **Stops on a free ride.** S1 lists water and repair within 5 km of a free rider and S2 shows the place, but a free
-  ride has no route, so ADD STOP is not offered (D55). Guiding a free ride to a place mid-ride would need the ride
-  screen to switch between free and guided; decide with the owner whether it is wanted.
-- **A stop leg ignored reads as off route.** A rider who keeps to the route past a stop's turn-off gets "off route"
-  from the stop's leg until the stop is 500 m behind and is dropped (D55). Removing it in S1 is the quick way out.
-- **Bivouac: no access information offline.** The maps carry no access tag for campsites or huts (no metadata, no
-  type), so "private access overrides VERIFIED" can only work if a place carries `hwtag-private`; in practice it
-  never does (D56). Shelters on a bus stop or platform are left out; a few named after a stop may remain.
+Status after Phase 38 (D65):
+- **Leg back onto the track reads "Head to start".** Fixed: a leg that starts away from the rider now reads "Head to
+  the path" (`Maneuver.HEAD_TO_PATH`); the route's own start keeps "Head to start". Test: GuideTest.
+- **Stops on a free ride.** Unchanged, by design for now (D55): adding a stop to a free ride would turn it into a
+  guided ride. Decision for the owner: NEEDS OWNER N38.
+- **A stop leg ignored reads as off route.** Fixed: off a stop's leg but on the route itself, the card shows the
+  route's guidance (not OFF ROUTE) while a new leg is asked for; the stop is still dropped 500 m past it. Test:
+  GuideTest.
+- **Bivouac: no access information offline.** A limit of the map data, not of the app: the offline maps carry no
+  access tag for campsites or huts. Left as documented (D56).
 
 ## Fixed and verified
 
-_No bugs marked as fixed yet._
+Nothing is marked verified in the field yet: every BUG and FEAT below is fixed and checked on the emulator, and
+waits for its field check on the owner's phone (the NEEDS OWNER list in `TZ_PROGRESS.md`). Phase 38 closed the
+backlog out on 2026-10-15 (D65).
 
 ### Fixed, awaiting field check
 

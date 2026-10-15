@@ -44,6 +44,14 @@
       app:behavior_hideable="false"
       app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior">
 
+      <!-- Scrolls when R6 is taller than the screen (small phones, large fonts): the end button stays reachable. -->
+      <androidx.core.widget.NestedScrollView
+        android:id="@+id/tz_ride_controls_scroll"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:fillViewport="false"
+        android:overScrollMode="never"
+        android:scrollbars="none">
       <LinearLayout
         android:id="@+id/tz_ride_controls"
         android:layout_width="match_parent"
@@ -241,6 +249,7 @@
           android:layout_height="@dimen/tz_button_h"
           android:layout_marginTop="@dimen/tz_space_12" />
       </LinearLayout>
+      </androidx.core.widget.NestedScrollView>
 
       <app.trackzero.ui.TzPageHandle
         android:id="@+id/tz_ride_handle"

@@ -26,7 +26,8 @@
       android:paddingStart="@dimen/tz_ride_pill_pad"
       android:paddingEnd="@dimen/tz_ride_pill_pad"
       android:text="@string/tz_free_ride"
-      android:textSize="@dimen/tz_text_18" />
+      android:textSize="@dimen/tz_text_18"
+      android:visibility="gone" />
 
     <Space
       android:layout_width="0dp"
@@ -37,7 +38,8 @@
       android:id="@+id/tz_ride_locate"
       style="@style/TzMapButton"
       android:contentDescription="@string/tz_cd_recenter"
-      android:src="@drawable/ic_tz_locate" />
+      android:src="@drawable/ic_tz_locate"
+      android:visibility="gone" />
   </LinearLayout>
 
   <app.trackzero.ui.TzTurnCard

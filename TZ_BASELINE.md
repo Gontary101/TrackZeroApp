@@ -97,3 +97,33 @@ Same guided ride (the Aubière route, GPX replayed), -PtzMeasure build, 115 s pe
   asks for there (SaverPolicyTest covers both sides).
 - **The barometer is off** in the saver (the sensor list is empty), so the climb comes from the GPS altitude meanwhile (D60).
 - The real numbers (battery % per hour, missed turns) need two real 2 h+ rides: NEEDS OWNER N35.
+
+## Phase 38 — the final build against the Phase 16 baseline
+
+Same conditions as Phase 16 (emulator, -PtzMeasure, the Aubière ride at 25 km/h, 2-minute windows). Full outputs:
+`shots/baseline/phase38_road.md`, `shots/baseline/phase38_profiles.md`.
+
+| Screen | CPU % of a core, P16 → P38 | Frames by views | Threads | Location requests |
+|---|---|---|---|---|
+| B1 idle | 64.4 → 66.7 | 77 → 75 | 46 → 45 | 1 → 1 (the map's) |
+| R2 (map page) | 89.5 → 84.6 | 130 → 132 | 52 → 53 | 2 → **1** (the ride's GPS, which feeds the map, D42) |
+| R4 | 5.2 → 5.4 | 1265 → 1279 | 52 → 53 | 2 → 1 |
+| R5 | 1.8 → 2.8 | 128 → 124 | 55 → 54 | 2 → 1 |
+| R6 open | 81.9 → 80.6 | 125 → 129 | 58 → 58 | 2 → 1 |
+| Screen off | 0.1 → 0.2 | 0 → 0 | 58 → 58 | 1 → 1 |
+
+- **Road vs the single-profile baseline: within noise.** The map rows move inside their known ±15 % band; the rows
+  without the map are within a point (R5's +1 point is the climb page's profile and climbs list, Phase 21–22 runs
+  measured 2.5–2.6). Same sensors (rotation vector on B1, barometer on the ride), no wake lock of the app's own.
+- **Battery stats, whole run** (about 16 min, the emulator's power profile): app 3.86 mAh against 2.50 in Phase 16,
+  but Google Play services' share fell from 2.09 to 0.73 mAh: the sensors and GNSS the fused provider held for the
+  map in Phase 16 are now the app's own single request. Together 4.58 mAh against 4.59; GNSS time for both 12.2 min
+  against 16.3 min.
+- **Each profile on the same ride** (R4, 2 min): Road 5.5 %, Gravel 5.5 %, Walk 5.2 %, Hike 5.3 %; 1,274–1,282
+  frames, 51–53 threads, one 1 s GPS request each. A ride on a track routes nothing until a leg is needed, so the
+  profile costs nothing while riding; it only chooses how legs are routed.
+- **Inactive profiles and closed features**: one router at a time (Phase 22), and now no router thread at all 10 s
+  after the last request (Phase 38 fix); with a ride running and the planner, loop search, stops, share, tutorial
+  and sounds closed, the thread count and CPU are the baseline's.
+- **Saver vs normal**: the Phase 35 section above.
+- Real-ride figures: NEEDS OWNER N16 (repeat on this build), N35 (saver), N38.

@@ -4,12 +4,14 @@ import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.drawable.InsetDrawable;
 import android.util.AttributeSet;
+import android.util.TypedValue;
 import android.view.Gravity;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
+import androidx.core.widget.TextViewCompat;
 import app.organicmaps.R;
 
 /** Pill segmented control (B3 filter, R5 Climb / Full route). Options are 44dp, or 40dp when compact. */
@@ -52,6 +54,14 @@ public class TzSegmented extends LinearLayout
       option.setText(options[i]);
       option.setGravity(Gravity.CENTER);
       option.setPadding(pad, 0, pad, 0);
+      if (mFill)
+      {
+        // Equal widths: one line, the text shrinking only when a large font would not fit (L1's five climbs).
+        option.setMaxLines(1);
+        TextViewCompat.setAutoSizeTextTypeUniformWithConfiguration(
+            option, getResources().getDimensionPixelSize(R.dimen.tz_segment_text_min), Math.round(option.getTextSize()),
+            1, TypedValue.COMPLEX_UNIT_PX);
+      }
       final int index = i;
       option.setOnClickListener(v -> {
         if (index == mSelected)

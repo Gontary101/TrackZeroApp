@@ -104,7 +104,7 @@ public final class ToneRules
     {
     case TURN_RIGHT, SLIGHT_RIGHT -> out.add(TonePattern.RIGHT);
     case TURN_LEFT, SLIGHT_LEFT -> out.add(TonePattern.LEFT);
-    case STRAIGHT, HEAD_TO_START, REROUTE -> out.add(TonePattern.STRAIGHT);
+    case STRAIGHT, HEAD_TO_START, HEAD_TO_PATH, REROUTE -> out.add(TonePattern.STRAIGHT);
     case UTURN -> out.add(TonePattern.UTURN);
     case ARRIVE, JOIN, STOP -> out.add(TonePattern.ARRIVE);
     case LEAVE_BIKE ->

@@ -88,6 +88,19 @@ public class GuideTest
   }
 
   @Test
+  public void aLegStartingAwayFromTheRiderSaysHeadToThePath()
+  {
+    // The router starts the way back on a road 150 m off (an off-road detour): not "Head to start" (Phase 38).
+    final Rider r = Rider.onTrack();
+    r.at(0, 0);
+    r.rideTo(0, 300);
+    r.rideTo(300, 300);
+    r.hold(6);
+    r.guide.onPath(path(new double[] {300, 450}, new double[] {100, 450}, new double[] {0, 500}));
+    assertEquals(Maneuver.HEAD_TO_PATH, r.guide.turnState().maneuver);
+  }
+
+  @Test
   public void backOnTheTrackWhileWaitingCancels()
   {
     final Rider r = Rider.onTrack();
@@ -418,6 +431,28 @@ public class GuideTest
     assertEquals("dropped Fontaine", log.log.get(log.log.size() - 1));
     r.rideTo(0, 2400);
     assertFalse(r.guide.offRoute());
+  }
+
+  @Test
+  public void aStopLegIgnoredOnTheRouteIsNotOffRoute()
+  {
+    // Riding on along the route past the stop's turn-off (Phase 38): the route guides, no off-route card.
+    final StopLog log = new StopLog();
+    final Rider r = onLong(log);
+    r.at(0, 0);
+    r.rideTo(0, 300);
+    r.guide.addStop(stop("Atelier", 300, 1500));
+    r.guide.onPath(path(new double[] {0, 300}, new double[] {0, 1400}, new double[] {300, 1500}));
+    assertNotNull(r.guide.legLine());
+    r.rideTo(0, 1700);
+    r.hold(6);
+    assertFalse(r.guide.offRoute());
+    assertFalse(r.guide.turnState().recalculating);
+    assertEquals(1, r.guide.stops().size());
+    // Far enough past it, the stop is dropped as before.
+    r.rideTo(0, 2100);
+    assertTrue(r.guide.stops().isEmpty());
+    assertEquals(0, log.offRoutes);
   }
 
   // ---- Battery saver (Phase 35) ----

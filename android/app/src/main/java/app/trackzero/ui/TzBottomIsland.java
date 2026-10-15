@@ -3,6 +3,7 @@ package app.trackzero.ui;
 import android.content.Context;
 import android.content.res.ColorStateList;
 import android.util.AttributeSet;
+import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
 import android.widget.ImageView;
@@ -12,6 +13,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 import androidx.core.widget.ImageViewCompat;
+import androidx.core.widget.TextViewCompat;
 import app.organicmaps.R;
 
 /** Floating bottom navigation: Map · Routes · RIDE · Search · More. */
@@ -72,6 +74,10 @@ public class TzBottomIsland extends LinearLayout
     final TextView label = (TextView) slot.getChildAt(1);
     label.setMaxLines(1);
     TzTextSize.capCurrent(label);
+    // On a narrow phone even the capped size may not fit its slot: the label shrinks rather than clips.
+    TextViewCompat.setAutoSizeTextTypeUniformWithConfiguration(
+        label, label.getResources().getDimensionPixelSize(R.dimen.tz_island_label_min), Math.round(label.getTextSize()),
+        1, TypedValue.COMPLEX_UNIT_PX);
   }
 
   public void setListener(@Nullable Listener listener)

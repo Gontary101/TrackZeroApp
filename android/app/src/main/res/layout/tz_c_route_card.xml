@@ -35,8 +35,9 @@
         android:layout_height="wrap_content"
         android:ellipsize="end"
         android:maxLines="1" />
+      <!-- Bounded: with a large font on a narrow phone the values shrink to fit instead of being cut. -->
       <LinearLayout
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="@dimen/tz_card_line_gap"
         android:gravity="center_vertical"
@@ -53,6 +54,7 @@
           android:layout_height="wrap_content"
           android:layout_marginStart="@dimen/tz_stat_icon_gap"
           app:tzNumberSize="22"
+          app:tzFitWidth="true"
           app:tzNumberStyle="@style/TzText.MetricS" />
         <ImageView
           android:layout_width="@dimen/tz_stat_icon"
@@ -67,6 +69,7 @@
           android:layout_height="wrap_content"
           android:layout_marginStart="@dimen/tz_stat_icon_gap"
           app:tzNumberSize="22"
+          app:tzFitWidth="true"
           app:tzNumberStyle="@style/TzText.MetricS" />
       </LinearLayout>
       <TextView

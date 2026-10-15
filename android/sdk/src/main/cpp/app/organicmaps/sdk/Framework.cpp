@@ -666,7 +666,12 @@ void Framework::SetAccessibilityFreezeFrame(bool freeze)
   if (freeze)
     m_work.SetRenderingDisabled(false /* destroySurface */);
   else
+  {
     m_work.SetRenderingEnabled();
+    // TrackZero: draw now. TrackZero freezes the map under opaque screens (TzActivity.freezeHiddenMap); what changed
+    // meanwhile (a route line removed) must not wait for the next camera move, or the last frame shows it (D65).
+    m_work.MakeFrameActive();
+  }
 }
 
 ::Framework * Framework::NativeFramework()

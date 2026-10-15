@@ -243,4 +243,6 @@
   <dimen name="tz_tut_pin_halo_r">22dp</dimen>
   <dimen name="tz_tut_pin_ring">3dp</dimen>
   <dimen name="tz_tut_pin_drop">30dp</dimen>
+  <dimen name="tz_segment_text_min">11sp</dimen>
+  <dimen name="tz_island_label_min">8sp</dimen>
 </resources>

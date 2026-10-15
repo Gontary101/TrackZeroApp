@@ -77,6 +77,8 @@ import java.util.TimeZone;
  */
 public class TzRideScreen extends TzScreen implements TzRideService.Listener, TzSaverSheet.Listener
 {
+  private static final String STATE_SHEET_OPEN = "sheetOpen";
+
   private static final int PAGE_MAP = 0;
   private static final int PAGE_SPEED = 1;
   private static final int PAGE_CLIMB = 2;
@@ -327,6 +329,13 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener, Tz
       mSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
     });
     mEnd.setListener(this::endRide);
+    // The controls stay open when the activity is recreated (font size, appearance).
+    if (savedInstanceState != null && savedInstanceState.getBoolean(STATE_SHEET_OPEN))
+    {
+      mSheetBehavior.setState(BottomSheetBehavior.STATE_EXPANDED);
+      mScrim.setVisibility(View.VISIBLE);
+      applySlide(1);
+    }
 
     // Keep the rider at 67 % of the height whatever the screen size.
     view.addOnLayoutChangeListener((v, l, t, r, b, ol, ot, or, ob) -> {
@@ -397,6 +406,14 @@ public class TzRideScreen extends TzScreen implements TzRideService.Listener, Tz
       applySlide(Math.max(0, offset));
     }
   };
+
+  @Override
+  public void onSaveInstanceState(@NonNull Bundle outState)
+  {
+    super.onSaveInstanceState(outState);
+    if (mSheetBehavior != null)
+      outState.putBoolean(STATE_SHEET_OPEN, mSheetBehavior.getState() == BottomSheetBehavior.STATE_EXPANDED);
+  }
 
   /** Collapsed: only the transparent page handle. Expanded: the R6 panel on surface1 over a scrim. */
   private void applySlide(float offset)

@@ -58,6 +58,7 @@
   <string name="tz_mnv_stop">Stop</string>
   <string name="tz_mnv_reroute">Head back to the route</string>
   <string name="tz_mnv_head_to_start">Head to start</string>
+  <string name="tz_mnv_head_to_path">Head to the path</string>
 
   <!-- Voice announcements. tz_voice_language is the language these phrases are written in (the TTS voice). -->
   <string name="tz_voice_language">en</string>

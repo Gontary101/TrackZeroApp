@@ -1054,3 +1054,25 @@ with the stock weights, so near region borders the profile applies a little less
 - **Cost.** One request per candidate as before; long candidates take longer to route (120 km: about 4 min on the
   emulator's debug build). The progress count and cancel are unchanged. Pure parsing and limits in `LoopChoice`
   (tested).
+
+## D65 · Final bug hunt and battery validation (Phase 38)
+- **How.** `tools/trackzero/regress.sh` drives each area of 38.1 on the emulator and keeps a shot per step (they are
+  the test); the smoke test after the last fix. Battery: the Phase 16 run repeated as is, plus each profile on R4.
+- **Frozen map, stale frame.** The map's render loop is frozen under opaque screens (D32/BUG-004 work). Unfreezing
+  re-enabled rendering but drew nothing until the next camera move, so the last frame, taken before a route line was
+  removed, could stay on screen (seen after the activity was recreated on B5 and the planner opened). The root fix is
+  in the SDK's `Framework::SetAccessibilityFreezeFrame`: after `SetRenderingEnabled`, `MakeFrameActive` (marked
+  TrackZero). An engine-side guard against late route recaches was tried first and removed: the trace showed every
+  line removed in order; the frame was the stale part.
+- **R6 on small screens.** With 360 × 640 dp and a 1.3 font the sheet is taller than the screen; the end button was
+  off the bottom. The controls are in a NestedScrollView inside the sheet (the bottom-sheet behaviour hands the drag
+  to it); on normal phones nothing scrolls and nothing changes.
+- **Router thread.** A single-thread executor kept its thread for the life of the process, and a request cancelled
+  before it started still ran. Now a ThreadPoolExecutor of one with a 10 s idle timeout, and each task checks that it
+  is still the latest request before it starts (`sRequest` volatile).
+- **Legs.** "Head to start" on a leg (a detour that begins on a road away from the rider) is now `HEAD_TO_PATH`
+  ("Head to the path"; same glyph, tone and rotation). Off a stop's leg but on the route, the route guides instead of
+  OFF ROUTE while a new leg is asked for.
+- **Accepted as designed:** a restored ride comes back paused (D23); a ride ended before any distance is not saved
+  and says so; the pre-session gap on the ride screen (0.8–3.4 s on the emulator, main thread busy with the map)
+  now shows a neutral screen rather than the free-ride pill.

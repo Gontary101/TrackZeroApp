@@ -19,5 +19,7 @@ public enum Maneuver
   /** The end of a leg to a stop the rider added (FEAT-007, Phase 30); its street is the stop's name. */
   STOP,
   REROUTE,
-  HEAD_TO_START
+  HEAD_TO_START,
+  /** A routed leg (back onto the track, to a stop) starts away from the rider: get to it first (Phase 38). */
+  HEAD_TO_PATH
 }

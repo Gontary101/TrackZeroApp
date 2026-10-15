@@ -18,7 +18,7 @@ public final class TzManeuvers
   {
     view.setImageResource(glyph(m, bold));
     view.setScaleX(m == Maneuver.SLIGHT_LEFT ? -1f : 1f);
-    view.setRotation(m == Maneuver.HEAD_TO_START ? rotationDeg : 0f);
+    view.setRotation(m == Maneuver.HEAD_TO_START || m == Maneuver.HEAD_TO_PATH ? rotationDeg : 0f);
   }
 
   @DrawableRes
@@ -26,7 +26,7 @@ public final class TzManeuvers
   {
     return switch (m)
     {
-      case STRAIGHT, HEAD_TO_START, JOIN -> bold ? R.drawable.ic_tz_straight_bold : R.drawable.ic_tz_straight;
+      case STRAIGHT, HEAD_TO_START, HEAD_TO_PATH, JOIN -> bold ? R.drawable.ic_tz_straight_bold : R.drawable.ic_tz_straight;
       case TURN_RIGHT -> bold ? R.drawable.ic_tz_turn_right_bold : R.drawable.ic_tz_turn_right;
       case TURN_LEFT, UTURN -> bold ? R.drawable.ic_tz_turn_left_bold : R.drawable.ic_tz_turn_left;
       case SLIGHT_RIGHT, SLIGHT_LEFT -> bold ? R.drawable.ic_tz_fork_right_bold : R.drawable.ic_tz_fork_right;
@@ -74,6 +74,7 @@ public final class TzManeuvers
       case STOP -> R.string.tz_mnv_stop;
       case REROUTE -> R.string.tz_mnv_reroute;
       case HEAD_TO_START -> R.string.tz_mnv_head_to_start;
+      case HEAD_TO_PATH -> R.string.tz_mnv_head_to_path;
     };
   }
 }

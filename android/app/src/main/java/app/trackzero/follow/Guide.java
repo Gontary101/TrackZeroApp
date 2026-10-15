@@ -661,7 +661,11 @@ public final class Guide
     if (leg != null && leg.placed())
     {
       if (leg.phase() != FollowEngine.Phase.OFF_ROUTE)
-        return leg.turnState();
+        return leg.turnState().asHeadToPath();
+      // Off a stop's leg but on the route itself (past the turn-off): the route guides while a new leg is asked
+      // for; the rider is not lost (Phase 38).
+      if (mLegStop != null && main != null && onIt(main))
+        return main.turnState();
       return working ? TurnState.recalculating(leg.offRouteM()) : TurnState.offRoute(leg.offRouteM());
     }
     if (main.phase() == FollowEngine.Phase.OFF_ROUTE && working)

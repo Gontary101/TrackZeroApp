@@ -69,6 +69,16 @@ public final class TurnState
     this.wrongWay = wrongWay;
   }
 
+  /** The same, said of a leg: its first point is the path's, not the route's start (Phase 38). */
+  @NonNull
+  TurnState asHeadToPath()
+  {
+    return maneuver != Maneuver.HEAD_TO_START
+               ? this
+               : new TurnState(Maneuver.HEAD_TO_PATH, distanceM, street, glyphRotationDeg, thenManeuver, thenDistanceM,
+                               thenStreet, imminent, offRoute, recalculating, exit, thenExit, wrongWay);
+  }
+
   @NonNull
   public static TurnState offRoute(double distanceToRouteM)
   {

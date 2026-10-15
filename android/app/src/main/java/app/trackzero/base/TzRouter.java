@@ -17,8 +17,9 @@ import app.trackzero.follow.RoutedPath;
 import app.trackzero.routes.Profile;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Paths from CoMaps' router (Phase 15) for a profile (Phase 22): to the start of a track, back onto it, or to a place,
@@ -69,13 +70,21 @@ public final class TzRouter
     void onPath(@Nullable RoutedPath path, @NonNull Reason reason);
   }
 
-  private static final ExecutorService EXECUTOR = Executors.newSingleThreadExecutor(r -> new Thread(() -> {
-    Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
-    r.run();
-  }, "TzRouter"));
+  private static final long IDLE_THREAD_S = 10;
+  /** One thread at a time; it ends 10 s after the last task, so an idle app has no router thread (Phase 22, 38). */
+  private static final ThreadPoolExecutor EXECUTOR =
+      new ThreadPoolExecutor(1, 1, IDLE_THREAD_S, TimeUnit.SECONDS, new LinkedBlockingQueue<>(), r -> new Thread(() -> {
+        Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
+        r.run();
+      }, "TzRouter"));
+
+  static
+  {
+    EXECUTOR.allowCoreThreadTimeOut(true);
+  }
   private static final Handler MAIN = new Handler(Looper.getMainLooper());
-  /** The latest request (main thread); older answers are dropped. */
-  private static int sRequest;
+  /** The latest request (set on the main thread); older answers are dropped, older requests not started. */
+  private static volatile int sRequest;
 
   private TzRouter() {}
 
@@ -107,6 +116,9 @@ public final class TzRouter
     final double[] la = lat.clone();
     final double[] lo = lon.clone();
     EXECUTOR.execute(() -> {
+      // Cancelled or replaced while it waited (leaving the planner, a newer request): nothing to work out.
+      if (request != sRequest)
+        return;
       final long start = System.nanoTime();
       final boolean hasBearing = !Double.isNaN(bearingDeg);
       final BicyclePath p = BicyclePath.nativeBuild(la, lo, profile.ordinal(), hasBearing, hasBearing ? bearingDeg : 0,

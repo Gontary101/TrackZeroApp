@@ -100,6 +100,14 @@ Collected from the v2 phases; each says what to do, what to look at and what cou
   before the map, and the location question comes only after it. SKIP on any step goes to the map; the next start
   opens the map directly. More › Show the tutorial plays it again and comes back to More. With TalkBack on, each step
   reads sensibly (step number, SKIP, the picture, the title) and the tone tiles play. Pass: all of these.
+- **N38 · Final build (Phase 38).** On the release build:
+  - Ride the 60-minute route of N16 again and note TrackZero's battery share and the phone's % used, next to the
+    Phase 16 figures.
+  - Do a long loop (L1 › "…", e.g. 150 km) with the maps around downloaded: the loops it proposes, and the time it
+    takes on the phone.
+  - Decide: should a free ride accept a stop (S1 › ADD STOP, turning the free ride into a guided one)? Today it shows
+    the stops but cannot add them (D55).
+  - Pass: battery figures recorded; loops found; a yes or no on stops for free rides.
 - **N18 · Immersive ride (FEAT-001, Phase 18).** On a ride, no status bar or navigation bar on all three pages and with
   the controls open. Swipe from the top or bottom edge: the bars appear briefly over the ride and nothing moves. Tap the
   handle 10 times: it opens the controls every time. A quick upward swipe from just above the handle opens them too.
@@ -850,3 +858,50 @@ it led to).
 - Output, outside the repository: `~/Projects/TrackZero/film/out/TrackZero_launch_1080p.mp4` (1920 × 1080, 30 fps,
   88.8 s) and `TrackZero_launch_vertical_1080x1920.mp4`; raw recordings in `~/Projects/TrackZero/film/raw` (D63).
 - Phase 38 follows.
+
+## Phase 38 — Final bug hunt, regression, battery validation
+
+### 38.1 Test, fix, retest
+`tools/trackzero/regress.sh` (new) drives the emulator through each area and saves a shot per step; the smoke test
+ran after the last fix. Results by area, each problem with its cause and fix:
+- **Screen transitions and recreation** (every screen, then the activity recreated by a font size change and back):
+  - A route line from B5 stayed on the map under P1 after the activity was recreated: the map is frozen under opaque
+    screens and, unfrozen, drew no new frame, so its last picture (with the removed line) stayed. Fix: unfreezing asks
+    for a frame (`Framework::SetAccessibilityFreezeFrame` → `MakeFrameActive`, D65).
+  - R6 closed itself when the activity was recreated. Fix: its open state is saved and restored.
+  - L1's five climbing options wrapped "Other" onto two lines at a larger font. Fix: equal widths, one line, the text
+    shrinking only if needed (`TzSegmented` fill mode).
+- **Ride lifecycle**: free ride ended at once (not saved, said so) and started again; place ride; planned ride (saved
+  as a route); pause, process death, restored paused; saver on, process death, restored in the saver; a stop added,
+  process death, restored with its leg. All as designed (a restored ride comes back paused, D23).
+  - Before the service connected (0.8–3.4 s on the emulator), the ride's map page showed the FREE RIDE pill and an
+    empty island, also on guided rides. Fix: the pill and locate button start hidden; the first render shows them on
+    free rides only.
+- **GPS**: location off at the start, back; lost for 30 s (NO GPS card after the threshold, cleared on return);
+  permission revoked mid-ride (the system kills the app; reopened, the prompt, then the ride restored paused). OK.
+- **Interruptions**: another app in front, screen off/on, the activity destroyed with the service alive ("Don't keep
+  activities"), Pause and Resume from the notification. OK.
+- **Small phone, largest font, imperial** (360 × 640 dp, font 1.3):
+  - The island's labels were cut ("SEARC"). Fix: they shrink to fit their slot.
+  - The route card cut the gain ("4,97" for 4,971 ft). Fix: the card's values shrink to fit.
+  - **R6 was taller than the screen: HOLD TO END & SAVE could not be reached.** Fix: the controls scroll inside the
+    sheet. Checked: the end button reachable and holding it saves the ride.
+- **Routing**: a request cancelled before it started still ran (2.7 s of routing for nothing) and the router thread
+  never ended. Fix: a request superseded while waiting is skipped, and the thread ends 10 s after the last task (an
+  idle app has no router thread again, as Phase 22 required).
+- **Observed during v2** (backlog): "Head to start" on a leg is now "Head to the path"; an ignored stop leg no longer
+  shows OFF ROUTE while the rider is on the route. The other two stay (owner decision N38; map data limit).
+- **Owner request (2026-10-15)**: loops of any size (D64, its own commit).
+- Not run here: deleting the map under a shown route and an interrupted download (covered in Phases 23 and 26 and by
+  CoMaps' downloader), Bluetooth audio during a tone (no Bluetooth on the emulator: N32).
+- Tests: `LoopChoiceTest` (3), LoopPlannerTest (+2), GuideTest (+2). 306 tests pass.
+
+### 38.2 Battery validation
+Same route, build type and emulator as Phase 16 (`tools/trackzero/baseline_run.sh`, `profiles_measure.sh`, new):
+Road matches the single-profile baseline within noise on every screen, with one location request instead of two;
+the four profiles cost the same on the same ride; nothing runs for an inactive profile or a closed feature. Numbers
+in TZ_BASELINE "Phase 38". Field figures: N16, N35, N38.
+
+### 38.3 Backlog
+Every BUG and FEAT is under "Fixed, awaiting field check" with its check; the v2 observations have their status.
+- Smoke test: all steps pass, no crashes.
