@@ -1,14 +1,18 @@
 package app.trackzero.screens;
 
+import android.content.DialogInterface;
 import android.graphics.Rect;
 import android.location.Location;
 import android.os.Bundle;
+import android.text.InputType;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
+import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -27,6 +31,7 @@ import app.trackzero.base.TzRouter;
 import app.trackzero.format.TzFormat;
 import app.trackzero.geo.DouglasPeucker;
 import app.trackzero.routes.GpxTrack;
+import app.trackzero.routes.LoopChoice;
 import app.trackzero.routes.LoopPlanner;
 import app.trackzero.routes.Profile;
 import app.trackzero.routes.RouteStore;
@@ -36,6 +41,7 @@ import app.trackzero.ui.TzProfiles;
 import app.trackzero.ui.TzRouteCard;
 import app.trackzero.ui.TzSegmented;
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -51,12 +57,20 @@ public class TzLoopScreen extends TzScreen implements TzProfileSheet.Listener
   private static final int[] BIKE_DISTANCES = {20, 30, 40, 60, 80};
   private static final int[] FOOT_DISTANCES = {5, 10, 15, 20, 30};
   private static final double M_PER_MI = 1609.344;
+  private static final double M_PER_FT = 0.3048;
+  /** The climbing control's last option: a total typed in. */
+  private static final int CLIMB_CUSTOM = 4;
 
   @NonNull
   private Profile mProfile = Profile.ROAD;
+  /** A chip's index, or the chips' count: the distance typed in ({@link #mCustomDistance}). */
   private int mDistanceIndex = 1;
-  @NonNull
-  private LoopPlanner.Climb mClimb = LoopPlanner.Climb.ROLLING;
+  /** A typed distance, km or mi; NaN: none yet. */
+  private double mCustomDistance = Double.NaN;
+  /** A preset's ordinal, or {@link #CLIMB_CUSTOM}: the total climb typed in ({@link #mCustomClimb}). */
+  private int mClimbIndex = LoopPlanner.Climb.ROLLING.ordinal();
+  /** A typed total climb, m or ft; NaN: none yet. */
+  private double mCustomClimb = Double.NaN;
   /** Null: the rider's location. */
   @Nullable
   private double[] mStart;
@@ -111,11 +125,22 @@ public class TzLoopScreen extends TzScreen implements TzProfileSheet.Listener
     });
     final TzSegmented climb = view.findViewById(R.id.tz_loop_climb);
     climb.setOptions(getString(R.string.tz_loop_any), getString(R.string.tz_loop_flat),
-                     getString(R.string.tz_loop_rolling), getString(R.string.tz_loop_hilly));
-    climb.select(mClimb.ordinal());
+                     getString(R.string.tz_loop_rolling), getString(R.string.tz_loop_hilly),
+                     getString(R.string.tz_loop_climb_other));
+    climb.select(mClimbIndex);
     climb.setListener(i -> {
-      mClimb = LoopPlanner.Climb.values()[i];
+      if (i == CLIMB_CUSTOM)
+      {
+        askClimb(climb);
+        return;
+      }
+      mClimbIndex = i;
       bindSetup();
+    });
+    // "Other" again: change the typed climb.
+    climb.setReselectListener(i -> {
+      if (i == CLIMB_CUSTOM)
+        askClimb(climb);
     });
     mTap = new TzMapTap(requireContext(), new TzMapTap.Listener() {
       @Override
@@ -189,7 +214,10 @@ public class TzLoopScreen extends TzScreen implements TzProfileSheet.Listener
   public void onProfileChosen(@NonNull Profile profile)
   {
     if (profile.foot != mProfile.foot)
+    {
       mDistanceIndex = 1;
+      mCustomDistance = Double.NaN;
+    }
     mProfile = profile;
     bindSetup();
   }
@@ -211,18 +239,18 @@ public class TzLoopScreen extends TzScreen implements TzProfileSheet.Listener
     bindDistances(v);
     final double distanceM = distanceM();
     final TextView climb = v.findViewById(R.id.tz_loop_climb_caption);
-    if (mClimb == LoopPlanner.Climb.ANY)
+    if (mClimbIndex == LoopPlanner.Climb.ANY.ordinal())
     {
       climb.setText(R.string.tz_loop_climb_any);
     }
     else
     {
-      final double up = mClimb.mPerKm * distanceM / 1000;
-      final double rounded = up < 1000 ? Math.max(50, Math.round(up / 50) * 50) : Math.round(up / 100) * 100;
+      final double up = climbPerKm() * distanceM / 1000;
+      final double rounded = mClimbIndex == CLIMB_CUSTOM
+                                 ? up
+                                 : up < 1000 ? Math.max(50, Math.round(up / 50) * 50) : Math.round(up / 100) * 100;
       final Locale locale = Locale.getDefault();
-      climb.setText(getString(R.string.tz_loop_climb_caption,
-                              getString(new int[] {R.string.tz_loop_any, R.string.tz_loop_flat, R.string.tz_loop_rolling,
-                                                   R.string.tz_loop_hilly}[mClimb.ordinal()]),
+      climb.setText(getString(R.string.tz_loop_climb_caption, climbName(),
                               TzFormat.elevation(rounded, TzPrefs.units(requireContext()), locale).toString(),
                               chosenDistance()));
     }
@@ -234,11 +262,16 @@ public class TzLoopScreen extends TzScreen implements TzProfileSheet.Listener
     row.removeAllViews();
     final int[] options = mProfile.foot ? FOOT_DISTANCES : BIKE_DISTANCES;
     final int gap = getResources().getDimensionPixelSize(R.dimen.tz_loop_chip_gap);
-    for (int i = 0; i < options.length; i++)
+    // The presets, then one more: a distance typed in ("…" until there is one).
+    for (int i = 0; i <= options.length; i++)
     {
+      final boolean custom = i == options.length;
       final TextView chip = new TextView(requireContext());
       chip.setGravity(Gravity.CENTER);
-      chip.setText(String.valueOf(options[i]));
+      chip.setText(!custom ? String.valueOf(options[i])
+                           : Double.isNaN(mCustomDistance) ? getString(R.string.tz_loop_distance_other)
+                                                           : LoopChoice.label(mCustomDistance));
+      chip.setContentDescription(custom ? getString(R.string.tz_loop_cd_other_distance) : null);
       chip.setTypeface(ResourcesCompat.getFont(requireContext(), R.font.barlow_condensed_semibold));
       chip.setTextSize(TypedValue.COMPLEX_UNIT_PX, getResources().getDimension(R.dimen.tz_text_22));
       final boolean selected = i == mDistanceIndex;
@@ -247,6 +280,11 @@ public class TzLoopScreen extends TzScreen implements TzProfileSheet.Listener
       chip.setSelected(selected);
       final int index = i;
       chip.setOnClickListener(x -> {
+        if (custom)
+        {
+          askDistance();
+          return;
+        }
         mDistanceIndex = index;
         bindSetup();
       });
@@ -260,19 +298,135 @@ public class TzLoopScreen extends TzScreen implements TzProfileSheet.Listener
                                                                     : R.string.tz_loop_distance_km);
   }
 
+  /** The distance chosen, in km or mi, as on its chip. */
+  private double chosenValue()
+  {
+    final int[] options = mProfile.foot ? FOOT_DISTANCES : BIKE_DISTANCES;
+    return mDistanceIndex >= options.length ? mCustomDistance : options[mDistanceIndex];
+  }
+
   /** The distance chosen as on its chip: "30 km". */
   @NonNull
   private String chosenDistance()
   {
-    final int value = (mProfile.foot ? FOOT_DISTANCES : BIKE_DISTANCES)[mDistanceIndex];
-    return value + " " + TzFormat.distance(distanceM(), TzPrefs.units(requireContext()), Locale.getDefault()).unit;
+    return LoopChoice.label(chosenValue()) + " "
+         + TzFormat.distance(distanceM(), TzPrefs.units(requireContext()), Locale.getDefault()).unit;
   }
 
   /** The distance chosen, metres. */
   private double distanceM()
   {
-    final int value = (mProfile.foot ? FOOT_DISTANCES : BIKE_DISTANCES)[mDistanceIndex];
+    final double value = chosenValue();
     return TzPrefs.units(requireContext()) == TzFormat.Units.IMPERIAL ? value * M_PER_MI : value * 1000.0;
+  }
+
+  /** Metres up per km asked for, NaN for any. */
+  private double climbPerKm()
+  {
+    if (mClimbIndex == CLIMB_CUSTOM)
+    {
+      final double m = TzPrefs.units(requireContext()) == TzFormat.Units.IMPERIAL ? mCustomClimb * M_PER_FT
+                                                                                   : mCustomClimb;
+      return LoopChoice.perKm(m, distanceM());
+    }
+    final LoopPlanner.Climb c = LoopPlanner.Climb.values()[mClimbIndex];
+    return c == LoopPlanner.Climb.ANY ? Double.NaN : c.mPerKm;
+  }
+
+  @NonNull
+  private String climbName()
+  {
+    return getString(new int[] {R.string.tz_loop_any, R.string.tz_loop_flat, R.string.tz_loop_rolling,
+                                R.string.tz_loop_hilly, R.string.tz_loop_climb_other}[mClimbIndex]);
+  }
+
+  /** A distance beyond the chips (400 km, say): typed in, checked, then chosen. */
+  private void askDistance()
+  {
+    final boolean imperial = TzPrefs.units(requireContext()) == TzFormat.Units.IMPERIAL;
+    final double max = mProfile.foot ? LoopChoice.MAX_DISTANCE_FOOT : LoopChoice.MAX_DISTANCE_BIKE;
+    askNumber(getString(imperial ? R.string.tz_loop_ask_distance_mi : R.string.tz_loop_ask_distance_km),
+              getString(R.string.tz_loop_ask_range, LoopChoice.label(LoopChoice.MIN_DISTANCE), LoopChoice.label(max)),
+              Double.isNaN(mCustomDistance) ? chosenValue() : mCustomDistance, text -> {
+                final Double v = LoopChoice.distance(text, mProfile.foot);
+                if (v == null)
+                  return false;
+                mCustomDistance = v;
+                mDistanceIndex = (mProfile.foot ? FOOT_DISTANCES : BIKE_DISTANCES).length;
+                bindSetup();
+                return true;
+              }, null);
+  }
+
+  /** A total climb typed in; cancelled, the control goes back to the climb chosen before. */
+  private void askClimb(@NonNull TzSegmented control)
+  {
+    final boolean imperial = TzPrefs.units(requireContext()) == TzFormat.Units.IMPERIAL;
+    final double suggested = Double.isNaN(mCustomClimb)
+                                 ? Math.round(LoopPlanner.Climb.ROLLING.mPerKm * distanceM() / 1000
+                                              / (imperial ? M_PER_FT : 1) / 50) * 50
+                                 : mCustomClimb;
+    askNumber(getString(imperial ? R.string.tz_loop_ask_climb_ft : R.string.tz_loop_ask_climb_m),
+              getString(R.string.tz_loop_ask_climb_caption), suggested, text -> {
+                final Double v = LoopChoice.climb(text);
+                if (v == null)
+                  return false;
+                mCustomClimb = v;
+                mClimbIndex = CLIMB_CUSTOM;
+                control.select(CLIMB_CUSTOM);
+                bindSetup();
+                return true;
+              }, () -> control.select(mClimbIndex));
+  }
+
+  private interface Accept
+  {
+    /** False: not a valid value (the dialog stays, with its caption as the reason). */
+    boolean accept(@NonNull String text);
+  }
+
+  private void askNumber(@NonNull String title, @NonNull String caption, double value, @NonNull Accept accept,
+                         @Nullable Runnable cancelled)
+  {
+    final EditText input = new EditText(requireContext());
+    input.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
+    input.setText(Double.isNaN(value) ? "" : LoopChoice.label(value));
+    input.setSelectAllOnFocus(true);
+    input.setTextColor(ContextCompat.getColor(requireContext(), R.color.tz_text1));
+    final TextView hint = new TextView(requireContext(), null, 0, R.style.TzText_Caption);
+    hint.setText(caption);
+    final LinearLayout box = new LinearLayout(requireContext());
+    box.setOrientation(LinearLayout.VERTICAL);
+    final int pad = getResources().getDimensionPixelSize(R.dimen.tz_space_24);
+    box.setPadding(pad, getResources().getDimensionPixelSize(R.dimen.tz_space_8), pad, 0);
+    box.addView(input);
+    box.addView(hint);
+    final androidx.appcompat.app.AlertDialog dialog =
+        new MaterialAlertDialogBuilder(requireContext())
+            .setTitle(title)
+            .setView(box)
+            .setNegativeButton(R.string.tz_cancel, (d, w) -> {
+              if (cancelled != null)
+                cancelled.run();
+            })
+            .setOnCancelListener(d -> {
+              if (cancelled != null)
+                cancelled.run();
+            })
+            .setPositiveButton(R.string.tz_ok, null)
+            .create();
+    dialog.setOnShowListener(d -> {
+      input.requestFocus();
+      dialog.getButton(DialogInterface.BUTTON_POSITIVE).setOnClickListener(b -> {
+        if (accept.accept(input.getText().toString()))
+          dialog.dismiss();
+        else
+          hint.setTextColor(ContextCompat.getColor(requireContext(), R.color.tz_danger));
+      });
+    });
+    dialog.show();
+    if (dialog.getWindow() != null)
+      dialog.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
   }
 
   // ---- Picking a point on the map ----
@@ -304,7 +458,13 @@ public class TzLoopScreen extends TzScreen implements TzProfileSheet.Listener
       return 14;
     if (distanceM <= 20_000)
       return 13;
-    return distanceM <= 40_000 ? 12 : 11;
+    if (distanceM <= 40_000)
+      return 12;
+    if (distanceM <= 100_000)
+      return 11;
+    if (distanceM <= 250_000)
+      return 10;
+    return distanceM <= 500_000 ? 9 : 8;
   }
 
   private void endPick()
@@ -366,9 +526,10 @@ public class TzLoopScreen extends TzScreen implements TzProfileSheet.Listener
     final double distanceM = distanceM();
     final String chosen = chosenDistance();
     if (TzTrace.on())
-      TzTrace.log("loop", "propose " + mProfile.id + " " + Math.round(distanceM) + " m " + mClimb + " shift " + mShift);
+      TzTrace.log("loop", "propose " + mProfile.id + " " + Math.round(distanceM) + " m climb " + climbPerKm()
+                         + " m/km shift " + mShift);
     setLooking(0, mVia == null ? 8 : 4);
-    planner.plan(start[0], start[1], distanceM, mClimb, mProfile, mVia == null ? Double.NaN : mVia[0],
+    planner.plan(start[0], start[1], distanceM, climbPerKm(), mProfile, mVia == null ? Double.NaN : mVia[0],
                  mVia == null ? Double.NaN : mVia[1], mShift, new LoopPlanner.Listener() {
                    @Override
                    public void onProgress(int done, int of)
@@ -378,7 +539,7 @@ public class TzLoopScreen extends TzScreen implements TzProfileSheet.Listener
                    }
 
                    @Override
-                   public void onDone(@NonNull List<LoopPlanner.Loop> loops)
+                   public void onDone(@NonNull List<LoopPlanner.Loop> loops, boolean mapsMissing)
                    {
                      if (planner != mPlanner || getView() == null)
                        return;
@@ -386,7 +547,7 @@ public class TzLoopScreen extends TzScreen implements TzProfileSheet.Listener
                      resetButton();
                      if (TzTrace.on())
                        TzTrace.log("loop", "done " + loops.size() + " loops");
-                     showResults(loops, chosen);
+                     showResults(loops, chosen, mapsMissing);
                    }
                  });
   }
@@ -431,7 +592,7 @@ public class TzLoopScreen extends TzScreen implements TzProfileSheet.Listener
     v.findViewById(R.id.tz_loop_setup).setVisibility(View.VISIBLE);
   }
 
-  private void showResults(@NonNull List<LoopPlanner.Loop> loops, @NonNull String chosen)
+  private void showResults(@NonNull List<LoopPlanner.Loop> loops, @NonNull String chosen, boolean mapsMissing)
   {
     final View v = requireView();
     v.findViewById(R.id.tz_loop_setup).setVisibility(View.GONE);
@@ -441,13 +602,13 @@ public class TzLoopScreen extends TzScreen implements TzProfileSheet.Listener
                         : getResources().getQuantityString(R.plurals.tz_loop_found, loops.size(), loops.size()));
     final TzFormat.Units units = TzPrefs.units(requireContext());
     final Locale locale = Locale.getDefault();
-    final String climb = getString(new int[] {R.string.tz_loop_any, R.string.tz_loop_flat, R.string.tz_loop_rolling,
-                                              R.string.tz_loop_hilly}[mClimb.ordinal()]).toLowerCase(locale);
+    final String climb = climbName().toLowerCase(locale);
     ((TextView) v.findViewById(R.id.tz_loop_request)).setText(getString(
         R.string.tz_loop_request, getString(mStart == null ? R.string.tz_loop_from_here : R.string.tz_loop_from_point),
         getString(TzProfiles.label(mProfile)), chosen, climb));
-    ((TextView) v.findViewById(R.id.tz_loop_note)).setText(loops.isEmpty() ? R.string.tz_loop_none
-                                                                           : R.string.tz_loop_estimates);
+    ((TextView) v.findViewById(R.id.tz_loop_note)).setText(!loops.isEmpty() ? R.string.tz_loop_estimates
+                                                           : mapsMissing    ? R.string.tz_loop_none_maps
+                                                                            : R.string.tz_loop_none);
     final LinearLayout cards = v.findViewById(R.id.tz_loop_cards);
     cards.removeAllViews();
     final String[] directions = getResources().getStringArray(R.array.tz_loop_directions);

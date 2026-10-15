@@ -22,7 +22,7 @@ import java.util.Map;
  */
 public final class LoopPlanner
 {
-  /** The climb asked for, in metres up per kilometre. */
+  /** The climb presets (L1), in metres up per kilometre; any other target is a number ({@link #plan}). */
   public enum Climb
   {
     ANY(0),
@@ -50,8 +50,11 @@ public final class LoopPlanner
     /** {@code done} of {@code of} candidates tried. */
     void onProgress(int done, int of);
 
-    /** Up to three loops, best first; empty: none fits. */
-    void onDone(@NonNull List<Loop> loops);
+    /**
+     * Up to three loops, best first; empty: none fits. {@code mapsMissing}: some candidate ran into a map that is
+     * not on the phone (a big loop reaches beyond the downloaded region).
+     */
+    void onDone(@NonNull List<Loop> loops, boolean mapsMissing);
   }
 
   /** A proposed loop. */
@@ -171,13 +174,15 @@ public final class LoopPlanner
   private double mViaLon = Double.NaN;
   private double mDistanceM;
   @NonNull
-  private Climb mClimb = Climb.ANY;
+  /** Metres up per km asked for; NaN: any. */
+  private double mClimbPerKm = Double.NaN;
   @NonNull
   private Profile mProfile = Profile.ROAD;
   @Nullable
   private Listener mListener;
   private final List<Candidate> mCandidates = new ArrayList<>();
   private final List<Loop> mFound = new ArrayList<>();
+  private boolean mMapsMissing;
   private int mIndex;
   private int mRetries;
 
@@ -194,9 +199,10 @@ public final class LoopPlanner
 
   /**
    * @param viaLat     a point every loop passes through, NaN for none
+   * @param climbPerKm metres up per kilometre to aim for, NaN when climbing does not count
    * @param shiftDeg   0, or 22.5 for "other loops" (directions between the first ones)
    */
-  public void plan(double startLat, double startLon, double distanceM, @NonNull Climb climb, @NonNull Profile profile,
+  public void plan(double startLat, double startLon, double distanceM, double climbPerKm, @NonNull Profile profile,
                    double viaLat, double viaLon, double shiftDeg, @NonNull Listener listener)
   {
     mStartLat = startLat;
@@ -204,11 +210,12 @@ public final class LoopPlanner
     mViaLat = viaLat;
     mViaLon = viaLon;
     mDistanceM = distanceM;
-    mClimb = climb;
+    mClimbPerKm = climbPerKm;
     mProfile = profile;
     mListener = listener;
     mCandidates.clear();
     mFound.clear();
+    mMapsMissing = false;
     mIndex = 0;
     mRetries = 0;
     if (Double.isNaN(viaLat))
@@ -239,7 +246,7 @@ public final class LoopPlanner
       return;
     if (mIndex >= mCandidates.size())
     {
-      mListener.onDone(pick(mFound));
+      mListener.onDone(pick(mFound), mMapsMissing);
       return;
     }
     request(mCandidates.get(mIndex));
@@ -253,6 +260,8 @@ public final class LoopPlanner
         return;
       if (path == null)
       {
+        if (reason == TzRouter.Reason.NO_MAP)
+          mMapsMissing = true;
         final boolean noRoad = reason == TzRouter.Reason.NO_START || reason == TzRouter.Reason.NO_END
                                || reason == TzRouter.Reason.NO_WAY;
         if (noRoad && !c.moved && mRetries < MAX_RETRIES)
@@ -297,9 +306,9 @@ public final class LoopPlanner
     final double up = upDown == null ? Double.NaN : upDown[0];
     final double retrace = retrace(path.line);
     double climbMiss = 0;
-    if (mClimb != Climb.ANY)
+    if (!Double.isNaN(mClimbPerKm))
     {
-      final double target = mClimb.mPerKm * length / 1000;
+      final double target = mClimbPerKm * length / 1000;
       climbMiss = Double.isNaN(up) ? 0.5 : Math.min(1, Math.abs(up - target) / Math.max(target, 100));
     }
     final double score = Math.abs(length - mDistanceM) / mDistanceM + 0.5 * climbMiss + 2 * retrace;

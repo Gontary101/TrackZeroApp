@@ -499,6 +499,16 @@
   <string name="tz_loop_profile">Profile</string>
   <string name="tz_loop_via">Pass through</string>
   <string name="tz_loop_optional">Optional</string>
+  <!-- L1: a loop size beyond the chips (2026-10-15, owner request) -->
+  <string name="tz_loop_climb_other">Other</string>
+  <string name="tz_loop_distance_other">…</string>
+  <string name="tz_loop_cd_other_distance">Another distance</string>
+  <string name="tz_loop_ask_distance_km">Loop distance, km</string>
+  <string name="tz_loop_ask_distance_mi">Loop distance, mi</string>
+  <string name="tz_loop_ask_range">From %1$s to %2$s.</string>
+  <string name="tz_loop_ask_climb_m">Climbing, metres up</string>
+  <string name="tz_loop_ask_climb_ft">Climbing, feet up</string>
+  <string name="tz_loop_ask_climb_caption">The total for the whole loop. 0 is as flat as possible.</string>
   <string name="tz_loop_propose">Propose loops</string>
   <string name="tz_loop_looking">Looking… %1$d/%2$d</string>
   <string name="tz_loop_pick_start">Tap the map where the loop starts.</string>
@@ -515,6 +525,7 @@
   <string name="tz_loop_new_roads">%d %% new roads</string>
   <string name="tz_loop_estimates">Distance and climbing are estimates from the offline map. Tap a loop to preview it, then save it or ride it.</string>
   <string name="tz_loop_none">No loop this size from here. Try another distance or profile.</string>
+  <string name="tz_loop_none_maps">A loop this size reaches beyond the maps on this phone. Download the maps around here in More › Offline maps, or choose a shorter loop.</string>
   <string name="tz_loop_other">Try other loops</string>
   <string name="tz_loop_card_name">%1$s · %2$s</string>
   <string name="tz_loop_name">Loop %1$s · %2$s</string>
@@ -547,4 +558,5 @@
   <string name="tz_cd_tutorial_step">Step %1$d of %2$d</string>
   <string name="tz_tone_cd_action">play</string>
   <string name="tz_more_tutorial">Show the tutorial</string>
+  <string name="tz_ok">OK</string>
 </resources>

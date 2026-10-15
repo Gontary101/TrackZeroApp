@@ -1040,3 +1040,17 @@ with the stock weights, so near region borders the profile applies a little less
   or stock music. Loudness −14 LUFS, true peak under −1.5 dBTP.
 - **Not in the repository:** the recordings and the rendered films (about 100 MB) live in `~/Projects/TrackZero/film`;
   `film.md` says how to rebuild them. Phase 39 has not run: the name and the mark are unchecked for publication.
+
+## D64 · Loops of any size (owner request, 2026-10-15)
+- **What.** L1 had five distance chips (20–80 km; 5–30 on foot) and four climbs. A sixth chip ("…") takes a typed
+  distance, 2–1,000 km or mi (100 on foot), and shows it once set; a fifth climb, Other, takes the total climb in m
+  or ft (0–30,000), suggested at the Rolling rate. Out-of-range input keeps the dialog open with its range in red.
+- **Planner.** `LoopPlanner.plan` takes the climb as metres per km (NaN: any); the presets are that number. The
+  geometry already scales with the distance (corners at a radius from it), so nothing else changes; a 400 km test
+  plan fits its size like the 30 km ones.
+- **Maps.** A big loop reaches beyond the downloaded region. The router says so (`NO_MAP`); the planner now passes
+  it on, and L2 says to download the maps around or choose a shorter loop instead of "no loop this size". The map
+  picker zooms out further for big loops (zoom 8 beyond 500 km).
+- **Cost.** One request per candidate as before; long candidates take longer to route (120 km: about 4 min on the
+  emulator's debug build). The progress count and cancel are unchanged. Pure parsing and limits in `LoopChoice`
+  (tested).

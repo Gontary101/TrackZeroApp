@@ -33,6 +33,8 @@ public class LoopPlannerTest
     boolean noRoadFarNorth;
     LoopPlanner planner;
     boolean cancelOnFirst;
+    /** No map beyond this distance from the start (a loop bigger than the downloaded region). */
+    double mapsWithinM = Double.MAX_VALUE;
 
     @Override
     public void route(double[] lat, double[] lon, Profile profile, BikeWalkPlanner.Answer answer)
@@ -44,6 +46,12 @@ public class LoopPlannerTest
         answer.onPath(null, TzRouter.Reason.CANCELLED);
         return;
       }
+      for (int i = 0; i < lat.length; i++)
+        if (Geo.distance(LAT, LON, lat[i], lon[i]) > mapsWithinM)
+        {
+          answer.onPath(null, TzRouter.Reason.NO_MAP);
+          return;
+        }
       final double bearing = Geo.bearing(lat[0], lon[0], lat[1], lon[1]);
       if (noRoadFarNorth && Math.abs(Geo.normalizeAngle(bearing)) < 40
           && Geo.distance(lat[0], lon[0], lat[1], lon[1]) > 7000)
@@ -108,6 +116,7 @@ public class LoopPlannerTest
   private static final class Result implements LoopPlanner.Listener
   {
     List<LoopPlanner.Loop> loops;
+    boolean mapsMissing;
     int lastDone;
     int of;
 
@@ -119,9 +128,10 @@ public class LoopPlannerTest
     }
 
     @Override
-    public void onDone(List<LoopPlanner.Loop> loops)
+    public void onDone(List<LoopPlanner.Loop> loops, boolean mapsMissing)
     {
       this.loops = loops;
+      this.mapsMissing = mapsMissing;
     }
   }
 
@@ -130,7 +140,7 @@ public class LoopPlannerTest
     final LoopPlanner planner = new LoopPlanner(router);
     router.planner = planner;
     final Result r = new Result();
-    planner.plan(LAT, LON, D, LoopPlanner.Climb.ROLLING, Profile.GRAVEL, viaLat, viaLon, 0, r);
+    planner.plan(LAT, LON, D, LoopPlanner.Climb.ROLLING.mPerKm, Profile.GRAVEL, viaLat, viaLon, 0, r);
     return r;
   }
 
@@ -213,6 +223,37 @@ public class LoopPlannerTest
         nearest = Math.min(nearest, Geo.distance(line.lats()[i], line.lons()[i], via[0], via[1]));
       assertTrue("nearest " + nearest, nearest < 1);
     }
+  }
+
+  @Test
+  public void aFourHundredKilometreLoopFitsItsSize()
+  {
+    // A size typed in L1 (beyond the chips): the same planner, scaled.
+    final GridRouter router = new GridRouter();
+    final LoopPlanner planner = new LoopPlanner(router);
+    router.planner = planner;
+    final Result r = new Result();
+    final double d = 400_000;
+    planner.plan(LAT, LON, d, 4000 / 400.0, Profile.ROAD, Double.NaN, Double.NaN, 0, r);
+    assertFalse(r.loops.isEmpty());
+    for (LoopPlanner.Loop l : r.loops)
+      assertTrue("length " + l.lengthM(), Math.abs(l.lengthM() - d) <= 0.3 * d);
+  }
+
+  @Test
+  public void aLoopBeyondTheMapsSaysSo()
+  {
+    final GridRouter router = new GridRouter();
+    router.mapsWithinM = 20_000;
+    final LoopPlanner planner = new LoopPlanner(router);
+    router.planner = planner;
+    final Result r = new Result();
+    planner.plan(LAT, LON, 400_000, Double.NaN, Profile.ROAD, Double.NaN, Double.NaN, 0, r);
+    assertTrue(r.loops.isEmpty());
+    assertTrue(r.mapsMissing);
+    // Within the maps, nothing is missing.
+    final Result ok = plan(new GridRouter(), Double.NaN, Double.NaN);
+    assertFalse(ok.mapsMissing);
   }
 
   @Test

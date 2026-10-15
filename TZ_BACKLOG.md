@@ -131,6 +131,9 @@ _No bugs marked as fixed yet._
   under the island on every page. Field check: NEEDS OWNER N18 (handle part).
 - **FEAT-005** — Phase 20. Research in `TZ_RESEARCH_ROUTE_VISIBILITY.md`; 8dp line with a black casing (D45).
   Field check: NEEDS OWNER N20 (choose among four candidates).
+- **Loops of any size** (owner request, 2026-10-15) — L1 takes a typed distance (up to 1,000 km) and a typed total
+  climb; L2 says when the maps for a big loop are missing (D64). Field check: a long loop with the maps around
+  downloaded, on the phone.
 - **First-launch tutorial** (the requirement above, and FEAT-008's tutorial part) — Phase 37. T1–T4, four visual
   steps before B1 the first time, SKIP on each, replay from More › Show the tutorial; tones to tap on T3 (D62).
   Field check: NEEDS OWNER N37.
