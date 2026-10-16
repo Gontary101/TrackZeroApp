@@ -956,6 +956,11 @@ Asked for by the owner after testing the release build on the phone.
   Seen, already so before (baseline build the same): after panning away, a cold start reopens the last view.
 - Tests: unit tests pass; smoke test (debug engine with ASan) all steps, no crashes, no ASan reports.
 
+- **Owner request during the pass**: the "GPS ±5 M" chip and its green dot are gone from B1; only an amber NO GPS
+  warning appears when location is off or lost, and location now resumes by itself when switched back on (D68).
+  Checked on the emulator: no chip with a fix; NO GPS with location off; back on, the chip goes and the position
+  returns. Smoke test passes.
+
 ### NEEDS OWNER
 - **N67** — On the phone: leave the app open on the map for 30 minutes with the phone still on a table, and note the
   battery drop against the previous build; on a ride with the map page on, note whether the map's movement looks as

@@ -1125,3 +1125,11 @@ with the stock weights, so near region borders the profile applies a little less
   nothing (no location request, no frames); the screen-off ride 0.2 %.
 - **Tracing in measure builds.** TzTrace keys on the debug build type, not `BuildConfig.DEBUG` (false when not
   debuggable), so -PtzMeasure runs keep the trace that the scripts read (search now logs its time).
+
+## D68 · No GPS accuracy chip on B1 (owner, 2026-10-16)
+- **Owner's call.** "GPS ±5 M" and its green dot are no use to a rider: B1 shows no chip while there is a position.
+  The chip remains only as the amber NO GPS warning when location is off or lost (the location helper's timeout or
+  "disabled"), never before the first fix, so it does not flash at every start. Deviation from design.html B1.
+- **Location back on.** CoMaps stopped at "off" and waited for the next app start or a tap on the locate button, so
+  NO GPS stayed after location was switched back on. While a browse screen listens, a PROVIDERS_CHANGED receiver
+  restarts the location helper (no camera move).

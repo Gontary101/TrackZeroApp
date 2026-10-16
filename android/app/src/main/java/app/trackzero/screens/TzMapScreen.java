@@ -31,7 +31,6 @@ import java.util.Locale;
 public class TzMapScreen extends TzScreen implements TzLocation.Listener, TzMap.FollowListener
 {
   private static final int FIRST_CAMERA_ZOOM = 15;
-  private static final float GOOD_ACCURACY_M = 20;
 
   @Nullable
   private TzChip mGps;
@@ -128,11 +127,10 @@ public class TzMapScreen extends TzScreen implements TzLocation.Listener, TzMap.
     TzLocation.addListener(requireContext(), this);
     TzSearch.setShownListener(this::bindPlace);
     bindPlace();
+    // No warning before the first fix: the location helper says when the GPS is off or lost (onLocationLost).
     final Location last = TzLocation.last(requireContext());
     if (last != null)
       onLocation(last);
-    else
-      showNoGps();
   }
 
   @Override
@@ -258,13 +256,9 @@ public class TzMapScreen extends TzScreen implements TzLocation.Listener, TzMap.
       TzPrefs.setFirstCameraDone(requireContext());
       TzMap.centerOn(location.getLatitude(), location.getLongitude(), FIRST_CAMERA_ZOOM);
     }
-    if (mGps == null)
-      return;
-    final float acc = location.getAccuracy();
-    final TzFormat.Value v =
-        TzFormat.elevation(acc, TzPrefs.units(requireContext()), Locale.getDefault());
-    final String text = getString(R.string.tz_gps_accuracy, (v.number + " " + v.unit).toUpperCase(Locale.ROOT));
-    mGps.setState(text, acc <= GOOD_ACCURACY_M ? R.color.tz_mint : R.color.tz_amber, R.color.tz_text1);
+    // The owner's call (2026-10-16): the accuracy is no use to a rider; the chip only warns that there is no GPS.
+    if (mGps != null)
+      mGps.setVisibility(View.GONE);
   }
 
   @Override
@@ -275,8 +269,10 @@ public class TzMapScreen extends TzScreen implements TzLocation.Listener, TzMap.
 
   private void showNoGps()
   {
-    if (mGps != null)
-      mGps.setState(getString(R.string.tz_gps_none), R.color.tz_amber, R.color.tz_text1);
+    if (mGps == null)
+      return;
+    mGps.setState(getString(R.string.tz_gps_none), R.color.tz_amber, R.color.tz_text1);
+    mGps.setVisibility(View.VISIBLE);
   }
 
   @Override

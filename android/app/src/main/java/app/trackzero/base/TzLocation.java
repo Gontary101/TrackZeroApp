@@ -1,19 +1,24 @@
 package app.trackzero.base;
 
 import android.annotation.SuppressLint;
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.location.Location;
 import android.location.LocationManager;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
 import app.organicmaps.MwmApplication;
+import app.organicmaps.sdk.location.LocationHelper;
 import app.organicmaps.sdk.location.LocationListener;
 import app.organicmaps.sdk.util.LocationUtils;
 import app.trackzero.ride.TzFix;
 import java.util.HashMap;
 import java.util.Map;
 
-/** The map's location feed (CoMaps LocationHelper) for browse screens: GPS chip, first camera, "starts in". */
+/** The map's location feed (CoMaps LocationHelper) for browse screens: NO GPS chip, first camera, "starts in". */
 public final class TzLocation
 {
   public interface Listener
@@ -25,6 +30,12 @@ public final class TzLocation
   }
 
   private static final Map<Listener, LocationListener> sAdapters = new HashMap<>();
+  /**
+   * Location switched back on while a browse screen listens: CoMaps stopped at "off" and would wait for the next
+   * start of the app or a tap on the locate button (the chip said NO GPS meanwhile).
+   */
+  @Nullable
+  private static BroadcastReceiver sProviders;
 
   private TzLocation() {}
 
@@ -62,6 +73,22 @@ public final class TzLocation
     };
     sAdapters.put(l, adapter);
     MwmApplication.from(c).getLocationHelper().addListener(adapter);
+    if (sProviders == null)
+    {
+      final Context app = c.getApplicationContext();
+      sProviders = new BroadcastReceiver() {
+        @SuppressLint("MissingPermission")  // checked
+        @Override
+        public void onReceive(Context context, Intent intent)
+        {
+          final LocationHelper helper = MwmApplication.from(app).getLocationHelper();
+          if (!helper.isActive() && hasPermission(app) && LocationUtils.areLocationServicesTurnedOn(app))
+            helper.start();
+        }
+      };
+      ContextCompat.registerReceiver(app, sProviders, new IntentFilter(LocationManager.PROVIDERS_CHANGED_ACTION),
+                                     ContextCompat.RECEIVER_NOT_EXPORTED);
+    }
   }
 
   /**
@@ -97,5 +124,10 @@ public final class TzLocation
     final LocationListener adapter = sAdapters.remove(l);
     if (adapter != null)
       MwmApplication.from(c).getLocationHelper().removeListener(adapter);
+    if (sAdapters.isEmpty() && sProviders != null)
+    {
+      c.getApplicationContext().unregisterReceiver(sProviders);
+      sProviders = null;
+    }
   }
 }

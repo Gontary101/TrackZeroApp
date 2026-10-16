@@ -12,7 +12,6 @@
   <string name="tz_cd_zoom_in">Zoom in</string>
   <string name="tz_cd_zoom_out">Zoom out</string>
   <string name="tz_cd_recenter">Recenter</string>
-  <string name="tz_gps_accuracy">GPS ±%1$s</string>
   <string name="tz_gps_none">NO GPS</string>
 
   <string name="tz_osm_attribution">© OpenStreetMap</string>
