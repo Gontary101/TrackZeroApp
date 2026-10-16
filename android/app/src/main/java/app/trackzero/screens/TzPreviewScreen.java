@@ -60,6 +60,8 @@ public class TzPreviewScreen extends TzScreen
 {
   /** A place instead of a route of the library: its name and where it is. */
   public static final String ARG_PLACE_NAME = "placeName";
+  /** A loop opened from L2's proposals: back goes to them. */
+  public static final String ARG_FROM_LOOPS = "fromLoops";
   /** A place from S1 is shown with at least this much around it and its closest point on the route. */
   private static final double FOCUS_PAD_M = 300;
   public static final String ARG_PLACE_LAT = "placeLat";
@@ -279,10 +281,19 @@ public class TzPreviewScreen extends TzScreen
     return true;
   }
 
-  /** Back to where the preview came from: the routes, or the map with the place found. */
+  /** Back to where the preview came from: the routes, the map with the place found, or the proposed loops. */
   private void back()
   {
-    TzNavigator.show(mPlaceName != null ? TzNavigator.Screen.MAP : TzNavigator.Screen.ROUTES, null);
+    if (mPlaceName != null)
+      TzNavigator.show(TzNavigator.Screen.MAP, null);
+    else if (requireArguments().getBoolean(ARG_FROM_LOOPS))
+    {
+      final Bundle args = new Bundle();
+      args.putBoolean(TzLoopScreen.ARG_RESUME, true);
+      TzNavigator.show(TzNavigator.Screen.LOOP, args);
+    }
+    else
+      TzNavigator.show(TzNavigator.Screen.ROUTES, null);
   }
 
   // ---- A ride to a place ----

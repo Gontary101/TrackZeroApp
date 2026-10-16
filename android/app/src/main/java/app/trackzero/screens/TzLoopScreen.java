@@ -60,6 +60,54 @@ public class TzLoopScreen extends TzScreen implements TzProfileSheet.Listener
   private static final double M_PER_FT = 0.3048;
   /** The climbing control's last option: a total typed in. */
   private static final int CLIMB_CUSTOM = 4;
+  /** Back from a loop's preview: L2 again, as it was ({@link #sLast}). */
+  public static final String ARG_RESUME = "resume";
+
+  /** L1's choices and L2's loops when one was opened, for back from its preview; gone when L1 / L2 is left. */
+  @Nullable
+  private static Last sLast;
+
+  private static final class Last
+  {
+    @NonNull
+    final Profile profile;
+    final int distanceIndex;
+    final double customDistance;
+    final int climbIndex;
+    final double customClimb;
+    @Nullable
+    final double[] start;
+    @Nullable
+    final double[] via;
+    final double shift;
+    @NonNull
+    final List<LoopPlanner.Loop> loops;
+    @NonNull
+    final String chosen;
+    final boolean mapsMissing;
+
+    Last(@NonNull TzLoopScreen s)
+    {
+      profile = s.mProfile;
+      distanceIndex = s.mDistanceIndex;
+      customDistance = s.mCustomDistance;
+      climbIndex = s.mClimbIndex;
+      customClimb = s.mCustomClimb;
+      start = s.mStart;
+      via = s.mVia;
+      shift = s.mShift;
+      loops = s.mLoops;
+      chosen = s.mChosen;
+      mapsMissing = s.mMapsMissing;
+    }
+  }
+
+  /** The loops L2 shows, and what they answer, for {@link #sLast}. */
+  @NonNull
+  private List<LoopPlanner.Loop> mLoops = new ArrayList<>();
+  @NonNull
+  private String mChosen = "";
+  private boolean mMapsMissing;
 
   @NonNull
   private Profile mProfile = Profile.ROAD;
@@ -98,6 +146,19 @@ public class TzLoopScreen extends TzScreen implements TzProfileSheet.Listener
   public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState)
   {
     mProfile = TzPrefs.profile(requireContext());
+    final Last last = getArguments() != null && getArguments().getBoolean(ARG_RESUME) ? sLast : null;
+    sLast = null;
+    if (last != null)
+    {
+      mProfile = last.profile;
+      mDistanceIndex = last.distanceIndex;
+      mCustomDistance = last.customDistance;
+      mClimbIndex = last.climbIndex;
+      mCustomClimb = last.customClimb;
+      mStart = last.start;
+      mVia = last.via;
+      mShift = last.shift;
+    }
     view.findViewById(R.id.tz_loop_back).setOnClickListener(v -> leave());
     view.findViewById(R.id.tz_loop_results_back).setOnClickListener(v -> showSetup());
     view.findViewById(R.id.tz_loop_start).setOnClickListener(v -> pick(true));
@@ -152,6 +213,8 @@ public class TzLoopScreen extends TzScreen implements TzProfileSheet.Listener
       }
     }, this::onChrome);
     bindSetup();
+    if (last != null)
+      showResults(last.loops, last.chosen, last.mapsMissing);
     super.onViewCreated(view, savedInstanceState);
   }
 
@@ -596,6 +659,9 @@ public class TzLoopScreen extends TzScreen implements TzProfileSheet.Listener
 
   private void showResults(@NonNull List<LoopPlanner.Loop> loops, @NonNull String chosen, boolean mapsMissing)
   {
+    mLoops = loops;
+    mChosen = chosen;
+    mMapsMissing = mapsMissing;
     final View v = requireView();
     v.findViewById(R.id.tz_loop_setup).setVisibility(View.GONE);
     v.findViewById(R.id.tz_loop_results).setVisibility(View.VISIBLE);
@@ -666,8 +732,10 @@ public class TzLoopScreen extends TzScreen implements TzProfileSheet.Listener
     RouteStore.get(requireContext()).putTemp(name, loop.path, mProfile, new ArrayList<GpxTrack.Waypoint>(), route -> {
       if (route == null || getView() == null)
         return;
+      sLast = new Last(this);
       final Bundle args = new Bundle();
       args.putString(TzRoutesScreen.ARG_ROUTE_ID, route.id);
+      args.putBoolean(TzPreviewScreen.ARG_FROM_LOOPS, true);
       TzNavigator.show(TzNavigator.Screen.PREVIEW, args);
     });
   }

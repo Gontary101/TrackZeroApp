@@ -466,7 +466,7 @@ Model::Type RankingInfo::GetTypeScore() const
 PoiType RankingInfo::GetPoiTypeScore() const
 {
   // Equalize all *pure category* results to not distinguish different toilets (see ToiletAirport test).
-  return (m_pureCats ? PoiType::PureCategory : m_classifType.poi);
+  return (m_pureCats && !m_categoryInPlace ? PoiType::PureCategory : m_classifType.poi);
 }
 
 PoiType GetPoiType(feature::TypesHolder const & th)

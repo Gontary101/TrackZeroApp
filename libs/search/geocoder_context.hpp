@@ -31,7 +31,10 @@ struct BaseContext
     TOKEN_TYPE_COUNTRY,
     TOKEN_TYPE_POSTCODE,
 
-    TOKEN_TYPE_COUNT
+    TOKEN_TYPE_COUNT,
+    // TrackZero: a linking word left unmatched between the words of a parse (IsConnectorToken); not a layer, so after
+    // the count (D66).
+    TOKEN_TYPE_CONNECTOR
   };
 
   static TokenType FromModelType(Model::Type type);

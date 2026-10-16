@@ -126,6 +126,8 @@ protected:
   void EmitWithMetadata(feature::Metadata::EType type);
 
   Locales GetCategoryLocales() const;
+  // TrackZero: the languages of the map at pt, for category words (D66).
+  void SetRegionLocales(m2::PointD const & pt);
 
   template <typename ToDo>
   void ForEachCategoryType(StringSliceBase const & slice, ToDo && toDo) const;
@@ -163,6 +165,8 @@ protected:
   // Suggestions language code, not the same as we use in mwm data
   localisation::LanguageIndex m_inputLanguageIndex = localisation::kUnsupportedLanguageIndex;
   localisation::LanguageIndex m_currentLanguageIndex = localisation::kUnsupportedLanguageIndex;
+  // TrackZero: categories indexes (CategoriesHolder::MapLocaleToInteger) of the map's languages (D66).
+  std::vector<int8_t> m_regionLanguageIndexes;
 
   DataSource const & m_dataSource;
 

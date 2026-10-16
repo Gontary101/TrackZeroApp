@@ -552,6 +552,9 @@ void FrontendRenderer::AcceptMessage(ref_ptr<Message> message)
 
     if (!CheckRouteRecaching(make_ref(subrouteData)))
       break;
+    // TrackZero: removed while its recache was on the way (m_removedSubroutes).
+    if (m_removedSubroutes.count(subrouteData->m_subrouteId) != 0)
+      break;
 
     m_routeRenderer->ClearObsoleteData(m_lastRecacheRouteId);
 
@@ -626,6 +629,7 @@ void FrontendRenderer::AcceptMessage(ref_ptr<Message> message)
     else
     {
       m_routeRenderer->RemoveSubrouteData(msg->GetSegmentId());
+      m_removedSubroutes.insert(msg->GetSegmentId());
     }
     break;
   }

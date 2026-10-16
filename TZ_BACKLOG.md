@@ -132,6 +132,9 @@ backlog out on 2026-10-15 (D65).
   under the island on every page. Field check: NEEDS OWNER N18 (handle part).
 - **FEAT-005** — Phase 20. Research in `TZ_RESEARCH_ROUTE_VISIBILITY.md`; 8dp line with a black casing (D45).
   Field check: NEEDS OWNER N20 (choose among four candidates).
+- **Owner fixes, round 2** (2026-10-16) — no map flash between More's screens; no planned or loop line left on the
+  map; back from a proposed loop returns to the proposals; "<kind> de <town>" searches find the place first (D66).
+  Field check: NEEDS OWNER N66.
 - **Loops of any size** (owner request, 2026-10-15) — L1 takes a typed distance (up to 1,000 km) and a typed total
   climb; L2 says when the maps for a big loop are missing (D64). Field check: a long loop with the maps around
   downloaded, on the phone.

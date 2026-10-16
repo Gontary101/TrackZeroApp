@@ -905,3 +905,36 @@ in TZ_BASELINE "Phase 38". Field figures: N16, N35, N38.
 ### 38.3 Backlog
 Every BUG and FEAT is under "Fixed, awaiting field check" with its check; the v2 observations have their status.
 - Smoke test: all steps pass, no crashes.
+
+## Owner fixes after Phase 38 (2026-10-15 / 16)
+Asked for by the owner after testing the release build on the phone.
+- **Round 1** (commit ee5cde7): the CLIMBING row's labels aligned on first show (TzSegmented measures every slot the
+  same); the appearance switch opens as a circle from the row instead of a black flash (TzThemeReveal, the activity
+  handles `uiMode` itself); the island's RIDE button is the icon alone, larger; on a ride the part already ridden is
+  drawn at a lower opacity (engine `SetSubroutePassed`).
+- **Round 2** (D66):
+  - **Flash on More's options.** Opaque screen over opaque screen faded the old one out while the new one faded in,
+    so the map showed between them. The old screen now holds under the new one (`tz_hold`), drawn under it by a
+    FragmentContainerView. Checked frame by frame: More › Sounds, no map frame.
+  - **A planned line stayed on the map.** Async answers (routing, geometry) could draw for a screen already gone, and
+    nothing hid that line. Lines of a gone screen are refused and swept on every screen change
+    (`TzRouteLayer.dropOrphans`); an engine guard stops a recache asked for just before a removal from bringing a line
+    back. Checked: plan › discard › map, at zoom 10 and 16 and after Search / More / Sounds; plan › preview › back ›
+    a saved loop; proposed loop › back › another loop. Each shows only its own line.
+  - **Back from a proposed loop** went to Routes, losing the proposals. It returns to the same L2 list now, so
+    another loop can be picked. The planner's back returns to the map when it was opened from a long-press there.
+  - **Search order.** "gare de melun" listed bus stops and bike parkings named "Gare …" above the station. Three
+    causes in the engine: "gare" is a category word only in French (now matched in the languages of the map the
+    search is in); the "de" between the category and the town matched nothing, so the station's parse was
+    incomplete (linking words may now stay unmatched); a station found as "category in the town" was ranked as a
+    generic category (now it keeps its kind and, when named after the town, ranks as the town's own). The station
+    and its building, listed twice, are one result now. Checked on the Puy-de-Dôme map: "gare de clermont",
+    "gare clermont", "clermont-ferrand gare", "gare of clermont" give Clermont-Ferrand station first; "gare de
+    royat" gives Royat-Chamalières; "rue de la paix", "pharmacie royat", "boulangerie de clermont" unchanged.
+    Melun's map is not on the emulator: NEEDS OWNER N66.
+- Tests: unit tests pass; smoke test all steps, no crashes. The engine's desktop search tests need Qt 6, which is not
+  installed here (no sudo): not run.
+
+### NEEDS OWNER
+- **N66** — On the phone, search "gare de melun" (and a couple of "<kind> de <town>" searches you use): the station
+  should be first.

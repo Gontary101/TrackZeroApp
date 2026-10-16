@@ -535,6 +535,21 @@ private:
     if (totalLength == 0)
       totalLength = 1;
 
+    // TrackZero: linking words left unmatched between the matched words ("gare de melun") count as matched; the
+    // length the parts around the innermost one matched (its city, street...) (D66).
+    size_t connectorsLength = 0;
+    size_t aroundLength = 0;
+    if (!m_params.IsCategorialRequest())
+    {
+      for (size_t i = 0; i < m_params.GetNumTokens(); ++i)
+      {
+        bool const inParse = std::any_of(info.m_tokenRanges.begin(), info.m_tokenRanges.end(),
+                                         [i](TokenRange const & r) { return r.Begin() <= i && i < r.End(); });
+        if (!inParse && IsConnectorToken(m_params.GetToken(i).GetOriginal()))
+          connectorsLength += m_params.GetToken(i).GetOriginal().size();
+      }
+    }
+
     if (m_params.IsCategorialRequest())
     {
       info.m_hasName = ft.HasName();
@@ -551,7 +566,7 @@ private:
       auto nameScore = scores.m_nameScore;
       auto errorsMade = scores.m_errorsMade;
       bool isAltOrOldName = scores.m_isAltOrOldName;
-      auto matchedLength = scores.m_matchedLength;
+      auto matchedLength = scores.m_matchedLength + connectorsLength;
 
       auto const updateScoreForFeature = [&](FeatureType & ft, Model::Type type)
       {
@@ -622,6 +637,7 @@ private:
       info.m_errorsMade = errorsMade;
       info.m_isAltOrOldName = isAltOrOldName;
       info.m_matchedFraction = matchedLength / static_cast<float>(totalLength);
+      aroundLength = matchedLength - scores.m_matchedLength;
 
       /// @todo Also should add POI + nearby Street/Suburb/City.
       info.m_nearbyMatch = preInfo.m_geoParts.IsPoiAndComplexPoi();
@@ -642,8 +658,43 @@ private:
       ASSERT_LESS_OR_EQUAL(categoriesInfo.GetMatchedLength(), totalLength, (featureTypes));
       info.m_matchedFraction =
           std::max(info.m_matchedFraction, categoriesInfo.GetMatchedLength() / static_cast<float>(totalLength));
+
+      // TrackZero: the category and the place it is in say all the query ("gare de melun": a station in Melun), as
+      // whole as a category alone (D66).
+      if (!m_params.IsCategorialRequest() && info.m_allTokensUsed &&
+          categoriesInfo.GetMatchedLength() + aroundLength >= totalLength)
+      {
+        info.m_nameScore = NameScore::FULL_PREFIX;
+        info.m_matchedFraction = 1;
+
+        // Named after the place ("Clermont-Ferrand" for "gare de clermont"): the place's own, ranked by its kind (a
+        // station above a halt) and as near as the place's centre.
+        auto placeRange = info.m_tokenRanges[Model::TYPE_CITY];
+        if (placeRange.Empty())
+          placeRange = info.m_tokenRanges[Model::TYPE_VILLAGE];
+        if (!placeRange.Empty() && GetNameScores(ft, m_params, placeRange, info.m_type).m_nameScore != NameScore::ZERO)
+        {
+          info.m_nameScore = NameScore::FULL_MATCH;
+          info.m_categoryInPlace = true;
+          if (preInfo.m_cityId.IsValid())
+          {
+            if (auto city = LoadFeature(preInfo.m_cityId))
+            {
+              info.m_distanceToPivot =
+                  std::min(info.m_distanceToPivot, mercator::DistanceOnEarth(center, city->GetCenter()));
+            }
+          }
+        }
+      }
       if (!info.m_errorsMade.IsValid())
         info.m_errorsMade = ErrorsMade(0);
+    }
+    else if (!m_params.IsCategorialRequest() && info.m_allTokensUsed && Model::IsPoi(info.m_type))
+    {
+      // TrackZero: the words naming its kind are matched too ("clermont-ferrand gare": the station named
+      // Clermont-Ferrand) (D66).
+      info.m_matchedFraction = std::min(
+          1.0f, info.m_matchedFraction + categoriesInfo.GetMatchedLength() / static_cast<float>(totalLength));
     }
     info.m_falseCats = categoriesInfo.IsFalseCategories();
   }

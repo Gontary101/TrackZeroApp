@@ -27,6 +27,10 @@ namespace search
 class QueryParams;
 class TokenSlice;
 
+// TrackZero: a short linking word ("de", "of", "di"...) that may stay unmatched between the other words of a query:
+// "gare de melun" is the station (a category) in Melun (D66).
+bool IsConnectorToken(strings::UniString const & token);
+
 class CategoriesInfo
 {
 public:

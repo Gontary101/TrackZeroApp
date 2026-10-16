@@ -12,9 +12,11 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
+import androidx.fragment.app.FragmentContainerView;
 import androidx.fragment.app.FragmentManager;
 import app.organicmaps.R;
 import app.trackzero.base.TzMap;
+import app.trackzero.base.TzRouteLayer;
 import app.trackzero.screens.TzAboutScreen;
 import app.trackzero.screens.TzHistoryScreen;
 import app.trackzero.screens.TzLoopScreen;
@@ -104,7 +106,8 @@ public final class TzNavigator
   {
     sActivity = activity;
 
-    final FrameLayout container = new FrameLayout(activity);
+    // A fragment container draws a leaving screen under the arriving one (a plain FrameLayout draws it on top).
+    final FragmentContainerView container = new FragmentContainerView(activity);
     container.setId(R.id.tz_screen_container);
     root.addView(container, new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT,
                                                           FrameLayout.LayoutParams.MATCH_PARENT));
@@ -229,7 +232,9 @@ public final class TzNavigator
     fragment.setArguments(args);
     fm().beginTransaction()
         .setReorderingAllowed(true)
-        .setCustomAnimations(R.animator.tz_fade_in, R.animator.tz_fade_out)
+        // Opaque over opaque: the old screen holds under the new one (a crossfade would show the map between them).
+        .setCustomAnimations(R.animator.tz_fade_in, sCurrent.opaque && screen.opaque ? R.animator.tz_hold
+                                                                                      : R.animator.tz_fade_out)
         .replace(R.id.tz_screen_container, fragment, screen.name())
         .commit();
     onShown(screen);
@@ -284,6 +289,9 @@ public final class TzNavigator
   private static void onShown(@NonNull Screen screen)
   {
     sCurrent = screen;
+    // After the transaction ran: the leaving screen's view is gone, the new one's exists.
+    if (sActivity != null)
+      sActivity.getWindow().getDecorView().post(TzRouteLayer::dropOrphans);
     updateBack();
     // The ride screen pauses the map per carousel page itself.
     if (screen != Screen.RIDE)

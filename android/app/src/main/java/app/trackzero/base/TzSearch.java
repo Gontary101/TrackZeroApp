@@ -78,6 +78,9 @@ public final class TzSearch
   @NonNull
   private static List<Place> sLast = Collections.emptyList();
 
+  /** Two results of one name nearer than this are one place. */
+  private static final float SAME_PLACE_M = 300;
+
   private static final SearchListener LISTENER = new SearchListener() {
     @Override
     public void onResultsUpdate(@NonNull SearchResult[] results, long timestamp)
@@ -92,6 +95,8 @@ public final class TzSearch
           continue;
         // An unnamed place is called by its type ("Charging Station").
         final String name = r.name.isEmpty() ? r.description.localizedFeatureType : r.name;
+        if (sameAsAbove(places, name, r.lat, r.lon))
+          continue;
         places.add(new Place(name, subtitle(name, r.description.localizedFeatureType, r.description.description,
                                             r.description.region),
                              r.lat, r.lon, kind(SearchEngine.nativeGetResultType(i)), i));
@@ -109,6 +114,21 @@ public final class TzSearch
   };
 
   private TzSearch() {}
+
+  /** The map often has a place twice, a point and its building (a station): the better ranked one stays. */
+  private static boolean sameAsAbove(@NonNull List<Place> places, @NonNull String name, double lat, double lon)
+  {
+    final float[] metres = new float[1];
+    for (Place p : places)
+    {
+      if (!p.name.equals(name))
+        continue;
+      Location.distanceBetween(p.lat, p.lon, lat, lon, metres);
+      if (metres[0] < SAME_PLACE_M)
+        return true;
+    }
+    return false;
+  }
 
   /**
    * Searches the downloaded maps around the rider (anywhere without a location).

@@ -506,6 +506,26 @@ void Processor::EmitWithMetadata(feature::Metadata::EType type)
   });
 }
 
+void Processor::SetRegionLocales(m2::PointD const & pt)
+{
+  m_regionLanguageIndexes.clear();
+  auto const countryId = m_infoGetter.GetRegionCountryId(pt);
+  if (countryId.empty())
+    return;
+  auto const handle = m_dataSource.GetMwmHandleById(m_dataSource.GetMwmIdByCountryFile(platform::CountryFile(countryId)));
+  if (!handle.IsAlive())
+    return;
+  for (auto const lang : handle.GetInfo()->GetRegionData().GetLanguages())
+  {
+    auto const code = localisation::ConvertLanguageIndexToLanguageCode(lang);
+    if (code.empty())
+      continue;
+    int8_t const index = CategoriesHolder::MapLocaleToInteger(std::string(code));
+    if (index != -1)
+      m_regionLanguageIndexes.push_back(index);
+  }
+}
+
 Locales Processor::GetCategoryLocales() const
 {
   static int8_t const enLocaleCode = CategoriesHolder::MapLocaleToInteger("en");
@@ -517,6 +537,8 @@ Locales Processor::GetCategoryLocales() const
     result.insert(static_cast<uint64_t>(m_currentLanguageIndex));
   if (m_inputLanguageIndex != -1)
     result.insert(static_cast<uint64_t>(m_inputLanguageIndex));
+  for (int8_t const index : m_regionLanguageIndexes)
+    result.insert(static_cast<uint64_t>(index));
 
   return result;
 }
@@ -561,6 +583,9 @@ void Processor::Search(SearchParams params)
   m_position = params.m_position;
 
   SetInputLocale(params.m_inputLocale);
+  // TrackZero: category words are also matched in the languages of the map the search is in ("gare de melun" in
+  // France with an English keyboard finds the station; D66).
+  SetRegionLocales(m_position ? *m_position : viewport.Center());
 
   SetQuery(params.m_query, params.m_categorialRequest);
   SetViewport(viewport);

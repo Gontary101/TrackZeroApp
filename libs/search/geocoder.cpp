@@ -1430,6 +1430,15 @@ void Geocoder::MatchPOIsAndBuildings(BaseContext & ctx, size_t curToken, CBV con
     return FindPaths(ctx);
   }
 
+  // TrackZero: a linking word after matched words may stay unmatched ("gare de melun": the station, a category, in
+  // Melun). Only between other words: the last one may still be being typed (D66).
+  if (curToken > 0 && curToken + 1 < numTokens && !layers.empty() &&
+      IsConnectorToken(m_params.GetToken(curToken).GetOriginal()))
+  {
+    ScopedMarkTokens mark(ctx.m_tokens, BaseContext::TOKEN_TYPE_CONNECTOR, TokenRange(curToken, curToken + 1));
+    MatchPOIsAndBuildings(ctx, curToken + 1, filter);
+  }
+
   layers.emplace_back();
   SCOPE_GUARD(cleanupGuard, [&] { layers.pop_back(); });
 

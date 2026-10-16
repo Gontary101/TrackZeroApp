@@ -1076,3 +1076,24 @@ with the stock weights, so near region borders the profile applies a little less
 - **Accepted as designed:** a restored ride comes back paused (D23); a ride ended before any distance is not saved
   and says so; the pre-session gap on the ride screen (0.8–3.4 s on the emulator, main thread busy with the map)
   now shows a neutral screen rather than the free-ride pill.
+
+## D66 · Owner fixes, round 2: screen changes, leftover lines, search order (2026-10-16)
+- **Hold, not crossfade, between opaque screens.** Fading both screens let the map show through mid-way. The leaving
+  screen keeps alpha 1 for the crossfade's length (`tz_hold`) while the new one fades in over it; the container is a
+  FragmentContainerView, which draws leaving fragments under entering ones (a FrameLayout draws them on top).
+  Transitions to or from the map keep the fade.
+- **Lines belong to a live screen.** `TzRouteLayer` refuses a draw whose owner fragment has no view and sweeps lines
+  of gone owners after each screen change (RIDE_START hand-overs are kept). Engine: `FrontendRenderer` remembers
+  removed subroute ids (never reused) and drops their late FlushSubroute. Unlike D65's dropped guard this covers a
+  real ordering: a recache posted by the render thread (context recreated) can reach the backend after the removal
+  went through it, and its data would arrive after the removal.
+- **Back keeps L2.** The last proposals and L1's choices are kept (static, one set) when a loop is opened; the
+  preview's back opens L2 from them. Leaving L1/L2 any other way forgets them.
+- **Search (engine, marked TrackZero).** Category words also match in the languages of the map at the search point
+  (`Processor::SetRegionLocales`). A short linking word (`IsConnectorToken`: de, du, des, la, of, the, di, von...)
+  between matched words may stay unmatched (`TOKEN_TYPE_CONNECTOR`, a parse branch only; the last token is never
+  skipped: it may still be typed) and counts as matched in the ranking. A pure-category POI whose category and place
+  cover the whole query ranks as a full prefix; named after the place, as a full match, with its kind's weight
+  (station above halt) and the distance to the place's centre (`m_categoryInPlace`). A POI matched by name and
+  kind counts the kind's words as matched. App side: one name within 300 m is one result.
+- **Not done.** No re-rank in the app: the engine's order stays the source of truth.

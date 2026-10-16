@@ -2,6 +2,7 @@ package app.trackzero.base;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
 import app.organicmaps.sdk.Framework;
 import app.trackzero.TzTrace;
 import app.trackzero.geo.Geo;
@@ -105,6 +106,14 @@ public final class TzRouteLayer
 
     void set(@Nullable Object owner, @Nullable double[] lat, @Nullable double[] lon, int ring, double spacingM)
     {
+      // A screen gone already (an answer that came back after it left) draws nothing: nothing would ever hide it
+      // (D66: a planned line stayed on the map).
+      if (lat != null && gone(owner))
+      {
+        if (TzTrace.on())
+          TzTrace.log("line", name + " ignored: owner gone " + ownerName(owner));
+        return;
+      }
       final boolean same = lat != null && ids != null && ring == this.ring && Arrays.equals(lat, this.lat)
                            && Arrays.equals(lon, this.lon);
       // Already on the map (a line handed over by the screen before): only the owner changes.
@@ -369,6 +378,27 @@ public final class TzRouteLayer
       sLeg.set(null, null, null, RING_NONE, 0);
     if (sWalk.owner == owner)
       sWalk.set(null, null, null, RING_NONE, 0);
+  }
+
+  /**
+   * Removes the lines of screens that have gone (their teardown missed them): called on every screen change, so no
+   * line outlives the screen that drew it (D66). Lines handed to the ride (RIDE_START) are kept.
+   */
+  public static void dropOrphans()
+  {
+    for (Line l : new Line[] {sRoute, sLeg, sWalk})
+      if (l.lat != null && (l.owner == null || gone(l.owner)))
+      {
+        if (TzTrace.on())
+          TzTrace.log("line", l.name + " orphan of " + ownerName(l.owner) + " removed");
+        l.set(null, null, null, RING_NONE, 0);
+      }
+  }
+
+  /** A screen (fragment) whose view has gone. */
+  static boolean gone(@Nullable Object owner)
+  {
+    return owner instanceof Fragment f && f.getView() == null;
   }
 
   @NonNull

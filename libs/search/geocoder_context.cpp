@@ -99,6 +99,7 @@ std::string ToString(BaseContext::TokenType type)
   case BaseContext::TOKEN_TYPE_COUNTRY: return "COUNTRY";
   case BaseContext::TOKEN_TYPE_POSTCODE: return "POSTCODE";
   case BaseContext::TOKEN_TYPE_COUNT: return "COUNT";
+  case BaseContext::TOKEN_TYPE_CONNECTOR: return "CONNECTOR";
   }
   UNREACHABLE();
 }

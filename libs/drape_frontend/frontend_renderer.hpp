@@ -42,6 +42,7 @@
 #include <functional>
 #include <memory>
 #include <optional>
+#include <unordered_set>
 #include <vector>
 
 namespace dp
@@ -399,6 +400,10 @@ private:
   uint64_t m_maxUserMarksGeneration;
 
   int m_lastRecacheRouteId = 0;
+  // TrackZero: subroutes removed one by one (TrackZero's route lines; ids are never reused). A recache asked for
+  // before a removal (the surface recreated, the map style changed) must not bring the line back when its data
+  // arrives after the removal (D66).
+  std::unordered_set<dp::DrapeID> m_removedSubroutes;
 
   struct FollowRouteData
   {

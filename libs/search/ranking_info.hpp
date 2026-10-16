@@ -78,6 +78,7 @@ struct RankingInfo : public StoredRankingInfo
     , m_categorialRequest(false)
     , m_hasName(false)
     , m_nearbyMatch(false)
+    , m_categoryInPlace(false)
   {
     m_classifType.street = StreetType::Default;
   }
@@ -151,6 +152,10 @@ struct RankingInfo : public StoredRankingInfo
 
   // Nearby match: POI and Complex POI (planning POI and Street/Suburb/City).
   bool m_nearbyMatch : 1;
+
+  // TrackZero: a pure category POI in the place the rest of the query names ("gare de melun"): its own kind counts,
+  // a station above a halt (D66).
+  bool m_categoryInPlace : 1;
 };
 
 PoiType GetPoiType(feature::TypesHolder const & th);

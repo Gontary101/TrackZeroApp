@@ -252,18 +252,24 @@ public class TzPlanScreen extends TzScreen
     return true;
   }
 
-  /** Back to the routes; with points placed, after "Discard this plan?". */
+  /**
+   * Back where the plan began (the map for a long-press there, else the routes); with points placed, after "Discard
+   * this plan?".
+   */
   private void back()
   {
+    final Bundle args = getArguments();
+    final TzNavigator.Screen to = args != null && args.containsKey(ARG_LAT) ? TzNavigator.Screen.MAP
+                                                                           : TzNavigator.Screen.ROUTES;
     if (mDraft.isEmpty())
     {
-      TzNavigator.show(TzNavigator.Screen.ROUTES, null);
+      TzNavigator.show(to, null);
       return;
     }
     new MaterialAlertDialogBuilder(requireContext())
         .setMessage(R.string.tz_plan_discard)
         .setNegativeButton(R.string.tz_cancel, null)
-        .setPositiveButton(R.string.tz_plan_discard_ok, (d, w) -> TzNavigator.show(TzNavigator.Screen.ROUTES, null))
+        .setPositiveButton(R.string.tz_plan_discard_ok, (d, w) -> TzNavigator.show(to, null))
         .show();
   }
 

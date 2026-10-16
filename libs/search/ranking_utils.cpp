@@ -17,6 +17,20 @@ namespace search
 using namespace std;
 using namespace strings;
 
+bool IsConnectorToken(UniString const & token)
+{
+  static auto const kConnectors = []
+  {
+    vector<UniString> words;
+    for (char const * w : {"a", "au", "aux", "d", "da", "das", "de", "del", "della", "den", "der", "des", "di", "do",
+                           "dos", "du", "l", "la", "le", "les", "of", "the", "van", "von", "zu", "zum", "zur"})
+      words.push_back(MakeUniString(w));
+    sort(words.begin(), words.end());
+    return words;
+  }();
+  return binary_search(kConnectors.begin(), kConnectors.end(), token);
+}
+
 // CategoriesInfo ----------------------------------------------------------------------------------
 CategoriesInfo::CategoriesInfo(feature::TypesHolder const & holder, TokenSlice const & tokens, Locales const & locales,
                                CategoriesHolder const & categories)
