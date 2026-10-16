@@ -67,6 +67,9 @@ private:
   location::GpsInfo m_lastGpsInfo;
   location::GpsInfo m_beforeLastGpsInfo;
   uint64_t m_consecutiveRuns = kExtrapolationCounterUndefined;
+  // TrackZero: the position last handed on; a repeat that would not move the arrow is not sent (each one woke the
+  // map for frames: about 20 a second on a still map, D67).
+  location::GpsInfo m_lastSentGpsInfo;
   // Number of calls Extrapolator::OnLocationUpdate() method. This way |m_locationUpdateCounter|
   // reflects generation of extrapolations. That mean the next gps location is
   // the next generation.

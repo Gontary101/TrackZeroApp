@@ -1097,3 +1097,31 @@ with the stock weights, so near region borders the profile applies a little less
   (station above halt) and the distance to the place's centre (`m_categoryInPlace`). A POI matched by name and
   kind counts the kind's words as matched. App side: one name within 300 m is one result.
 - **Not done.** No re-rank in the app: the engine's order stays the source of truth.
+
+## D67 · Profiling pass: a still map draws nothing (2026-10-16, owner request)
+- **How it was found.** `tools/trackzero/profile.sh` (new) counts, per window, CPU per thread, frames presented by
+  the map's surface and by the views (SurfaceFlinger timestats), alarms, location requests and sensors;
+  `profile_run.sh` drives cold start, B1 still / walking, background, and a ride's pages and screen off. Builds with
+  -PtzMeasure now also compile the engine as for release (optimised, no ASan): until now the debug engine's
+  AddressSanitizer and -O0 inflated every map number several times over. Temporary counters in the render loop
+  (frame reasons, message types) located the cause; removed afterwards.
+- **The cause.** On B1 with the rider still, the map drew about 20–30 frames a second for ever. CoMaps' location
+  extrapolator re-sends the last fix every 200 ms for 2 s after each fix when there is nothing to extrapolate; each
+  message ends the render loop's rest and draws ~3 frames. A real phone adds its GPS jitter: a 0.2 s arrow animation
+  (and a map move in follow mode) every second.
+- **Fixes (engine, marked TrackZero).**
+  - Extrapolator: the fix itself always goes on; after it, only a point that moves by 0.25 m or more. No
+    extrapolation when the GPS says the rider is not moving (< 0.7 m/s, the arrow's own threshold).
+  - MyPositionController: an update less than 1.5 px from where the arrow was last moved to, turning less than 1°,
+    is not animated and does not move the map; standing still (GPS speed < 0.5 m/s) also a move within half the
+    accuracy (≤ 3 m) and an accuracy change under 25 %. The drift is bounded by those thresholds; a real move
+    animates from where the arrow is. `OnLocationUpdate` says whether anything changed.
+  - FrontendRenderer: a position message that changed nothing does not wake the render loop nor restart its frames.
+  - The 30 fps cap CoMaps applies in its own navigation now also applies whenever the map follows the rider and no
+    finger is on it (a TrackZero ride's map page drew at the display's full rate: 60–120 Hz on today's phones).
+- **Not changed.** Search, routing and loop planning were timed on the optimised build (search 0.4–1.8 s; 20 km
+  loops 4.5 s, 80 km 17 s): one stateful router, so no parallel candidates without a cache per thread (memory). The
+  REC dot's 10-step pulse (D32) and the 1 s GPS request on B1 stay (UX). The background without a ride costs
+  nothing (no location request, no frames); the screen-off ride 0.2 %.
+- **Tracing in measure builds.** TzTrace keys on the debug build type, not `BuildConfig.DEBUG` (false when not
+  debuggable), so -PtzMeasure runs keep the trace that the scripts read (search now logs its time).

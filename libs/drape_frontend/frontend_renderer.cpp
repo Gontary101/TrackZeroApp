@@ -284,6 +284,7 @@ void FrontendRenderer::UpdateCanBeDeletedStatus()
 
 void FrontendRenderer::AcceptMessage(ref_ptr<Message> message)
 {
+  m_messageChangedNothing = false;
   switch (message->GetType())
   {
   case Message::Type::FlushTile:
@@ -491,12 +492,14 @@ void FrontendRenderer::AcceptMessage(ref_ptr<Message> message)
       break;
 #endif
     ref_ptr<GpsInfoMessage> msg = message;
-    m_myPositionController->OnLocationUpdate(msg->GetInfo(), msg->GetNavigationContext(),
-                                             m_userEventStream.GetCurrentScreen());
+    // TrackZero: nothing to draw for an update that changes nothing on screen (D67).
+    m_messageChangedNothing = !m_myPositionController->OnLocationUpdate(msg->GetInfo(), msg->GetNavigationContext(),
+                                                                         m_userEventStream.GetCurrentScreen());
 
     location::RouteMatchingInfo const & info = msg->GetRouteInfo();
     if (info.HasDistanceFromBegin())
     {
+      m_messageChangedNothing = false;
       m_routeRenderer->UpdateDistanceFromBegin(info.GetDistanceFromBegin());
       // Here we have to recache route arrows.
       m_routeRenderer->PrepareRouteArrows(m_userEventStream.GetCurrentScreen(),
@@ -1895,7 +1898,10 @@ void FrontendRenderer::RenderFrame()
     // Process a message or wait for a message.
     // IsRenderingEnabled() can return false in case of rendering disabling and we must prevent
     // possibility of infinity waiting in ProcessSingleMessage.
-    ProcessSingleMessage(IsRenderingEnabled());
+    // TrackZero: messages that change nothing (a still rider's position) are taken without drawing a frame (D67).
+    while (ProcessSingleMessage(IsRenderingEnabled()) && m_messageChangedNothing && IsRenderingEnabled())
+    {
+    }
     m_frameData.m_forceFullRedrawNextFrame = true;
     m_frameData.m_timer.Reset();
     m_frameData.m_inactiveFramesCounter = 0;
@@ -1912,8 +1918,12 @@ void FrontendRenderer::RenderFrame()
     {
       if (!ProcessSingleMessage(false /* waitForMessage */))
         break;
-      m_frameData.m_forceFullRedrawNextFrame = true;
-      m_frameData.m_inactiveFramesCounter = 0;
+      // TrackZero: a message that changed nothing does not keep the frames going (D67).
+      if (!m_messageChangedNothing)
+      {
+        m_frameData.m_forceFullRedrawNextFrame = true;
+        m_frameData.m_inactiveFramesCounter = 0;
+      }
       availableTime = syncInverval - m_frameData.m_timer.ElapsedSeconds();
     }
     while (availableTime > 0.0);
@@ -1924,9 +1934,13 @@ void FrontendRenderer::RenderFrame()
 #endif
 
   // Limit fps in following mode.
+  // TrackZero: also when the map follows the rider outside CoMaps' routing (TrackZero draws its own route lines),
+  // unless a finger is on the map: a ride's map page drew at the display's full rate (60-120 Hz) (D67).
   double constexpr kFrameTime = 1.0 / 30.0;
   auto const ft = m_frameData.m_timer.ElapsedSeconds();
-  if (!canSuspend && ft < kFrameTime && m_myPositionController->IsRouteFollowingActive())
+  bool const following = m_myPositionController->IsRouteFollowingActive() ||
+                         (m_myPositionController->IsModeChangeViewport() && !m_userEventStream.IsInUserAction());
+  if (!canSuspend && ft < kFrameTime && following)
   {
     auto const ms = static_cast<uint32_t>((kFrameTime - ft) * 1000);
     std::this_thread::sleep_for(std::chrono::milliseconds(ms));

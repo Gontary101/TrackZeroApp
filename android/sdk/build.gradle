@@ -78,8 +78,12 @@ android {
       jniDebuggable true // Enable jni debug build
       externalNativeBuild {
         cmake {
-          arguments += ["-DANDROID_STL=c++_shared",
-                        "-DENABLE_ASAN=ON"]
+          // TrackZero: -PtzMeasure (TZ_BASELINE.md) builds the engine as for release: optimised, no ASan.
+          if (project.hasProperty('tzMeasure'))
+            arguments += ["-DANDROID_STL=c++_shared", "-DCMAKE_BUILD_TYPE=Release"]
+          else
+            arguments += ["-DANDROID_STL=c++_shared",
+                          "-DENABLE_ASAN=ON"]
         }
       }
     }

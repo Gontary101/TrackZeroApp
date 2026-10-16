@@ -159,7 +159,8 @@ public:
   void OnEnterBackground();
 
   void OnCompassTapped();
-  void OnLocationUpdate(location::GpsInfo const & info, df::NavigationContext const & navigationContext,
+  // TrackZero: false when the update changes nothing on screen (a still rider's jitter, D67).
+  bool OnLocationUpdate(location::GpsInfo const & info, df::NavigationContext const & navigationContext,
                         ScreenBase const & screen);
   void OnCompassUpdate(location::CompassInfo const & info, ScreenBase const & screen);
 
@@ -270,6 +271,11 @@ private:
 
   bool m_positionIsObsolete;
   bool m_needBlockAutoZoom;
+  // TrackZero: the position, direction and error radius the arrow was last moved to; updates closer than a pixel or
+  // two to them are not animated (D67).
+  m2::PointD m_shownPosition;
+  double m_shownDirection = 0.0;
+  double m_shownErrorRadius = 0.0;
 
   uint64_t m_routingNotFollowNotifyId;
   uint64_t m_blockAutoZoomNotifyId;

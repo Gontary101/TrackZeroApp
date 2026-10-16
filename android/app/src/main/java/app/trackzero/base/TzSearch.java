@@ -108,6 +108,8 @@ public final class TzSearch
     @Override
     public void onResultsEnd(long timestamp)
     {
+      if (timestamp == sTimestamp && TzTrace.on())
+        TzTrace.log("search", "done " + sLast.size() + " in " + (System.nanoTime() - timestamp) / 1_000_000 + " ms");
       if (timestamp == sTimestamp && sCallback != null)
         sCallback.onResults(sLast, true);
     }
@@ -146,6 +148,8 @@ public final class TzSearch
     sCallback = callback;
     sLast = Collections.emptyList();
     sTimestamp = System.nanoTime();
+    if (TzTrace.on())
+      TzTrace.log("search", "query \"" + text + "\" category=" + category);
     final Location here = TzLocation.last(context);
     // The engine recognises a category by its name followed by a space (CoMaps' category search).
     final String q = category ? text.trim() + " " : text;

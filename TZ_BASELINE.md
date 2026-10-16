@@ -127,3 +127,32 @@ Same conditions as Phase 16 (emulator, -PtzMeasure, the Aubière ride at 25 km/h
   and sounds closed, the thread count and CPU are the baseline's.
 - **Saver vs normal**: the Phase 35 section above.
 - Real-ride figures: NEEDS OWNER N16 (repeat on this build), N35 (saver), N38.
+
+## Profiling (2026-10-16, D67)
+
+Owner request: profile the app across scenarios and cut what slows it down or drains the battery, without changing
+the experience. Same emulator; the debug package built with -PtzMeasure, which now also builds the engine as for
+release (optimised, no ASan; earlier map figures in this file had the debug engine and are higher). One minute per
+window, `tools/trackzero/profile_run.sh`, `profile.sh` (CPU per thread, frames presented by the map's surface and by
+the views, location requests, sensors). Full outputs: `shots/baseline/profile_before_d67.md`,
+`shots/baseline/profile_after_d67.md`.
+
+| Window (60 s) | CPU % of a core, before → after | Map frames, before → after |
+|---|---|---|
+| B1, rider still (steady fix) | 61.8 → **7.6** | 1,227 → **135** |
+| B1, GPS jitter 3 m (the emulator's fused provider calls it 1.6 m/s: a slow walk) | 76.7 → 38.1 | 1,811 → 1,106 |
+| B1, walking 5 km/h, no ride | 79.3 → 45.1 | 1,793 → 1,011 |
+| Background, no ride | 0.1 → 0.1 | 0 → 0 (no location request) |
+| R2 ride, map page, 25 km/h | 100.2 → 100.4 | 1,181 → 1,164 |
+| R4 speed page | 6.1 → 6.4 | — (views 665 → 686, the REC pulse) |
+| Screen off, ride recording | 0.2 → 0.2 | 0 |
+| Cold start (am start -W, best of 3) | 600 → 577 ms | |
+
+- **The still map was the hot spot**: it drew 20–30 frames a second with nothing moving. Now about 2 a second
+  (D67). On a phone the same fix stops the GPU drawing the map continuously while the app is open on B1.
+- **R2 is CPU-bound here** (software GL draws ~20 frames a second at 100 %), so the new 30 fps cap while following
+  does not show on the emulator; on a phone it halves (60 Hz) to quarters (120 Hz) the map's frames on a ride.
+- **Unchanged and fine**: background and screen-off cost nothing measurable; cold start ~0.6 s.
+- **Response times** (optimised build): search 0.4–1.8 s ("gare de clermont" the longest); loop proposals 4.5 s for
+  20 km, 17 s for 80 km (one router, candidates in turn).
+- Field check: battery per hour on B1 left open and on a ride, NEEDS OWNER N67.

@@ -27,7 +27,10 @@ public final class TzTrace
   private static final String FILE = "trace.txt";
   private static final String LOG_TAG = "TzTrace";
 
-  private static volatile boolean sOn = BuildConfig.DEBUG;
+  /** Debug builds, also -PtzMeasure ones (not debuggable, so not BuildConfig.DEBUG), always trace. */
+  private static final boolean DEBUG_BUILD = "debug".equals(BuildConfig.BUILD_TYPE);
+
+  private static volatile boolean sOn = DEBUG_BUILD;
   private static boolean sLoaded;
 
   private static final long[] sTimes = new long[SIZE];
@@ -44,7 +47,7 @@ public final class TzTrace
     if (sLoaded)
       return;
     sLoaded = true;
-    if (!BuildConfig.DEBUG)
+    if (!DEBUG_BUILD)
       sOn = TzPrefs.trace(c);
   }
 
@@ -57,7 +60,7 @@ public final class TzTrace
   public static void setOn(@NonNull Context c, boolean on)
   {
     TzPrefs.setTrace(c, on);
-    sOn = on || BuildConfig.DEBUG;
+    sOn = on || DEBUG_BUILD;
   }
 
   /** JVM tests: tracing reads the Android clock. */
@@ -74,7 +77,7 @@ public final class TzTrace
     final long now = SystemClock.elapsedRealtime();
     put(now, tag, text);
     // Debug builds also write to logcat, so test scripts can read the events without the share sheet.
-    if (BuildConfig.DEBUG)
+    if (DEBUG_BUILD)
       Log.i(LOG_TAG, now + " " + tag + " " + text);
   }
 

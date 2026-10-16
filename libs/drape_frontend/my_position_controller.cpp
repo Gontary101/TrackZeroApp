@@ -499,11 +499,15 @@ void MyPositionController::StartPendingPositionMode()
   }
 }
 
-void MyPositionController::OnLocationUpdate(location::GpsInfo const & info,
+bool MyPositionController::OnLocationUpdate(location::GpsInfo const & info,
                                             df::NavigationContext const & navigationContext, ScreenBase const & screen)
 {
   m2::PointD const oldPos = GetDrawablePosition();
   double const oldAzimut = GetDrawableAzimut();
+  // TrackZero (D67): what an unchanged screen needs.
+  bool const wasAssigned = m_isPositionAssigned;
+  bool const wasObsolete = m_positionIsObsolete;
+  auto const oldMode = m_mode;
 
   m2::RectD const rect = mercator::MetersToXY(info.m_longitude, info.m_latitude, info.m_horizontalAccuracy);
   // Use FromLatLon instead of rect.Center() since in case of large info.m_horizontalAccuracy
@@ -593,7 +597,32 @@ void MyPositionController::OnLocationUpdate(location::GpsInfo const & info,
 
   m_direction = m_preferRouteDirectionInRouting ? m_routeDirection : m_arrowDirection;
 
-  if (m_isPositionAssigned && (!AlmostCurrentPosition(oldPos) || !AlmostCurrentAzimut(oldAzimut)))
+  // TrackZero: a move of less than a pixel or two from where the arrow was last moved to (GPS jitter while still) is
+  // not animated and does not move the map; the drift is bounded by the threshold, a real move animates (D67).
+  // Standing still (the GPS says so), a move inside half the accuracy, up to 3 m, is the fix wandering, and the
+  // accuracy changing by less than a quarter is its noise: the arrow and its circle stay.
+  double constexpr kMinShownMovePx = 1.5;
+  double constexpr kMinShownTurnRad = math::DegToRad(1.0);
+  double constexpr kStillSpeedMps = 0.5;
+  double constexpr kMaxStillJitterM = 3.0;
+  bool const still = info.HasSpeed() && info.m_speed < kStillSpeedMps && info.m_horizontalAccuracy > 0.0;
+  double const mercatorPerMeter = info.m_horizontalAccuracy > 0.0 ? m_errorRadius / info.m_horizontalAccuracy : 0.0;
+  double const stillJitter =
+      still ? std::min(kMaxStillJitterM, info.m_horizontalAccuracy / 2) * mercatorPerMeter : 0.0;
+  bool const unseen = m_isPositionAssigned && !m_isPendingAnimation && screen.GetScale() > 0.0 &&
+                      (m_position.Length(m_shownPosition) / screen.GetScale() < kMinShownMovePx ||
+                       m_position.Length(m_shownPosition) < stillJitter) &&
+                      std::fabs(ang::GetShortestDistance(m_shownDirection, m_direction)) < kMinShownTurnRad &&
+                      (std::fabs(m_errorRadius - m_shownErrorRadius) / screen.GetScale() < kMinShownMovePx ||
+                       (still && std::fabs(m_errorRadius - m_shownErrorRadius) < 0.25 * m_shownErrorRadius));
+  if (!unseen)
+  {
+    m_shownPosition = m_position;
+    m_shownDirection = m_direction;
+    m_shownErrorRadius = m_errorRadius;
+  }
+
+  if (!unseen && m_isPositionAssigned && (!AlmostCurrentPosition(oldPos) || !AlmostCurrentAzimut(oldAzimut)))
   {
     CreateAnim(oldPos, oldAzimut, screen);
     m_isDirtyViewport = true;
@@ -688,6 +717,7 @@ void MyPositionController::OnLocationUpdate(location::GpsInfo const & info,
     m_updateLocationTimer.Reset();
     ResetNotification(m_updateLocationNotifyId);
   }
+  return !(unseen && wasAssigned && !wasObsolete && m_mode == oldMode);
 }
 
 void MyPositionController::LoseLocation()

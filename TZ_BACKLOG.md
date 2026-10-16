@@ -132,6 +132,9 @@ backlog out on 2026-10-15 (D65).
   under the island on every page. Field check: NEEDS OWNER N18 (handle part).
 - **FEAT-005** — Phase 20. Research in `TZ_RESEARCH_ROUTE_VISIBILITY.md`; 8dp line with a black casing (D45).
   Field check: NEEDS OWNER N20 (choose among four candidates).
+- **Profiling and battery pass** (owner request, 2026-10-16) — a still map no longer redraws continuously (CPU on a
+  still B1 61.8 → 7.6 % on the emulator), following capped at 30 fps; profiling scripts in tools/trackzero (D67,
+  TZ_BASELINE "Profiling"). Field check: NEEDS OWNER N67.
 - **Owner fixes, round 2** (2026-10-16) — no map flash between More's screens; no planned or loop line left on the
   map; back from a proposed loop returns to the proposals; "<kind> de <town>" searches find the place first (D66).
   Field check: NEEDS OWNER N66.

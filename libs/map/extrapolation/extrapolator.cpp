@@ -162,6 +162,17 @@ void Extrapolator::ExtrapolatedLocationUpdate(uint64_t locationUpdateCounter)
       else
         gpsInfo = m_lastGpsInfo;
     }
+    // TrackZero: the fix itself always goes; after it, only a point that moves (a still rider, or no extrapolation,
+    // repeated the same position every 200 ms) (D67).
+    double constexpr kMinMoveM = 0.25;
+    if (gpsInfo.IsValid() && m_consecutiveRuns != 0 && m_lastSentGpsInfo.IsValid() &&
+        ms::DistanceOnEarth(gpsInfo.m_latitude, gpsInfo.m_longitude, m_lastSentGpsInfo.m_latitude,
+                            m_lastSentGpsInfo.m_longitude) < kMinMoveM)
+    {
+      gpsInfo = location::GpsInfo();
+    }
+    if (gpsInfo.IsValid())
+      m_lastSentGpsInfo = gpsInfo;
   }
 
   if (gpsInfo.IsValid())
@@ -201,6 +212,12 @@ void Extrapolator::RunTaskOnBackgroundThread(bool delayed)
 bool Extrapolator::DoesExtrapolationWork() const
 {
   if (!m_isEnabled || m_consecutiveRuns == kExtrapolationCounterUndefined)
+    return false;
+
+  // TrackZero: a rider standing still (the GPS says so) has nothing to extrapolate; the jitter between two fixes is
+  // not a movement (D67).
+  double constexpr kMinMovingSpeedMps = 0.7;
+  if (m_lastGpsInfo.HasSpeed() && m_lastGpsInfo.m_speed < kMinMovingSpeedMps)
     return false;
 
   return AreCoordsGoodForExtrapolation(m_beforeLastGpsInfo, m_lastGpsInfo);

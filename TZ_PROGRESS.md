@@ -938,3 +938,25 @@ Asked for by the owner after testing the release build on the phone.
 ### NEEDS OWNER
 - **N66** — On the phone, search "gare de melun" (and a couple of "<kind> de <town>" searches you use): the station
   should be first.
+
+## Profiling and battery pass (owner request, 2026-10-16, D67)
+"Profile the entire app in various scenarios ... improve them vastly without hindering UX."
+- **Tooling**: `tools/trackzero/profile.sh` (one window: CPU per thread, map and view frames from SurfaceFlinger,
+  alarms, location, sensors), `profile_run.sh` (cold start, B1 still / walking, background, ride pages, screen off),
+  `emu_gps_jitter.py` (a still GPS that wanders), `emu_compass_noise.py`. -PtzMeasure builds now have the release
+  engine (the debug one has ASan and no optimisation) and keep the trace.
+- **Found and fixed**: the map screen drew 20–30 frames a second with the rider still (the location extrapolator
+  re-sent the same fix every 200 ms; GPS jitter animated the arrow every second). Now ~2 frames a second; CPU on a
+  still B1 61.8 → 7.6 % of a core on the emulator. Following the rider is capped at 30 fps like CoMaps' own
+  navigation (a ride's map page drew at the display's full rate). Numbers in TZ_BASELINE "Profiling".
+- **Checked, left as they are**: background and screen-off ride (nothing measurable), cold start 0.6 s, search
+  0.4–1.8 s, loops 4.5 s (20 km) to 17 s (80 km), the REC pulse (D32). The compass on the emulator can't be made
+  noisy (its rotation vector ignores the magnetic field set), so its 1° filter stays as it was.
+- **Checked visually**: the arrow keeps its place on R2 while riding, the map follows; B1 recentres on the rider.
+  Seen, already so before (baseline build the same): after panning away, a cold start reopens the last view.
+- Tests: unit tests pass; smoke test (debug engine with ASan) all steps, no crashes, no ASan reports.
+
+### NEEDS OWNER
+- **N67** — On the phone: leave the app open on the map for 30 minutes with the phone still on a table, and note the
+  battery drop against the previous build; on a ride with the map page on, note whether the map's movement looks as
+  smooth as before (it is now drawn at 30 frames a second).
